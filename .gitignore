@@ -9,7 +9,6 @@
 *.suo
 *.opendb
 *.db
-*.filters
 *.user
 GeneratedFiles
 *.iobj

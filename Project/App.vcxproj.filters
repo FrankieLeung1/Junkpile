@@ -1,0 +1,750 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{7949ce1d-c8e2-4554-bed8-a187cf69f412}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\imgui">
+      <UniqueIdentifier>{3c48d905-56b1-4b69-9b02-71d43856084b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui">
+      <UniqueIdentifier>{ae87cf3f-227a-4257-abad-e8486a2d84f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\imgui">
+      <UniqueIdentifier>{f4a4f8cd-b0a5-4b60-8d9e-6000ae05a9ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Threading">
+      <UniqueIdentifier>{c21060e4-c115-4eeb-a118-10204fe1825f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Threading">
+      <UniqueIdentifier>{2b38f3a1-6ae2-44e3-9611-5db7eecaa7d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS">
+      <UniqueIdentifier>{4e832f92-3ff9-481e-baca-1fd15013e4b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ECS">
+      <UniqueIdentifier>{644d4344-612c-4522-b4fa-6c201e324800}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Misc">
+      <UniqueIdentifier>{76e91929-317a-479d-819b-af53047bd605}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Misc">
+      <UniqueIdentifier>{69aa2c21-e5e0-4d89-a00b-90ca2822b3ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\glfw">
+      <UniqueIdentifier>{71f3aaa6-8287-414e-99ea-e4e98067bb14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sprites">
+      <UniqueIdentifier>{93cf934b-d2e7-4872-bf69-17dc6d8fcbaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Sprites">
+      <UniqueIdentifier>{d564d7a4-2b50-46a9-a650-de7b4379def2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Files">
+      <UniqueIdentifier>{c78cba9c-3ee4-40fc-8ab4-3630e628560c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Files">
+      <UniqueIdentifier>{8f741e38-7838-4d9d-bf9a-573f54a1b24d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering">
+      <UniqueIdentifier>{41a1f1a4-97c9-4d4b-8eb4-719a093cdd6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rendering">
+      <UniqueIdentifier>{e5cc3d9f-3bc1-4408-b94c-4b28b4a7f044}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Resources">
+      <UniqueIdentifier>{a7fb79d7-d0fc-44ac-b2c5-eb39e9b5f31d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Resources">
+      <UniqueIdentifier>{c2aa8664-ccdc-402b-aef7-8817b1ae00d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\lua">
+      <UniqueIdentifier>{a37be6f1-cccb-4c35-90de-bd434740740c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene">
+      <UniqueIdentifier>{ee1d65e0-d911-4827-8961-52fa34db8c29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Scene">
+      <UniqueIdentifier>{bd1f9c17-1fef-499c-a488-90d0737e06af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Physics">
+      <UniqueIdentifier>{f0ffbe3f-ed48-4fcd-8ab1-9506016c3c09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Physics">
+      <UniqueIdentifier>{bd59af71-5ed9-4c57-8ccf-524d1eb2087a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\ImGuiColorTextEdit">
+      <UniqueIdentifier>{4abe5d50-1a59-44e7-bf34-68eec4d82ef4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Scripts">
+      <UniqueIdentifier>{99277d47-265a-4484-a91d-19abe2dc611a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scripts">
+      <UniqueIdentifier>{63948fae-bac9-4cf0-8c90-795ca166956a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Framework">
+      <UniqueIdentifier>{69946bbd-ecca-4712-b7b3-22102f38555e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Framework">
+      <UniqueIdentifier>{8f38e7ce-e47b-49b7-9ae1-b9542cc22643}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Meta">
+      <UniqueIdentifier>{dc25c7f4-47d0-42a8-bdf7-c07124b0e36e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\xxHash">
+      <UniqueIdentifier>{43733dd3-d271-49db-9e40-300c5fff05be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\simplefilewatcher">
+      <UniqueIdentifier>{bee2ecbe-576e-4413-a954-df4fcd529765}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers">
+      <UniqueIdentifier>{33c4c893-a252-485e-ad14-125610440c2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers">
+      <UniqueIdentifier>{5c2e9756-1e28-4328-b655-3b0e725d4129}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Meta">
+      <UniqueIdentifier>{ad24fe79-a7fc-4fb6-8282-68ff51285e27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\screen_capture_lite">
+      <UniqueIdentifier>{e664bdac-a94c-4060-9dcb-72f899c34112}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Src\Exec\stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Exec\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\imgui\imgui.cpp">
+      <Filter>External\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\imgui\imgui_demo.cpp">
+      <Filter>External\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\imgui\imgui_draw.cpp">
+      <Filter>External\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\imgui\imgui_widgets.cpp">
+      <Filter>External\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\imgui\imgui_impl_glfw.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\imgui\imgui_impl_vulkan.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\imgui\ImGuiManager.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Threading\ThreadPool.cpp">
+      <Filter>Source Files\Threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Misc\ResizableMemoryPool.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Misc\Misc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\ECS\ComponentManager.cpp">
+      <Filter>Source Files\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\context.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\init.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\input.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\monitor.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\osmesa_context.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\vulkan.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\wgl_context.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\win32_init.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\win32_joystick.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\win32_monitor.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\win32_thread.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\win32_time.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\win32_window.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\window.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\xkb_unicode.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\glfw\src\egl_context.c">
+      <Filter>External\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Sprites\Sprite.cpp">
+      <Filter>Source Files\Sprites</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Sprites\SpriteData.cpp">
+      <Filter>Source Files\Sprites</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Files\FileManager.cpp">
+      <Filter>Source Files\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Files\File.cpp">
+      <Filter>Source Files\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Texture.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\RenderingDevice.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\VulkanHelpers.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\TextureAtlas.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Resources\ResourceManager.cpp">
+      <Filter>Source Files\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Pipeline.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\LuaHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lapi.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lauxlib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lbaselib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lbitlib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lcode.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lcorolib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lctype.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\ldblib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\ldebug.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\ldo.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\ldump.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lfunc.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lgc.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\linit.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\liolib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\llex.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lmathlib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lmem.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\loadlib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lobject.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lopcodes.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\loslib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lparser.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lstate.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lstring.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lstrlib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\ltable.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\ltablib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\ltm.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lua.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lundump.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lutf8lib.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lvm.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lua\src\lzio.c">
+      <Filter>External\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Scene\TileLevel.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Physics\PhysicsSystem.cpp">
+      <Filter>Source Files\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\ECS\System.cpp">
+      <Filter>Source Files\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\ImGuiColorTextEdit\TextEditor.cpp">
+      <Filter>External\ImGuiColorTextEdit</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Scripts\ScriptManager.cpp">
+      <Filter>Source Files\Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Framework\VulkanFramework.cpp">
+      <Filter>Source Files\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Shader.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Framework\Framework.cpp">
+      <Filter>Source Files\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Unit.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\xxHash\xxhash.c">
+      <Filter>External\xxHash</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Sampler.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Sprites\SpriteSystem.cpp">
+      <Filter>Source Files\Sprites</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\simplefilewatcher\source\FileWatcher.cpp">
+      <Filter>External\simplefilewatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\simplefilewatcher\source\FileWatcherWin32.cpp">
+      <Filter>External\simplefilewatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Managers\TimeManager.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Managers\InputManager.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Managers\EventManager.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Buffer.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Meta\Serializer.cpp">
+      <Filter>Source Files\Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Meta\Meta.cpp">
+      <Filter>Source Files\Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Meta\LuaRegisterer.cpp">
+      <Filter>Source Files\Meta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\SCCommon.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\ScreenCapture.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\ThreadManager.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\windows\DXFrameProcessor.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\windows\GDIFrameProcessor.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\windows\GDIMouseProcessor.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\windows\GetMonitors.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\windows\GetWindows.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\screen_capture_lite\src\windows\ThreadRunner.cpp">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Misc\WindowRecorder.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Src\Exec\stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\imconfig.h">
+      <Filter>External\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\imgui.h">
+      <Filter>External\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\imgui_internal.h">
+      <Filter>External\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\imstb_rectpack.h">
+      <Filter>External\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\imstb_textedit.h">
+      <Filter>External\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\imstb_truetype.h">
+      <Filter>External\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\imgui_impl_glfw.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\imgui_impl_vulkan.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\ImGuiManager.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Threading\ThreadPool.h">
+      <Filter>Header Files\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\ECS\ECS.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\ResizableMemoryPool.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\Misc.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\ECS\ComponentManager.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\ECS\EntityIterator.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\Callbacks.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\cocoa_joystick.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\cocoa_platform.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\internal.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\mappings.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\nsgl_context.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\osmesa_context.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\wgl_context.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\win32_joystick.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\win32_platform.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\xkb_unicode.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\glfw\src\egl_context.h">
+      <Filter>External\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Sprites\Sprite.h">
+      <Filter>Header Files\Sprites</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Sprites\SpriteData.h">
+      <Filter>Header Files\Sprites</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Files\FileManager.h">
+      <Filter>Header Files\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Files\File.h">
+      <Filter>Header Files\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\Texture.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\RenderingDevice.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\VulkanHelpers.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\TextureAtlas.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Resources\ResourceManager.h">
+      <Filter>Header Files\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\Pipeline.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\LuaHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lapi.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lauxlib.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lcode.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lctype.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\ldebug.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\ldo.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lfunc.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lgc.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\llex.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\llimits.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lmem.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lobject.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lopcodes.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lparser.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lprefix.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lstate.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lstring.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\ltable.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\ltm.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lua.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lua.hpp">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\luaconf.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lualib.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lundump.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lvm.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lua\src\lzio.h">
+      <Filter>External\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scene\TileLevel.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\SparseStructures.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Physics\PhysicsSystem.h">
+      <Filter>Header Files\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\ECS\System.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\ImGuiColorTextEdit\TextEditor.h">
+      <Filter>External\ImGuiColorTextEdit</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scripts\ScriptManager.h">
+      <Filter>Header Files\Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\Tests.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Framework\VulkanFramework.h">
+      <Filter>Header Files\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Framework\NullFramework.h">
+      <Filter>Header Files\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Meta\Meta.h">
+      <Filter>Header Files\Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Meta\Serializer.h">
+      <Filter>Header Files\Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Meta\LuaRegisterer.h">
+      <Filter>Header Files\Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\Any.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\Shader.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Framework\Framework.h">
+      <Filter>Header Files\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\Unit.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\xxHash\xxh3.h">
+      <Filter>External\xxHash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\xxHash\xxhash.h">
+      <Filter>External\xxHash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\Sampler.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Sprites\SpriteSystem.h">
+      <Filter>Header Files\Sprites</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\ClassMask.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\RenderTarget.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\RenderTarget.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\DataSource.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\simplefilewatcher\include\FileWatcher\FileWatcher.h">
+      <Filter>External\simplefilewatcher</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\simplefilewatcher\include\FileWatcher\FileWatcherImpl.h">
+      <Filter>External\simplefilewatcher</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\simplefilewatcher\include\FileWatcher\FileWatcherWin32.h">
+      <Filter>External\simplefilewatcher</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Managers\TimeManager.h">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Managers\InputManager.h">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Managers\EventManager.h">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\Buffer.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\screen_capture_lite\include\ScreenCapture.h">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\screen_capture_lite\include\windows\DXFrameProcessor.h">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\screen_capture_lite\include\windows\GDIFrameProcessor.h">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\screen_capture_lite\include\windows\GDIHelpers.h">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\screen_capture_lite\include\windows\GDIMouseProcessor.h">
+      <Filter>External\screen_capture_lite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\WindowRecorder.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
