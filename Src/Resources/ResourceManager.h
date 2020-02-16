@@ -311,7 +311,7 @@ bool ResourcePtr<Resource>::error(std::tuple<int, std::string>* error) const
 {
 	std::lock_guard<std::mutex> l(m_data->m_mutex);
 	if(error)
-		error = m_data->m_error;
+		*error = m_data->m_error;
 
 	return std::get<int>(m_data->m_error) != 0;
 }

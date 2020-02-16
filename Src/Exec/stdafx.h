@@ -3,6 +3,14 @@
 //#include <crtdbg.h>
 #define _SCL_SECURE_NO_WARNINGS
 
+#ifdef _DEBUG
+	#undef _DEBUG
+	#include <python.h>
+	#define _DEBUG
+#else
+	#include <python.h>
+#endif
+
 #include "lua/src/lua.hpp"
 #include "loguru/loguru.hpp"
 #include "imgui/imgui.h"

@@ -7,9 +7,9 @@
 FileManager::FileManager()
 {
 	addPath("");
-	addPath("../../Res/");
+	addPath("../Res/");
 
-	m_fileWatcher.addWatch(L"../../Res/", this, true);
+	m_fileWatcher.addWatch(L"../Res/", this, true);
 }
 
 FileManager::~FileManager()

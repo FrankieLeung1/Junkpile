@@ -12,6 +12,12 @@ m_state(luaL_newstate())
 
 ScriptManager::~ScriptManager()
 {
+	if(m_pythonInited)
+	{
+		int r = Py_FinalizeEx();
+		LOG_IF_F(ERROR, r != 0, "Python exited with %d\n", r);
+	}
+
 	delete m_editor;
 	lua_close(m_state);
 }
@@ -97,4 +103,15 @@ void ScriptManager::imgui()
 	m_editor->Render("TextEditor");
 
 	ImGui::End();
+}
+
+int ScriptManager::runPython(const std::vector<char>& content)
+{
+	if (!m_pythonInited)
+	{
+		Py_Initialize();
+	}
+
+	// is there a function that takes in size?
+	return PyRun_SimpleString(&content.front());
 }

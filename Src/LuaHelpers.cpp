@@ -486,7 +486,7 @@ LuaTableResource::~LuaTableResource()
 	lua_close(m_lua);
 }
 
-LuaTableResource::LuaTableLoader::LuaTableLoader(const std::string& path) :m_path(path), m_file(NewPtr, path.c_str())
+LuaTableResource::LuaTableLoader::LuaTableLoader(const std::string& path, int flags) :m_path(path), m_file(NewPtr, path.c_str(), flags)
 {
 
 }
@@ -516,9 +516,9 @@ const char* LuaTableResource::LuaTableLoader::getTypeName() const
 	return "LuaTable";
 }
 
-LuaTableResource::LuaTableLoader* LuaTableResource::createLoader(const char* path)
+LuaTableResource::LuaTableLoader* LuaTableResource::createLoader(const char* path, int flags)
 {
-	return new LuaTableLoader(path);
+	return new LuaTableLoader(path, flags);
 }
 
 LuaIterator::LuaIterator(LuaTable& table) :

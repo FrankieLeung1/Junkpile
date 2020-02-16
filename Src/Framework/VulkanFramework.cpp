@@ -86,7 +86,7 @@ VulkanFramework::VulkanFramework():
 m_clearColour(0.45f, 0.55f, 0.6f, 1.0f),
 m_windowTitle("App Window")
 {
-	initImGui(true);
+	initImGui(false);
 }
 
 VulkanFramework::~VulkanFramework()

@@ -39,7 +39,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//Any::test();
 	//Meta::LuaRegisterer::test();
 	//Sprite::test();
-	physicsTest();
+	//physicsTest();
 
 	/*struct Test
 	{
@@ -133,5 +133,5 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 			testRender();
 	}
 
-    return 0;
+	return 0;
 }

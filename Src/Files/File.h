@@ -12,6 +12,9 @@ class FileManager;
 class File : public Resource
 {
 public:
+	static const int CreateIfDoesNotExist = 1;
+
+public:
 	File(const char* path);
 	~File();
 
@@ -23,17 +26,18 @@ public:
 	class FileLoader : public Loader
 	{
 	public:
-		FileLoader(const char* path);
+		FileLoader(const char* path, int flags = 0);
 		Resource* load(std::tuple<int, std::string>* error);
 		std::string getDebugName() const;
 		const char* getTypeName() const;
 
 	protected:
+		int m_flags;
 		std::string m_path;
 		ResourcePtr<FileManager> m_fileManager;
 	};
-	static FileLoader* createLoader(const char* path);
-	static std::tuple<bool, std::size_t> getSharedHash(const char* path);
+	static FileLoader* createLoader(const char* path, int flags = 0);
+	static std::tuple<bool, std::size_t> getSharedHash(const char* path, int flags = 0);
 
 protected:
 	std::string m_path;

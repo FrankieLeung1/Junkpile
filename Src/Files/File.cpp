@@ -29,7 +29,7 @@ const std::string& File::getPath() const
 	return m_path;
 }
 
-File::FileLoader::FileLoader(const char* path) : m_path(path) {}
+File::FileLoader::FileLoader(const char* path, int flags) : m_path(path), m_flags(flags) {}
 Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 {
 	std::string path = m_fileManager->resolvePath(m_path.c_str());
@@ -39,6 +39,7 @@ Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 		return nullptr;
 	}
 
+	// TODO: m_flags & File::CreateIfDoesNotExist
 	std::fstream fstream(path, std::ios::in | std::fstream::binary);
 	if (!fstream.good())
 	{
@@ -62,9 +63,9 @@ std::string File::FileLoader::getDebugName() const
 }
 
 const char* File::FileLoader::getTypeName() const { return "File"; }
-File::FileLoader* File::createLoader(const char* path) { return new FileLoader(path); }
+File::FileLoader* File::createLoader(const char* path, int flags) { return new FileLoader(path, flags); }
 
-std::tuple<bool, std::size_t> File::getSharedHash(const char* path)
+std::tuple<bool, std::size_t> File::getSharedHash(const char* path, int flags)
 {
 	return{ true, std::hash<std::string>{}(path) };
 }

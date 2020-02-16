@@ -2,8 +2,6 @@
 
 #include "Texture.h"
 
-#ifndef TRAY
-
 #include "../Files/File.h"
 #include "VulkanHelpers.h"
 #include "RenderingDevice.h"
@@ -448,17 +446,3 @@ vk::Image Texture::getVkImageRT()
 {
 	return m_p->m_image;
 }
-
-#else // TRAY
-Texture::Texture() {}
-Texture::~Texture() {}
-void Texture::setData(int width, int height, int bitDepth, char* buffer) {}
-void Texture::setData(int width, int height, int bitDepth, std::vector<char>&& buffer) {}
-const std::vector<char>& Texture::getData() const { static std::vector<char> v; return v; }
-void Texture::uploadTexture(RenderingDevice* device, void* commandBuffer) {}
-int Texture::getWidth() const { return 0; }
-int Texture::getHeight() const { return 0; }
-int Texture::getPixelSize() const { return 0; }
-ImTextureID Texture::getImTexture() const { return nullptr; }
-
-#endif

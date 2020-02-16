@@ -5,7 +5,7 @@
 #include "../Managers/InputManager.h"
 
 ImGuiManager::ImGuiManager() :
-	m_persistence(NewPtr, "imgui.lua")
+	m_persistence(NewPtr, "imgui.lua", File::CreateIfDoesNotExist)
 {
 	//setMicrosoftStyle();
 }
@@ -39,6 +39,7 @@ bool* ImGuiManager::win(const char* name, const char* category)
 	if (!m_persistence.released())
 	{
 		std::tuple<int, std::string> error;
+		m_persistence.error(&error);
 		if (std::get<int>(error) == 0)
 		{
 			LuaStackCheck lsc(*m_persistence);

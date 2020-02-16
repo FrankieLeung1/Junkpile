@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -22,22 +14,9 @@
     <ProjectGuid>{B3B98DDD-DC71-42CC-ACDF-7E292B57D1CF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Exec</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -56,12 +35,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -69,37 +42,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\Bin\$(Configuration)\</OutDir>
+    <OutDir>..\Bin\</OutDir>
     <IntDir>$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <ExecutablePath>../External/Visual Leak Detector/bin/Win64;$(ExecutablePath)</ExecutablePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\Bin\$(Configuration)\</OutDir>
+    <OutDir>..\Bin\</OutDir>
     <IntDir>$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -107,36 +61,18 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <AddModuleNamesToAssembly>
       </AddModuleNamesToAssembly>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,14 +84,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\release</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -523,6 +459,140 @@
     <ClInclude Include="..\External\lua\src\lundump.h" />
     <ClInclude Include="..\External\lua\src\lvm.h" />
     <ClInclude Include="..\External\lua\src\lzio.h" />
+    <ClInclude Include="..\External\Python\include\abstract.h" />
+    <ClInclude Include="..\External\Python\include\asdl.h" />
+    <ClInclude Include="..\External\Python\include\ast.h" />
+    <ClInclude Include="..\External\Python\include\bitset.h" />
+    <ClInclude Include="..\External\Python\include\bltinmodule.h" />
+    <ClInclude Include="..\External\Python\include\boolobject.h" />
+    <ClInclude Include="..\External\Python\include\bytearrayobject.h" />
+    <ClInclude Include="..\External\Python\include\bytesobject.h" />
+    <ClInclude Include="..\External\Python\include\bytes_methods.h" />
+    <ClInclude Include="..\External\Python\include\cellobject.h" />
+    <ClInclude Include="..\External\Python\include\ceval.h" />
+    <ClInclude Include="..\External\Python\include\classobject.h" />
+    <ClInclude Include="..\External\Python\include\code.h" />
+    <ClInclude Include="..\External\Python\include\codecs.h" />
+    <ClInclude Include="..\External\Python\include\compile.h" />
+    <ClInclude Include="..\External\Python\include\complexobject.h" />
+    <ClInclude Include="..\External\Python\include\context.h" />
+    <ClInclude Include="..\External\Python\include\cpython\abstract.h" />
+    <ClInclude Include="..\External\Python\include\cpython\dictobject.h" />
+    <ClInclude Include="..\External\Python\include\cpython\fileobject.h" />
+    <ClInclude Include="..\External\Python\include\cpython\initconfig.h" />
+    <ClInclude Include="..\External\Python\include\cpython\interpreteridobject.h" />
+    <ClInclude Include="..\External\Python\include\cpython\object.h" />
+    <ClInclude Include="..\External\Python\include\cpython\objimpl.h" />
+    <ClInclude Include="..\External\Python\include\cpython\pyerrors.h" />
+    <ClInclude Include="..\External\Python\include\cpython\pylifecycle.h" />
+    <ClInclude Include="..\External\Python\include\cpython\pymem.h" />
+    <ClInclude Include="..\External\Python\include\cpython\pystate.h" />
+    <ClInclude Include="..\External\Python\include\cpython\sysmodule.h" />
+    <ClInclude Include="..\External\Python\include\cpython\traceback.h" />
+    <ClInclude Include="..\External\Python\include\cpython\tupleobject.h" />
+    <ClInclude Include="..\External\Python\include\cpython\unicodeobject.h" />
+    <ClInclude Include="..\External\Python\include\datetime.h" />
+    <ClInclude Include="..\External\Python\include\descrobject.h" />
+    <ClInclude Include="..\External\Python\include\dictobject.h" />
+    <ClInclude Include="..\External\Python\include\dtoa.h" />
+    <ClInclude Include="..\External\Python\include\dynamic_annotations.h" />
+    <ClInclude Include="..\External\Python\include\enumobject.h" />
+    <ClInclude Include="..\External\Python\include\errcode.h" />
+    <ClInclude Include="..\External\Python\include\eval.h" />
+    <ClInclude Include="..\External\Python\include\fileobject.h" />
+    <ClInclude Include="..\External\Python\include\fileutils.h" />
+    <ClInclude Include="..\External\Python\include\floatobject.h" />
+    <ClInclude Include="..\External\Python\include\frameobject.h" />
+    <ClInclude Include="..\External\Python\include\funcobject.h" />
+    <ClInclude Include="..\External\Python\include\genobject.h" />
+    <ClInclude Include="..\External\Python\include\graminit.h" />
+    <ClInclude Include="..\External\Python\include\grammar.h" />
+    <ClInclude Include="..\External\Python\include\import.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_accu.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_atomic.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_ceval.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_code.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_condvar.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_context.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_fileutils.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_getopt.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_gil.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_hamt.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_initconfig.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_object.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_pathconfig.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_pyerrors.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_pyhash.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_pylifecycle.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_pymem.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_pystate.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_traceback.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_tupleobject.h" />
+    <ClInclude Include="..\External\Python\include\internal\pycore_warnings.h" />
+    <ClInclude Include="..\External\Python\include\interpreteridobject.h" />
+    <ClInclude Include="..\External\Python\include\intrcheck.h" />
+    <ClInclude Include="..\External\Python\include\iterobject.h" />
+    <ClInclude Include="..\External\Python\include\listobject.h" />
+    <ClInclude Include="..\External\Python\include\longintrepr.h" />
+    <ClInclude Include="..\External\Python\include\longobject.h" />
+    <ClInclude Include="..\External\Python\include\marshal.h" />
+    <ClInclude Include="..\External\Python\include\memoryobject.h" />
+    <ClInclude Include="..\External\Python\include\methodobject.h" />
+    <ClInclude Include="..\External\Python\include\modsupport.h" />
+    <ClInclude Include="..\External\Python\include\moduleobject.h" />
+    <ClInclude Include="..\External\Python\include\namespaceobject.h" />
+    <ClInclude Include="..\External\Python\include\node.h" />
+    <ClInclude Include="..\External\Python\include\object.h" />
+    <ClInclude Include="..\External\Python\include\objimpl.h" />
+    <ClInclude Include="..\External\Python\include\odictobject.h" />
+    <ClInclude Include="..\External\Python\include\opcode.h" />
+    <ClInclude Include="..\External\Python\include\osdefs.h" />
+    <ClInclude Include="..\External\Python\include\osmodule.h" />
+    <ClInclude Include="..\External\Python\include\parsetok.h" />
+    <ClInclude Include="..\External\Python\include\patchlevel.h" />
+    <ClInclude Include="..\External\Python\include\picklebufobject.h" />
+    <ClInclude Include="..\External\Python\include\pyarena.h" />
+    <ClInclude Include="..\External\Python\include\pycapsule.h" />
+    <ClInclude Include="..\External\Python\include\pyconfig.h" />
+    <ClInclude Include="..\External\Python\include\pyctype.h" />
+    <ClInclude Include="..\External\Python\include\pydebug.h" />
+    <ClInclude Include="..\External\Python\include\pydtrace.h" />
+    <ClInclude Include="..\External\Python\include\pyerrors.h" />
+    <ClInclude Include="..\External\Python\include\pyexpat.h" />
+    <ClInclude Include="..\External\Python\include\pyfpe.h" />
+    <ClInclude Include="..\External\Python\include\pyhash.h" />
+    <ClInclude Include="..\External\Python\include\pylifecycle.h" />
+    <ClInclude Include="..\External\Python\include\pymacconfig.h" />
+    <ClInclude Include="..\External\Python\include\pymacro.h" />
+    <ClInclude Include="..\External\Python\include\pymath.h" />
+    <ClInclude Include="..\External\Python\include\pymem.h" />
+    <ClInclude Include="..\External\Python\include\pyport.h" />
+    <ClInclude Include="..\External\Python\include\pystate.h" />
+    <ClInclude Include="..\External\Python\include\pystrcmp.h" />
+    <ClInclude Include="..\External\Python\include\pystrhex.h" />
+    <ClInclude Include="..\External\Python\include\pystrtod.h" />
+    <ClInclude Include="..\External\Python\include\Python-ast.h" />
+    <ClInclude Include="..\External\Python\include\Python.h" />
+    <ClInclude Include="..\External\Python\include\pythonrun.h" />
+    <ClInclude Include="..\External\Python\include\pythread.h" />
+    <ClInclude Include="..\External\Python\include\pytime.h" />
+    <ClInclude Include="..\External\Python\include\py_curses.h" />
+    <ClInclude Include="..\External\Python\include\rangeobject.h" />
+    <ClInclude Include="..\External\Python\include\setobject.h" />
+    <ClInclude Include="..\External\Python\include\sliceobject.h" />
+    <ClInclude Include="..\External\Python\include\structmember.h" />
+    <ClInclude Include="..\External\Python\include\structseq.h" />
+    <ClInclude Include="..\External\Python\include\symtable.h" />
+    <ClInclude Include="..\External\Python\include\sysmodule.h" />
+    <ClInclude Include="..\External\Python\include\token.h" />
+    <ClInclude Include="..\External\Python\include\traceback.h" />
+    <ClInclude Include="..\External\Python\include\tracemalloc.h" />
+    <ClInclude Include="..\External\Python\include\tupleobject.h" />
+    <ClInclude Include="..\External\Python\include\typeslots.h" />
+    <ClInclude Include="..\External\Python\include\ucnhash.h" />
+    <ClInclude Include="..\External\Python\include\unicodeobject.h" />
+    <ClInclude Include="..\External\Python\include\warnings.h" />
+    <ClInclude Include="..\External\Python\include\weakrefobject.h" />
     <ClInclude Include="..\External\screen_capture_lite\include\ScreenCapture.h" />
     <ClInclude Include="..\External\screen_capture_lite\include\windows\DXFrameProcessor.h" />
     <ClInclude Include="..\External\screen_capture_lite\include\windows\GDIFrameProcessor.h" />

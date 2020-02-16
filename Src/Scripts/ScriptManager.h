@@ -16,6 +16,8 @@ public:
 	lua_State* getLua() const;
 	void imgui();
 
+	int runPython(const std::vector<char>&);
+
 protected:
 	void initEditor();
 
@@ -23,4 +25,5 @@ protected:
 	lua_State* m_state{ nullptr };
 	TextEditor* m_editor{ nullptr };
 	bool m_needsToCheckSyntax{ false };
+	bool m_pythonInited{ false };
 };

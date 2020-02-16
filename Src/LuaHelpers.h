@@ -169,7 +169,7 @@ public:
 	class LuaTableLoader : public Loader
 	{
 	public:
-		LuaTableLoader(const std::string& path);
+		LuaTableLoader(const std::string& path, int flags);
 		~LuaTableLoader();
 		LuaTableResource* load(std::tuple<int, std::string>* error);
 		std::string getDebugName() const;
@@ -179,7 +179,7 @@ public:
 		std::string m_path;
 		ResourcePtr<File> m_file;
 	};
-	static LuaTableLoader* createLoader(const char* path);
+	static LuaTableLoader* createLoader(const char* path, int flags = 0);
 };
 
 template<typename Tuple, typename T = void, std::size_t = 0> struct LuaArgs {};
