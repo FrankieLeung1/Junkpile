@@ -35,7 +35,50 @@ void FileManager::update()
 
 bool FileManager::exists(const char* path) const
 {
-	return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
+	return type(path) != Type::NotFound;
+}
+
+FileManager::Type FileManager::type(const char* path) const
+{
+	DWORD t = GetFileAttributesA(path);
+	if (t == INVALID_FILE_ATTRIBUTES)
+		return Type::NotFound;
+
+	if (t & FILE_ATTRIBUTE_DIRECTORY)
+		return Type::Directory;
+
+	if (t & FILE_ATTRIBUTE_NORMAL)
+		return Type::File;
+
+	return Type::Other;
+}
+
+std::vector<std::string> FileManager::files(const char* dir) const
+{
+	std::string path = resolvePath(dir);
+	path.append("/");
+
+	WIN32_FIND_DATAA data;
+	HANDLE hFind = FindFirstFileA((path + "*").c_str(), &data);
+	if (hFind == INVALID_HANDLE_VALUE)
+	{
+		LOG_F(ERROR, "FindFirstFile failed (%d)\n", GetLastError());
+		return {};
+	}
+	else
+	{
+		std::vector<std::string> r;
+		do {
+			if (data.cFileName[0] != '.')
+			{
+				r.push_back(path + data.cFileName);
+			}
+		}
+		while (FindNextFileA(hFind, &data));
+		FindClose(hFind);
+
+		return std::move(r);
+	}
 }
 
 void FileManager::save(const char* path, std::vector<char>&& buffer)
@@ -92,7 +135,7 @@ std::string FileManager::resolvePath(const char* path) const
 		memcpy(buffer, it->c_str(), it->size());
 		memcpy(buffer + it->size(), path, strlen(path) + 1);
 		LOG_IF_F(FATAL, (countof(buffer) < it->size() + pathSize + 1), "Increase buffer size\n");
-		if (std::experimental::filesystem::exists(buffer))
+		if (exists(buffer))
 			return buffer;
 
 		++it;

@@ -119,8 +119,7 @@ void ImGuiManager::drawMainMenuBar()
 		if (ImGui::BeginMenu("File"))
 		{
 			if (ImGui::MenuItem("Exit", "Alt+F4"))
-				//glfwSetWindowShouldClose(m_window, TRUE);
-				exit(0);
+				ResourcePtr<VulkanFramework>()->setShouldQuit(true);
 
 			ImGui::EndMenu();
 		}

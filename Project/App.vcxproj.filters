@@ -447,6 +447,9 @@
     <ClCompile Include="..\Src\Misc\WindowRecorder.cpp">
       <Filter>Source Files\Misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Scripts\Python.cpp">
+      <Filter>Source Files\Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1156,6 +1159,9 @@
     </ClInclude>
     <ClInclude Include="..\External\Python\include\cpython\unicodeobject.h">
       <Filter>External\Python\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scripts\Python.h">
+      <Filter>Header Files\Scripts</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

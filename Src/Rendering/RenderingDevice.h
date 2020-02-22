@@ -37,6 +37,12 @@ namespace Rendering
 
 		void update();
 
+		template<typename Object>
+		void setDebugName(Object, const char*) { LOG_F(INFO, "todo: setDebugName\n"); }
+
+		void beginDebugRegion(VkCommandBuffer, const char*);
+		void endDebugRegion(VkCommandBuffer);
+
 		VkBuffer createTransferBuffer(std::size_t, void* data = nullptr);
 		vk::Sampler* createObject(const vk::SamplerCreateInfo&);
 		template<typename T> T& getObject(std::size_t id) const;

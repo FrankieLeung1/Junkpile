@@ -24,6 +24,7 @@
 #include <functional>
 #include "../Misc/Tests.h"
 #include "../Scripts/ScriptManager.h"
+#include "../Scripts/Python.h"
 #include "../Meta/LuaRegisterer.h"
 #include "../Framework/VulkanFramework.h"
 #include "../Meta/Meta.h"
@@ -56,7 +57,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//EventManager::test();
 	//functionTest();
 
-	WindowRecorder::test();
+	//WindowRecorder::test();
 	//SpriteSystem::test(update, render);
 	/*update = [](float update)
 	{
@@ -87,6 +88,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<Rendering::Device> rd;
 	ResourcePtr<InputManager> i;
 	ComponentPtr<PositionComponent> pos(cm.get());
+
+	sm->addEnvironment<PythonEnvironment>();
 	
 	r.setFreeResources(false);
 
@@ -104,6 +107,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	r.startLoading();
 	r.setAutoStartTasks(true);
+
+	sm->runScriptsInFolder("Tray");
 
 	std::function<void(float)> testUpdate;
 	std::function<void()> testRender;

@@ -435,6 +435,16 @@ void Device::allocateThreadResources(const std::thread::id& id)
 	m_threadResources[id] = resources;
 }
 
+void Device::beginDebugRegion(VkCommandBuffer, const char*)
+{
+	LOG_F(INFO, "todo: beginDebugRegion\n");
+}
+
+void Device::endDebugRegion(VkCommandBuffer)
+{
+	LOG_F(INFO, "todo: endDebugRegion\n");
+}
+
 Device::ThreadResources* Device::getThreadResources()
 {
 	auto it = m_threadResources.find(std::this_thread::get_id());

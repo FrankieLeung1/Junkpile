@@ -2,6 +2,7 @@
 #include "ScriptManager.h"
 #include "../imgui/ImGuiManager.h"
 #include "../LuaHelpers.h"
+#include "../Files/FileManager.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
 
 ScriptManager::ScriptManager():
@@ -12,19 +13,39 @@ m_state(luaL_newstate())
 
 ScriptManager::~ScriptManager()
 {
-	if(m_pythonInited)
-	{
-		int r = Py_FinalizeEx();
-		LOG_IF_F(ERROR, r != 0, "Python exited with %d\n", r);
-	}
-
 	delete m_editor;
 	lua_close(m_state);
 }
 
-void ScriptManager::runInitScripts()
+void ScriptManager::runScriptsInFolder(const char* path, bool recursive)
 {
+	ResourcePtr<FileManager> fileManagers;
+	std::vector<std::string> files = fileManagers->files(path);
+	for (const std::string& current : files)
+	{
+		if (recursive && fileManagers->type(path) == FileManager::Type::Directory)
+			runScriptsInFolder(current.c_str(), true);
 
+		if (run(current.c_str()))
+			break;
+	}
+}
+
+bool ScriptManager::run(const char* path)
+{
+	for (auto& languages : m_languages)
+	{
+		if (languages->isScript(path))
+		{
+			auto script = languages->newScript(path);
+
+			ResourcePtr<File> f(NewPtr, path);
+			std::tuple<std::string, int> e = languages->loadScript(script, f->getContents(), f->getSize());
+			LOG_IF_F(ERROR, std::get<int>(e) > -1, "%s (%d): %s\n", path, std::get<int>(e), std::get<std::string>(e));
+			return true;
+		}
+	}
+	return false;
 }
 
 lua_State* ScriptManager::getLua() const
@@ -103,15 +124,4 @@ void ScriptManager::imgui()
 	m_editor->Render("TextEditor");
 
 	ImGui::End();
-}
-
-int ScriptManager::runPython(const std::vector<char>& content)
-{
-	if (!m_pythonInited)
-	{
-		Py_Initialize();
-	}
-
-	// is there a function that takes in size?
-	return PyRun_SimpleString(&content.front());
 }

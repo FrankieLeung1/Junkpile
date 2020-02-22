@@ -23,6 +23,11 @@ public:
 
 	bool exists(const char*) const;
 	
+	enum Type {NotFound, File, Directory, Other};
+	Type type(const char*) const;
+
+	std::vector<std::string> files(const char* dir) const;
+	
 	void save(const char* path, std::vector<char>&&);
 
 protected:
