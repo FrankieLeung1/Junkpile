@@ -42,7 +42,7 @@ void Sprite::test()
 
 		glm::vec2 d = sprite.getDimensions();
 
-		ImGui::Image(t.getImTexture(), ImVec2(d.x, d.y),
+		ImGui::Image(&t, ImVec2(d.x, d.y),
 			ImVec2(uv1.x, uv1.y), ImVec2(uv2.x, uv2.y), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 		ImGui::Text("It's peanut butter jelly time!");

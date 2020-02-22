@@ -50,6 +50,7 @@ namespace Rendering
 		Unit& in(ResourcePtr<Shader>);
 		Unit& in(ResourcePtr<Texture>);
 		Unit& in(ResourcePtr<TextureAtlas>);
+		Unit& in(VkImageLayout);
 		Unit& in(vk::SamplerMipmapMode);
 		Unit& in(vk::CompareOp);
 		Unit& in(Named<bool>);
@@ -72,6 +73,7 @@ namespace Rendering
 
 		void submitCommandBuffers(Rendering::Device*, Device::ThreadResources*, vk::CommandBuffer openBuffer);
 		bool submitTextureUpload(Rendering::Device*, vk::CommandBuffer, Texture*);
+		bool submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffer, Texture* texture);
 
 	protected:
 		struct Data

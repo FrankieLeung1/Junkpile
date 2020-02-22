@@ -56,7 +56,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//EventManager::test();
 	//functionTest();
 
-	//WindowRecorder::test();
+	WindowRecorder::test();
 	//SpriteSystem::test(update, render);
 	/*update = [](float update)
 	{

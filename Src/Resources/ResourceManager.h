@@ -53,7 +53,8 @@ struct ResourceData
 		WAITING,
 		LOADING,
 		LOADED,
-		FAILED
+		FAILED,
+		UNMANAGED // not managed by the resource manager
 	};
 	State m_state{ State::WAITING };
 	std::size_t m_sharedHash{ 0 };
@@ -70,6 +71,7 @@ struct ResourceData
 
 struct NewPtr_t {};
 extern NewPtr_t NewPtr;
+
 template<typename Resource>
 class ResourcePtr
 {
@@ -79,6 +81,8 @@ public:
 public:
 	struct EmptyPtr {};
 	ResourcePtr(EmptyPtr);
+	struct NoOwnershipPtr {}; //probably needs a different name
+	ResourcePtr(NoOwnershipPtr, Resource*);
 	ResourcePtr(const ResourcePtr<Resource>&);
 
 	template<typename... Args> ResourcePtr(NewPtr_t = NewPtr, Args&&... args);
@@ -282,6 +286,16 @@ m_data(nullptr)
 }
 
 template<typename Resource>
+ResourcePtr<Resource>::ResourcePtr(NoOwnershipPtr, Resource* resource):
+m_data(new ResourceData())
+{
+	m_data->m_state = State::UNMANAGED;
+	m_data->m_owns = false;
+	m_data->m_refCount = 1;
+	m_data->m_resource = resource;
+}
+
+template<typename Resource>
 ResourcePtr<Resource>::ResourcePtr(const ResourcePtr<Resource>& copy):
 m_data(copy.m_data)
 {
@@ -357,7 +371,15 @@ void ResourcePtr<Resource>::release()
 {
 	if (m_data)
 	{
-		g_resourceManager->release(m_data);
+		if (m_data->m_state == State::UNMANAGED)
+		{
+			m_data->m_refCount--;
+			if (m_data->m_refCount <= 0)
+				delete m_data;
+		}
+		else
+			g_resourceManager->release(m_data);
+
 		m_data = nullptr;
 	}
 }

@@ -30,11 +30,12 @@ namespace Rendering
 
 		void uploadTexture(Device* device, VkCommandBuffer commandBuffer);
 		void uploadTexture(Device* device, VkCommandBuffer commandBuffer, RenderTarget*);
+		void bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
 
 		int getWidth() const;
 		int getHeight() const;
 		int getPixelSize() const;
-		ImTextureID getImTexture() const;
+		vk::Image getVkImage() const;
 
 		void setVkImageRT(vk::Image image, VmaAllocation memory);
 		vk::Image getVkImageRT();

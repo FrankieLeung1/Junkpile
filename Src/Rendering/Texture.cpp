@@ -5,6 +5,7 @@
 #include "../Files/File.h"
 #include "VulkanHelpers.h"
 #include "RenderingDevice.h"
+#include "Unit.h"
 
 using namespace Rendering;
 
@@ -78,7 +79,6 @@ void Texture::createDeviceObjects(Device* device)
 		binding[0].descriptorCount = 1;
 		binding[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		binding[0].pImmutableSamplers = sampler;
-		//binding[0].pImmutableSamplers = nullptr;
 		VkDescriptorSetLayoutCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		info.bindingCount = 1;
@@ -212,7 +212,7 @@ void Texture::setHostVisible(int width, int height, int pixelSize)
 		VkDescriptorImageInfo imageDesc[1] = {};
 		imageDesc[0].sampler = m_p->m_sampler;
 		imageDesc[0].imageView = m_p->m_view;
-		imageDesc[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageDesc[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		VkWriteDescriptorSet writeDesc[1] = {};
 		writeDesc[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDesc[0].dstSet = m_p->m_descriptorSet;
@@ -222,6 +222,10 @@ void Texture::setHostVisible(int width, int height, int pixelSize)
 		vkUpdateDescriptorSets(device->getDevice(), 1, writeDesc, 0, NULL);
 	}
 
+	Rendering::Unit unit = device->createUnit();
+	unit.in(ResourcePtr<Rendering::Texture>(ResourcePtr<Rendering::Texture>::NoOwnershipPtr{}, this));
+	unit.in(VK_IMAGE_LAYOUT_GENERAL);
+	unit.submit();
 }
 
 void Texture::uploadTexture(Device* device, VkCommandBuffer _commandBuffer, RenderTarget* target)
@@ -413,6 +417,12 @@ void Texture::uploadTexture(Device* device, VkCommandBuffer vcommandBuffer)
 #endif
 }
 
+void Texture::bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+{
+	VkDescriptorSet desc_set[1] = { m_p->m_descriptorSet };
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, desc_set, 0, NULL);
+}
+
 int Texture::getWidth() const
 {
 	return m_width;
@@ -428,9 +438,9 @@ int Texture::getPixelSize() const
 	return m_pixelSize;
 }
 
-ImTextureID Texture::getImTexture() const
+vk::Image Texture::getVkImage() const
 {
-	return (ImTextureID)m_p->m_descriptorSet;
+	return m_p->m_image;
 }
 
 void Texture::setVkImageRT(vk::Image image, VmaAllocation memory)

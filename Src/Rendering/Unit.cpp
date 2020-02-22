@@ -213,7 +213,9 @@ void Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResourc
 		Texture* texture = nullptr;
 		if (getResource(texture, any.getPtr<ResourcePtr<Texture>>()) || getResource(texture, any.getPtr<ResourcePtr<TextureAtlas>>()))
 		{
-			if (submitTextureUpload(device, openBuffer, texture)) return;
+			if (submitTextureUpload(device, openBuffer, texture)) return; // upload?
+			if (submitLayoutChange(device, openBuffer, texture)) return; // layout change?
+
 		}
 	}
 
@@ -224,12 +226,45 @@ bool Unit::submitTextureUpload(Rendering::Device* device, vk::CommandBuffer buff
 {
 	RenderTarget* target = nullptr;
 	Data& d = getData();
+	if (d.m_targets.empty())
+		return false;
+
 	for (RenderTarget* target : d.m_targets)
 	{
 		texture->uploadTexture(device, buffer, target);
 	}
 
 	return true;
+}
+
+bool Unit::submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffer, Texture* texture)
+{
+	if (texture->getMode() != Texture::Mode::HOST_VISIBLE)
+		return false;
+
+	Data& d = getData();
+	for (Any& any : d.m_settings)
+	{
+		if (any.isType<VkImageLayout>())
+		{
+			VkImageMemoryBarrier useBuffer[1] = {};
+			useBuffer[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			useBuffer[0].srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+			useBuffer[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			useBuffer[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			useBuffer[0].newLayout = any.get<VkImageLayout>();
+			useBuffer[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			useBuffer[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			useBuffer[0].image = texture->getVkImage();
+			useBuffer[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			useBuffer[0].subresourceRange.levelCount = 1;
+			useBuffer[0].subresourceRange.layerCount = 1;
+			vkCmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, useBuffer);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 template<typename T> Unit& Unit::_in(T v)
@@ -254,6 +289,7 @@ Unit& Unit::in(Unit v) { return _in(v); }
 Unit& Unit::in(ResourcePtr<Shader> v) { return _in(v); }
 Unit& Unit::in(ResourcePtr<Texture> v) { return _in(v); }
 Unit& Unit::in(ResourcePtr<TextureAtlas> v) { return _in(v); }
+Unit& Unit::in(VkImageLayout v) { return _in(v); }
 Unit& Unit::in(vk::SamplerMipmapMode v) { return _in(v); }
 Unit& Unit::in(vk::CompareOp v) { return _in(v); }
 Unit& Unit::in(Named<bool> v) { return _in(v); }

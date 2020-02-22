@@ -384,7 +384,6 @@ int VulkanFramework::initImGui(bool systemTray)
 
 		err = vkDeviceWaitIdle(g_Device);
 		check_vk_result(err);
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
 	return 0;

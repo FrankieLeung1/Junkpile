@@ -49,24 +49,15 @@ m_p(new Impl)
 			texture->setHostVisible(nextPowerOf2(width), nextPowerOf2(height), sizeof(ImageBGRA));
 		}
 
-		
 		struct RGBA { unsigned char r, g, b, a; };
 		void* map = texture->map();
 		const ImageBGRA* bgra = StartSrc(img);
 		RGBA* rgba = (RGBA*)map;
-		//memcpy(rgba, bgra, width * height * sizeof(ImageBGRA));
-
 		for (int y = 0; y < height; y++)
 		{
 			const ImageBGRA* rowStart = bgra;
 			for (int x = 0; x < width; x++)
 			{
-				/*float f = ((float)y / (float)height) * 255.0f;
-				float f2 = ((float)x / (float)width) * 255.0f;
-				rgba->r = 0;
-				rgba->g = f2;
-				rgba->b = 0;*/
-
 				rgba->r = bgra[x].R;
 				rgba->g = bgra[x].G;
 				rgba->b = bgra[x].B;
@@ -114,7 +105,7 @@ void WindowRecorder::test()
 		Rendering::Texture* t = m_p->m_texture;
 		if (t)
 		{
-			ImGui::Image(t->getImTexture(), ImVec2((float)t->getWidth(), (float)t->getHeight()));
+			ImGui::Image(t, ImVec2((float)t->getWidth(), (float)t->getHeight()));
 		}
 
 		ImGui::End();

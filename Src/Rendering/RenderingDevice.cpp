@@ -169,6 +169,7 @@ void Device::submitAll()
 	m_device.waitIdle();
 
 	m_rootUnit->m_submitted.clear();
+	resources.m_commandBuffersUsed = 0;
 }
 
 void Device::waitFor(vk::Fence fence, FunctionBase<void>* f)
