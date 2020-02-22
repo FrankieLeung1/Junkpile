@@ -420,7 +420,7 @@ namespace Meta
 	}
 
 	template<typename Object>
-	int ::visit(Visitor* v, const char* name, Object* instance)
+	int visit(Visitor* v, const char* name, Object* instance)
 	{
 		Meta::Object& o = getMetaSingleton<Object>();
 		int result = 0;
