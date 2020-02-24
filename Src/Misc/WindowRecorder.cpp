@@ -12,6 +12,7 @@ struct WindowRecorder::Impl
 	std::shared_ptr<SL::Screen_Capture::ICaptureConfiguration<SL::Screen_Capture::WindowCaptureCallback>> m_windowCapture;
 
 	Rendering::Texture* m_texture{ nullptr };
+	int m_width, m_height;
 	std::mutex m_textureMutex;
 };
 
@@ -72,6 +73,8 @@ m_p(new Impl)
 		texture->unmap();
 
 		m_p->m_texture = texture;
+		m_p->m_width = width;
+		m_p->m_height = height;
 	});
 
 	capture->start_capturing()->setFrameChangeInterval(std::chrono::microseconds(100));
@@ -100,12 +103,17 @@ void WindowRecorder::test()
 		Impl* m_p = This->m_p;
 		std::lock_guard<std::mutex> l(m_p->m_textureMutex);
 
-		ImGui::Begin("WindowRecorder");
+		ImGui::Begin("WindowRecorder", nullptr, ImGuiWindowFlags_NoScrollbar);
 
 		Rendering::Texture* t = m_p->m_texture;
 		if (t)
 		{
-			ImGui::Image(t, ImVec2((float)t->getWidth(), (float)t->getHeight()));
+			float width = (float)m_p->m_width, height = (float)m_p->m_height;
+			ImVec2 size = ImGui::GetContentRegionMax();
+			size.y = size.x * (height / width);
+
+			ImVec2 uv1 = { 0, 0 }, uv2 = { width / t->getWidth(), height / t->getHeight() };
+			ImGui::Image(t, size, uv1, uv2);
 		}
 
 		ImGui::End();
