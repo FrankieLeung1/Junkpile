@@ -14,6 +14,20 @@ PythonEnvironment::~PythonEnvironment()
 	}
 }
 
+void PythonEnvironment::init()
+{
+	if (!m_pythonInited)
+	{
+		m_pythonInited = true;
+		Py_Initialize();
+	}
+}
+
+const char* PythonEnvironment::getName() const
+{
+	return "Python";
+}
+
 bool PythonEnvironment::isScript(const char* path) const
 {
 	// ends with .py or .pyw
@@ -24,6 +38,7 @@ bool PythonEnvironment::isScript(const char* path) const
 
 PythonEnvironment::Script PythonEnvironment::newScript(const char* debugName)
 {
+	init();
 	m_scripts.push_back(ScriptData{debugName});
 	return reinterpret_cast<Script>(m_scripts.size() - 1);
 }
@@ -35,11 +50,7 @@ void PythonEnvironment::deleteScript(Script s)
 
 std::tuple<std::string, int> PythonEnvironment::loadScript(Script, const char* buffer, std::size_t size)
 {
-	if (!m_pythonInited)
-	{
-		m_pythonInited = true;
-		Py_Initialize();
-	}
+	init();
 
 	// TODO: shouldn't there be a SimpleBuffer function
 	char* b = (char*)alloca(size + 1);
@@ -51,4 +62,54 @@ std::tuple<std::string, int> PythonEnvironment::loadScript(Script, const char* b
 		return { "", -1 };
 	else
 		return { "PyRun_SimpleString failed", 0 };
+}
+
+static PyObject*
+spam_system(PyObject* self, PyObject* args)
+{
+	const char* command;
+	int sts;
+
+	if (!PyArg_ParseTuple(args, "s", &command))
+		return NULL;
+	sts = system(command);
+	if (sts < 0) {
+		
+		return NULL;
+	}
+	return PyLong_FromLong(sts);
+}
+
+static PyMethodDef SpamMethods[] = {
+	{"system",  spam_system, METH_VARARGS, "Execute a shell command."},
+	{NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+PyObject* PythonEnvironment::moduleInit()
+{
+	auto This = PythonEnvironment::getThis();
+	PyModuleDef& mod = This->m_moduleDef;
+	mod.m_base = PyModuleDef_HEAD_INIT;
+	mod.m_name = "Junkpile";
+	mod.m_doc = nullptr;
+
+	return PyModule_Create(&mod);
+}
+
+bool PythonEnvironment::registerObject(const Meta::Object& object, const char* exposedName, std::tuple<void*, const char*> instance)
+{
+	CHECK_F(!m_pythonInited);
+	if (!m_moduleRegistered)
+	{
+		PyImport_AppendInittab("Junkpile", moduleInit);
+		m_moduleRegistered = true;
+	}
+
+	return true;
+}
+
+PythonEnvironment* PythonEnvironment::getThis()
+{
+	ResourcePtr<ScriptManager> s;
+	return (PythonEnvironment*)s->getEnvironment("Python");
 }

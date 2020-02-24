@@ -108,6 +108,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	r.startLoading();
 	r.setAutoStartTasks(true);
 
+	sm->registerObject<Meta::MetaTest>("MetaTest");
 	sm->runScriptsInFolder("Tray");
 
 	std::function<void(float)> testUpdate;

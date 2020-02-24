@@ -69,6 +69,15 @@ void ScriptManager::initEditor()
 	}
 }
 
+ScriptManager::Environment* ScriptManager::getEnvironment(const char* name) const
+{
+	for (auto& l : m_languages)
+		if (strcmp(l->getName(), name) == 0)
+			return l;
+
+	return nullptr;
+}
+
 void ScriptManager::imgui()
 {
 	ResourcePtr<ImGuiManager> imgui;

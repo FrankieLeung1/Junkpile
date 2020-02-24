@@ -3,6 +3,7 @@
 //#include <crtdbg.h>
 #define _SCL_SECURE_NO_WARNINGS
 
+#define PY_SSIZE_T_CLEAN
 #ifdef _DEBUG
 	#undef _DEBUG
 	#include <python.h>

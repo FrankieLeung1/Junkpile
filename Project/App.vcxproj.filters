@@ -450,6 +450,9 @@
     <ClCompile Include="..\Src\Scripts\Python.cpp">
       <Filter>Source Files\Scripts</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Scripts\PythonRegisterer.cpp">
+      <Filter>Source Files\Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1161,6 +1164,9 @@
       <Filter>External\Python\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Scripts\Python.h">
+      <Filter>Header Files\Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scripts\PythonRegisterer.h">
       <Filter>Header Files\Scripts</Filter>
     </ClInclude>
   </ItemGroup>

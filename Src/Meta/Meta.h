@@ -185,7 +185,29 @@ namespace Meta
 
 	void test();
 
+	struct MetaTest
+	{
+		bool m_variable1{ false };
+		int m_variable2{ 0 };
+		float m_variable3{ 0.0f };
+		std::string m_variable4{ "test" };
+		std::vector<int> m_array1;
+
+		struct InnerMetaTest {
+			int m_variable1;
+		};
+		InnerMetaTest m_object1;
+
+		int* m_pointer1{ nullptr };
+		InnerMetaTest* m_pointer2{ nullptr };
+
+		void f(int i, float f) { LOG_F(INFO, "Meta Called! %d %f\n", i, f); }
+	};
+
 	// ----------------------- IMPLEMENTATION -----------------------
+	template<> Object Meta::getMeta<MetaTest>();
+	template<> Object Meta::getMeta<MetaTest::InnerMetaTest>();
+
 	template<typename Variable, typename T>
 	Object& Object::var(const char* name, Variable(T::*v))
 	{
@@ -408,7 +430,7 @@ namespace Meta
 	template<typename T>
 	Object getMeta()
 	{
-		static_assert("No meta data for T");
+		static_assert(false, "No meta data for T");
 		return {};
 	}
 

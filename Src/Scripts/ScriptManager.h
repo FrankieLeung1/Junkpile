@@ -4,6 +4,7 @@
 
 struct lua_State;
 class TextEditor;
+namespace Meta { class Object; }
 class ScriptManager : public SingletonResource<ScriptManager>
 {
 public:
@@ -14,10 +15,12 @@ public:
 
 	public:
 		virtual ~Environment() = 0 {};
+		virtual const char* getName() const = 0;
 		virtual bool isScript(const char* path) const = 0;
 		virtual Script newScript(const char* debugName) =0;
 		virtual void deleteScript(Script) = 0;
 		virtual std::tuple<std::string, int> loadScript(Script, const char* buffer, std::size_t size) =0;
+		virtual bool registerObject(const Meta::Object&, const char* exposedName, std::tuple<void*, const char*> instance = {}) =0;
 	};
 
 public:
@@ -27,8 +30,8 @@ public:
 	void runScriptsInFolder(const char* path, bool recursive = false);
 	bool run(const char* path);
 
-	template<typename T>
-	void addEnvironment();
+	template<typename T> void registerObject(const char* exposedName, std::tuple<T*, const char*> instance = {});
+	template<typename T> void addEnvironment();
 
 	void setEditorContent(const char*);
 	lua_State* getLua() const;
@@ -36,6 +39,7 @@ public:
 
 protected:
 	void initEditor();
+	Environment* getEnvironment(const char* name) const;
 
 protected:
 	lua_State* m_state{ nullptr };
@@ -43,9 +47,18 @@ protected:
 	bool m_needsToCheckSyntax{ false };
 	
 	std::list<Environment*> m_languages;
+
+	friend class PythonEnvironment;
 };
 
 // ----------------------- IMPLEMENTATION ----------------------- 
+template<typename T> 
+void ScriptManager::registerObject(const char* exposedName, std::tuple<T*, const char*> instance)
+{
+	for(auto* l : m_languages)
+		l->registerObject(Meta::getMeta<T>(), exposedName, std::tie(std::get<0>(instance), std::get<1>(instance)));
+}
+
 template<typename T>
 void ScriptManager::addEnvironment()
 {

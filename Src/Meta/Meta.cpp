@@ -138,26 +138,7 @@ int Hook::visit(Visitor* v, void* object)
 	return m_fn(v, object);
 }
 
-struct MetaTest
-{
-	bool m_variable1{ false };
-	int m_variable2{ 0 };
-	float m_variable3{ 0.0f };
-	std::string m_variable4{ "test" };
-	std::vector<int> m_array1;
-
-	struct InnerMetaTest {
-		int m_variable1;
-	};
-	InnerMetaTest m_object1;
-
-	int* m_pointer1{ nullptr };
-	InnerMetaTest* m_pointer2{ nullptr };
-
-	void f(int i, float f) { LOG_F(INFO, "Meta Called! %d %f\n", i, f); }
-};
-
-template<>
+template<> 
 Object Meta::getMeta<MetaTest>()
 {
 	return Object("MetaTest")
@@ -171,10 +152,10 @@ Object Meta::getMeta<MetaTest>()
 		.var("pointer1", &MetaTest::m_pointer1)
 		.var("pointer2", &MetaTest::m_pointer2)*/
 		.func("f", &MetaTest::f, { "argi", "argf" }, { 255, 255.9f });
-		//.hook([](void*, Visitor* v, void*) { return v->visit("post", std::string("bye")); });
+	//.hook([](void*, Visitor* v, void*) { return v->visit("post", std::string("bye")); });
 }
 
-template<>
+template<> 
 Object Meta::getMeta<MetaTest::InnerMetaTest>()
 {
 	return Object("InnerMetaTest")
