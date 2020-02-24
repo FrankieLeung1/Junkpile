@@ -128,7 +128,7 @@ void Device::setPipelineCache(vk::PipelineCache cache)
 	m_pipelineCache = cache;
 }
 
-Unit& Device::getRootUnit()
+RootUnit& Device::getRootUnit()
 {
 	return *m_rootUnit;
 }

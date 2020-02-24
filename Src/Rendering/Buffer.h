@@ -2,6 +2,7 @@
 
 namespace Rendering
 {
+	// is buffer a resource?
 	class Buffer
 	{
 	public:
@@ -9,6 +10,9 @@ namespace Rendering
 		enum Usage {Static, Mapped};
 		Buffer(Type, Usage, std::size_t size);
 		~Buffer();
+
+		Type getType() const;
+		Usage getUsage() const;
 
 		void* map();
 		void unmap();

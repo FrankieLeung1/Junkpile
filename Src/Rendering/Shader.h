@@ -20,6 +20,7 @@ namespace Rendering
 		void setCode(Type, const char*);
 		bool compile(std::string*);
 
+		Type getType() const;
 		static void test();
 
 		class ShaderLoader : public Loader

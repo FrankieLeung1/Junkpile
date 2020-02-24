@@ -84,6 +84,11 @@ bool Shader::compile(std::string* outError)
 	return success;
 }
 
+Shader::Type Shader::getType() const
+{
+	return m_type;
+}
+
 void Shader::freeModule()
 {
 	if (m_module)

@@ -37,6 +37,16 @@ Buffer::~Buffer()
 	vmaDestroyBuffer(m_device->getVMA(), m_buffer, m_allocation);
 }
 
+Buffer::Type Buffer::getType() const
+{
+	return m_type;
+}
+
+Buffer::Usage Buffer::getUsage() const
+{
+	return m_usage;
+}
+
 void* Buffer::map()
 {
 	void* data = nullptr;

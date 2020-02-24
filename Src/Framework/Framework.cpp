@@ -173,10 +173,10 @@ bool Framework::getExitCode(ProcessHandle* process, int* exitCode)
 
 const char* Framework::getResPath()
 {
-	return "../../Res/";
+	return "../Res/";
 }
 
 const char* Framework::getExternalPath()
 {
-	return "../../External/";
+	return "../External/";
 }

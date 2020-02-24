@@ -29,7 +29,7 @@ namespace Rendering
 		VmaAllocator getVMA() const;
 		VkAllocationCallbacks* getAllocator() const;
 
-		Unit& getRootUnit();
+		RootUnit& getRootUnit();
 		Unit createUnit();
 		void submitAll();
 

@@ -10,6 +10,7 @@ namespace Rendering
 {
 	class Shader;
 	class RootUnit;
+	class Buffer;
 	class Texture;
 	class TextureAtlas;
 	class UnitInstance;
@@ -50,6 +51,7 @@ namespace Rendering
 		Unit& in(ResourcePtr<Shader>);
 		Unit& in(ResourcePtr<Texture>);
 		Unit& in(ResourcePtr<TextureAtlas>);
+		Unit& in(Buffer*);
 		Unit& in(VkImageLayout);
 		Unit& in(vk::SamplerMipmapMode);
 		Unit& in(vk::CompareOp);
@@ -74,6 +76,7 @@ namespace Rendering
 		void submitCommandBuffers(Rendering::Device*, Device::ThreadResources*, vk::CommandBuffer openBuffer);
 		bool submitTextureUpload(Rendering::Device*, vk::CommandBuffer, Texture*);
 		bool submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffer, Texture* texture);
+		bool submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer);
 
 	protected:
 		struct Data

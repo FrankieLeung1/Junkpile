@@ -2,9 +2,11 @@
 #include "Unit.h"
 #include "../Misc/Misc.h"
 #include "VulkanHelpers.h"
+#include "Buffer.h"
 #include "Texture.h"
 #include "TextureAtlas.h"
 #include "RenderingDevice.h"
+#include "Shader.h"
 #include "../Resources/ResourceManager.h"
 
 using namespace Rendering;
@@ -215,9 +217,10 @@ void Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResourc
 		{
 			if (submitTextureUpload(device, openBuffer, texture)) return; // upload?
 			if (submitLayoutChange(device, openBuffer, texture)) return; // layout change?
-
 		}
 	}
+
+	if (submitDrawCall(device, openBuffer)) return;
 
 	LOG_F(FATAL, "Unknown Unit type");
 }
@@ -267,6 +270,46 @@ bool Unit::submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffe
 	return false;
 }
 
+bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
+{
+	Data& d = getData();
+	Texture* bindTextures[4] = {};
+	Buffer *vertices = nullptr, * indices = nullptr;
+	Shader *vShader = nullptr, *fShader = nullptr;
+	for (Any& any : d.m_settings)
+	{
+		if ((!vShader|| !fShader) && any.isType< ResourcePtr<Shader> >())
+		{
+			Shader* shader = any.get<ResourcePtr<Shader>>();
+			if (!vShader && shader->getType() == Shader::Type::Vertex)	vShader = shader;
+			else														fShader = shader;
+
+			continue;
+		}
+		else if ((bindTextures[0] == nullptr || bindTextures[1] == nullptr || bindTextures[2] == nullptr || bindTextures[3] == nullptr) && any.isType<Binding<ResourcePtr<Texture>>>())
+		{
+			auto& binding = any.get<Binding<ResourcePtr<Texture>>>();
+			int stage = binding.m_stage;
+			CHECK_F(stage < countof(bindTextures));
+			CHECK_F(bindTextures[stage] == nullptr);
+			bindTextures[stage] = binding.m_value;
+			continue;
+		}
+		else if ((!vertices || !indices) && any.isType<Buffer*>())
+		{
+			Buffer* buffer = any.get<Buffer*>();
+			if (!vertices && buffer->getType() == Buffer::Type::Vertex) vertices = buffer;
+			else if (!indices && buffer->getType() == Buffer::Type::Index) indices = buffer;
+			continue;
+		}
+	}
+
+	if(!vertices || !indices || !vShader || !fShader || !bindTextures[0])
+		return false;
+
+	return true;
+}
+
 template<typename T> Unit& Unit::_in(T v)
 {
 	CHECK_F(!m_submitted);
@@ -289,6 +332,7 @@ Unit& Unit::in(Unit v) { return _in(v); }
 Unit& Unit::in(ResourcePtr<Shader> v) { return _in(v); }
 Unit& Unit::in(ResourcePtr<Texture> v) { return _in(v); }
 Unit& Unit::in(ResourcePtr<TextureAtlas> v) { return _in(v); }
+Unit& Unit::in(Buffer* v) { return _in(v); }
 Unit& Unit::in(VkImageLayout v) { return _in(v); }
 Unit& Unit::in(vk::SamplerMipmapMode v) { return _in(v); }
 Unit& Unit::in(vk::CompareOp v) { return _in(v); }

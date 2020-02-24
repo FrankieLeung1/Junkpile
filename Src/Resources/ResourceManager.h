@@ -81,7 +81,7 @@ public:
 public:
 	struct EmptyPtr {};
 	ResourcePtr(EmptyPtr);
-	struct NoOwnershipPtr {}; //probably needs a different name
+	struct NoOwnershipPtr {};
 	ResourcePtr(NoOwnershipPtr, Resource*);
 	ResourcePtr(const ResourcePtr<Resource>&);
 

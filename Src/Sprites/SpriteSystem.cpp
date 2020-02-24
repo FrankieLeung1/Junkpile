@@ -46,31 +46,31 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	atlas->layoutAtlas();
 	//vf->uploadTexture(&std::get<Rendering::TextureAtlas>(data));
 
-	Rendering::Texture* texture = createTestResource<Rendering::Texture>();
+	ResourcePtr<Rendering::Texture> texture(ResourcePtr<Rendering::Texture>::NoOwnershipPtr{}, createTestResource<Rendering::Texture>());
 	Rendering::Unit upload = device->createUnit();
 	upload.in(atlas);
 	upload.out(*texture);
 	upload.submit();
 
 	struct Vert { float m_x, m_y, m_z; };
-	Rendering::Buffer vbuffer(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vert) * 4);
+	Rendering::Buffer* vbuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vert) * 4);
 	{
-		Vert* map = (Vert*)vbuffer.map();
+		Vert* map = (Vert*)vbuffer->map();
 		float f = 1.0f;
 		map[0] = Vert{ -f, f, 0.0f };
 		map[1] = Vert{ f, f, 0.0f };
 		map[2] = Vert{ -f, -f, 0.0f };
 		map[3] = Vert{ f, -f, 0.0f };
-		vbuffer.unmap();
+		vbuffer->unmap();
 	}
 
-	Rendering::Buffer ibuffer(Rendering::Buffer::Index, Rendering::Buffer::Mapped, sizeof(short) * 4);
+	Rendering::Buffer* ibuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Index, Rendering::Buffer::Mapped, sizeof(short) * 4);
 	{
-		short* index = (short*)ibuffer.map();
+		short* index = (short*)ibuffer->map();
 		for (short i = 0; i < 4; i++)
 			index[i] = i;
 
-		ibuffer.unmap();
+		ibuffer->unmap();
 	}
 
 	char vertexCode[] = R";(#version 450 core
@@ -98,12 +98,15 @@ void main()
 	auto entity = components->addEntity<PositionComponent, SpriteComponent>();
 	SpriteComponent* sprite = entity.get<SpriteComponent>();
 
-	render = [vertShader, fragShader]()
+	render = [vertShader, fragShader, ibuffer, vbuffer, texture]()
 	{
 		ResourcePtr<Rendering::Device> device;
 		Rendering::Unit unit(device->getRootUnit());
+		unit.in(vbuffer);
+		unit.in(ibuffer);
 		unit.in(vertShader);
 		unit.in(fragShader);
+		unit.in(Rendering::Unit::Binding<decltype(texture)>{0, texture});
 		unit.submit();
 	};
 }
