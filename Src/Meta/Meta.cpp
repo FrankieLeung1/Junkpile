@@ -15,7 +15,8 @@ m_baseType(type)
 
 Object::Object(const char* name):
 Base(sizeof(Object), BaseType::Object),
-m_name(name)
+m_name(name),
+m_factory()
 {
 
 }
@@ -45,11 +46,57 @@ Object& Object::hook(const BasicFunction<int, Visitor*, void*>& fn)
 	return *this;
 }
 
-int Object::visit(Visitor* v, void* o)
+Object& Object::factory(BasicFunction<void*> constructor, BasicFunction<void, void*> destructor)
+{
+	CHECK_F(!m_factory);
+	m_factory.set(constructor, destructor);
+	return *this;
+}
+
+Any Object::callWithVisitor(const char* name, void* instance, Visitor* v)
+{
+	for (const auto& it : m_variables)
+	{
+		if (it.m_baseType == Base::BaseType::Function)
+		{
+			Function& func = (Function&)it;
+			if (strcmp(name, func.getName()) == 0)
+			{
+				return func.callWithVisitor(v, instance);
+			}
+		}
+	}
+
+	LOG_F(ERROR, "callWithVisitor failed (%s)\n", name);
+	return nullptr;
+}
+
+void* Object::construct()
+{
+	if (!m_factory)
+	{
+		LOG_F(ERROR, "factory not provided for %s\n", getName());
+		return nullptr;
+	}
+
+	return m_factory.construct();
+}
+
+void Object::destruct(void* v)
+{
+	if (!m_factory)
+	{
+		LOG_F(ERROR, "factory not provided for %s\n", getName());
+		return;
+	}
+	m_factory.destruct(v);
+}
+
+int Object::visit(Visitor* v, void* o) const
 {
 	// TODO: do something with return values
 
-	for (auto& it : m_variables)
+	for (const auto& it : const_cast<Object*>(this)->m_variables)
 	{
 		switch (it.m_baseType)
 		{
@@ -79,7 +126,6 @@ int Object::visit(Visitor* v, void* o)
 				Hook& hook = (Hook&)it;
 				hook.visit(v, o);
 			}
-			break;
 		}
 	}
 
@@ -100,7 +146,7 @@ int Meta::Function::visit(Visitor* v, void* object)
 {
 	const char** argNames = m_argCount ? (const char**)(this + 1) : nullptr;
 	Any* defaults = nullptr;
-	if (m_defaultCount)
+	if (m_defaultCount > 0)
 	{
 		if (argNames)
 		{
@@ -113,7 +159,13 @@ int Meta::Function::visit(Visitor* v, void* object)
 		}
 	}
 
-	return m_implementation->visit(v, m_name, object, argNames, defaults);
+	return m_implementation->visit(v, m_name, object, argNames, defaults, m_defaultCount);
+}
+
+Any Meta::Function::callWithVisitor(Visitor* v, void* ptr)
+{
+	const char** bytes = (const char**)(this + 1);
+	return m_implementation->callWithVisitor(v, m_pointerBuffer, ptr, m_argCount ? bytes : nullptr, (Any*)(bytes + m_argCount), m_defaultCount);
 }
 
 const char* Meta::Function::getName() const
@@ -138,25 +190,55 @@ int Hook::visit(Visitor* v, void* object)
 	return m_fn(v, object);
 }
 
-template<> 
-Object Meta::getMeta<MetaTest>()
+Factory::Factory()
 {
-	return Object("MetaTest")
-		/*.hook([](void*, Visitor* v, void*) { return v->visit("pre", std::string("hi")); })
-		.var("variable1", &MetaTest::m_variable1)
-		.var("variable2", &MetaTest::m_variable2)
-		.var("variable3", &MetaTest::m_variable3)
-		.var("variable4", &MetaTest::m_variable4)
-		.var("array1", &MetaTest::m_array1)
-		.var("object1", &MetaTest::m_object1)
-		.var("pointer1", &MetaTest::m_pointer1)
-		.var("pointer2", &MetaTest::m_pointer2)*/
-		.func("f", &MetaTest::f, { "argi", "argf" }, { 255, 255.9f });
-	//.hook([](void*, Visitor* v, void*) { return v->visit("post", std::string("bye")); });
+}
+
+Factory::~Factory()
+{
+}
+
+void Factory::set(const BasicFunction<void*>& constructor, const BasicFunction<void, void*>& destructor)
+{
+	m_constructor = constructor;
+	m_destructor = destructor;
+}
+
+void* Factory::construct()
+{
+	return m_constructor();
+}
+
+void Factory::destruct(void* v)
+{
+	m_destructor(v);
+}
+
+bool Factory::operator!() const
+{
+	return !m_constructor || !m_destructor;
 }
 
 template<> 
-Object Meta::getMeta<MetaTest::InnerMetaTest>()
+Object Meta::instanceMeta<MetaTest>()
+{
+	return Object("MetaTest")
+		.defaultFactory<MetaTest>()
+		//.hook([](void*, Visitor* v, void*) { return v->visit("pre", std::string("hi")); })
+		//.var("variable1", &MetaTest::m_variable1)
+		//.var("variable2", &MetaTest::m_variable2)
+		//.var("variable3", &MetaTest::m_variable3)
+		//.var("variable4", &MetaTest::m_variable4)
+		//.var("array1", &MetaTest::m_array1)
+		//.var("object1", &MetaTest::m_object1)
+		//.var("pointer1", &MetaTest::m_pointer1)
+		//.var("pointer2", &MetaTest::m_pointer2)
+		.func("f", &MetaTest::f, { "argi", "argf" }, { 255, 255.9f });
+		//.hook([](void*, Visitor* v, void*) { return v->visit("post", std::string("bye")); });
+}
+
+template<> 
+Object Meta::instanceMeta<MetaTest::InnerMetaTest>()
 {
 	return Object("InnerMetaTest")
 		.var("variable1", &MetaTest::InnerMetaTest::m_variable1);
@@ -176,7 +258,7 @@ void Meta::test()
 	t.m_pointer2 = &t.m_object1;
 	Meta::visit(&v, "t", &t);
 
-	Object& o = getMetaSingleton<MetaTest>();
+	Object& o = getMeta<MetaTest>();
 	o.call<MetaTest, void>("f", &t, 23423, 123.4f);
 
 	ResourcePtr<ScriptManager> s;

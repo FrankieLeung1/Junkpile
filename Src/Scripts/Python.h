@@ -1,5 +1,6 @@
 #pragma once
 #include "ScriptManager.h"
+#include "PythonRegisterer.h"
 
 class PythonEnvironment : public ScriptManager::Environment
 {
@@ -13,11 +14,12 @@ public:
 	Script newScript(const char* debugName);
 	void deleteScript(Script);
 	std::tuple<std::string, int> loadScript(Script, const char* buffer, std::size_t);
-	bool registerObject(const Meta::Object&, const char* exposedName, std::tuple<void*, const char*> instance);
+	bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance);
 
 protected:
 	inline void init();
 	static PythonEnvironment* getThis();
+	static Meta::PythonRegisterer* findRegisterer(const char* name);
 	static PyObject* moduleInit();
 
 protected:
@@ -33,7 +35,8 @@ protected:
 	struct ExportedObject
 	{
 		std::string m_name;
-		const Meta::Object& m_object;
+		std::unique_ptr<Meta::PythonRegisterer> m_registerer;
+		ExportedObject(Meta::Object& object, const char* name, const char* doc);
 	};
 	std::vector<ExportedObject> m_exported;
 	PyModuleDef m_moduleDef;
@@ -41,6 +44,7 @@ protected:
 	struct ModuleState
 	{
 		PythonEnvironment* m_environment;
-
 	};
+
+	friend class Meta::PythonRegisterer;
 };

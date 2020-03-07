@@ -20,7 +20,7 @@ public:
 		virtual Script newScript(const char* debugName) =0;
 		virtual void deleteScript(Script) = 0;
 		virtual std::tuple<std::string, int> loadScript(Script, const char* buffer, std::size_t size) =0;
-		virtual bool registerObject(const Meta::Object&, const char* exposedName, std::tuple<void*, const char*> instance = {}) =0;
+		virtual bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance = {}) =0;
 	};
 
 public:
@@ -30,7 +30,7 @@ public:
 	void runScriptsInFolder(const char* path, bool recursive = false);
 	bool run(const char* path);
 
-	template<typename T> void registerObject(const char* exposedName, std::tuple<T*, const char*> instance = {});
+	template<typename T> void registerObject(const char* exposedName, const char* doc = nullptr, std::tuple<T*, const char*> instance = {});
 	template<typename T> void addEnvironment();
 
 	void setEditorContent(const char*);
@@ -53,10 +53,10 @@ protected:
 
 // ----------------------- IMPLEMENTATION ----------------------- 
 template<typename T> 
-void ScriptManager::registerObject(const char* exposedName, std::tuple<T*, const char*> instance)
+void ScriptManager::registerObject(const char* exposedName, const char* doc, std::tuple<T*, const char*> instance)
 {
 	for(auto* l : m_languages)
-		l->registerObject(Meta::getMeta<T>(), exposedName, std::tie(std::get<0>(instance), std::get<1>(instance)));
+		l->registerObject(Meta::getMeta<T>(), exposedName, doc, std::tie(std::get<0>(instance), std::get<1>(instance)));
 }
 
 template<typename T>

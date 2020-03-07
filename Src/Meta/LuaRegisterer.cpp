@@ -107,7 +107,7 @@ struct Test
 };
 
 template<>
-Object Meta::getMeta<Test>()
+Object Meta::instanceMeta<Test>()
 {
 	return Object("LuaRegistererTest")
 		.func("foo", &Test::foo);

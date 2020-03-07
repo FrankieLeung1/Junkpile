@@ -7,9 +7,11 @@
 #ifdef _DEBUG
 	#undef _DEBUG
 	#include <python.h>
+	#include <structmember.h>
 	#define _DEBUG
 #else
 	#include <python.h>
+	#include <structmember.h>
 #endif
 
 #include "lua/src/lua.hpp"

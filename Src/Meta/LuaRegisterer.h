@@ -58,6 +58,6 @@ namespace Meta
 	template<typename T>
 	void LuaRegisterer::open(lua_State* s)
 	{
-		open(getMetaSingleton<T>());
+		open(getMeta<T>());
 	}
 }
