@@ -17,6 +17,7 @@
 #include "imgui/imgui.h"
 #include "FileWatcher/FileWatcher.h"
 #include "vk_mem_alloc.h"
+#include "Fossilize/fossilize.hpp"
 
 #include <algorithm>
 #include <chrono>
