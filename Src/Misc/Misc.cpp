@@ -6,7 +6,11 @@
 void logToOutput(void*, const loguru::Message& message)
 {
 	char buffer[2048] = { 0 };
-	sprintf_s(buffer, "%s(%d) : %s", message.filename, message.line, message.message);
+	if (strstr(message.filename, "python") != nullptr && message.message[0] == '\x1')
+		strcpy_s(buffer, message.message + 1);
+	else
+		sprintf_s(buffer, "%s(%d) : %s", message.filename, message.line, message.message);
+	
 	OutputDebugStringA(buffer);
 }
 

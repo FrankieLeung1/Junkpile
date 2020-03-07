@@ -15,6 +15,9 @@ ScriptManager::~ScriptManager()
 {
 	delete m_editor;
 	lua_close(m_state);
+
+	for (auto& l : m_languages)
+		delete l;
 }
 
 void ScriptManager::runScriptsInFolder(const char* path, bool recursive)
@@ -41,7 +44,7 @@ bool ScriptManager::run(const char* path)
 
 			ResourcePtr<File> f(NewPtr, path);
 			std::tuple<std::string, int> e = languages->loadScript(script, f->getContents(), f->getSize());
-			LOG_IF_F(ERROR, std::get<int>(e) > -1, "%s (%d): %s\n", path, std::get<int>(e), std::get<std::string>(e));
+			LOG_IF_F(ERROR, std::get<int>(e) > -1, "%s (%d): %s\n", path, std::get<int>(e), std::get<std::string>(e).c_str());
 			return true;
 		}
 	}

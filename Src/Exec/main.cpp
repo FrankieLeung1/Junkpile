@@ -46,7 +46,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	{
 		Test()
 		{
-		memset(this + sizeof(Test), 0xFF, 4);
+			memset(this + sizeof(Test), 0xFF, 4);
 		}
 	};
 	char buffer[32];
@@ -58,7 +58,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//functionTest();
 
 	//WindowRecorder::test();
-	SpriteSystem::test(update, render);
+	//SpriteSystem::test(update, render);
 	/*update = [](float update)
 	{
 
@@ -108,8 +108,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	r.startLoading();
 	r.setAutoStartTasks(true);
 
-	/*sm->registerObject<Meta::MetaTest>("MetaTest");
-	sm->runScriptsInFolder("Tray");*/
+	sm->registerObject<Meta::MetaTest>("MetaTest");
+	sm->runScriptsInFolder("Tray");
 
 	std::function<void(float)> testUpdate;
 	std::function<void()> testRender;

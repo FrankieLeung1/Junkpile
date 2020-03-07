@@ -1,3 +1,5 @@
 import Junkpile
-Junkpile.system("t")
-print("we did it!")
+print("instancing\n")
+m = Junkpile.MetaTest()
+print("calling\n")
+m.f(1, 2.0)

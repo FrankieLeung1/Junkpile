@@ -8,6 +8,7 @@ public:
 
 public:
 	BasicFunction();
+	BasicFunction(const BasicFunction&);
 	template<typename FunctionPtr, typename UserData = nullptr_t> BasicFunction(FunctionPtr, UserData* ud = nullptr);
 	~BasicFunction();
 
@@ -17,7 +18,7 @@ public:
 	R operator()(Args...);
 
 protected:
-	struct Caller { virtual R call(void*, Args...) = 0; };
+	struct Caller { char m_d[5]; virtual R call(void*, Args...) = 0; };
 	template<typename FunctionPtr, typename UserData>
 	struct CallerImpl : public Caller
 	{
@@ -131,6 +132,13 @@ BasicFunction<R, Args...>::BasicFunction(FunctionPtr f, UserData* ud)
 }
 
 template<typename R, typename... Args>
+BasicFunction<R, Args...>::BasicFunction(const BasicFunction& copy)
+{
+	memcpy(&m_caller, &copy.m_caller, sizeof(sizeof(fnType)));
+	m_ud = copy.m_ud;
+}
+
+template<typename R, typename... Args>
 BasicFunction<R, Args...>::~BasicFunction()
 {
 	reinterpret_cast<Caller*>(&m_caller)->~Caller();
@@ -139,7 +147,8 @@ BasicFunction<R, Args...>::~BasicFunction()
 template<typename R, typename... Args>
 R BasicFunction<R, Args...>::call(Args... args)
 {
-	return reinterpret_cast<Caller*>(&m_caller)->call(m_ud, std::forward<Args>(args)...);
+	Caller* c = reinterpret_cast<Caller*>(&m_caller);
+	return c->call(m_ud, std::forward<Args>(args)...);
 }
 
 template<typename R, typename... Args>
@@ -159,6 +168,7 @@ template<typename R, typename... Args>
 template<typename FunctionPtr, typename UserData>
 BasicFunction<R, Args...>::CallerImpl<FunctionPtr, UserData>::CallerImpl(FunctionPtr Functor): m_fn(Functor)
 {
+	strcpy_s(m_d, "test");
 }
 
 template<typename R, typename... Args>

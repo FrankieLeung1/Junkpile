@@ -288,32 +288,34 @@ static void ImGui_ImplGlfw_UpdateMousePosAndButtons()
 #else
         const bool focused = glfwGetWindowAttrib(window, GLFW_FOCUSED) != 0;
 #endif
-
-        if (io.WantSetMousePos)
-        {
-            glfwSetCursorPos(window, (double)(mouse_pos_backup.x - viewport->Pos.x), (double)(mouse_pos_backup.y - viewport->Pos.y));
-        }
-        else
-        {
-            double mouse_x, mouse_y;
-            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-            {
-                // Multi-viewport mode: mouse position in OS absolute coordinates (io.MousePos is (0,0) when the mouse is on the upper-left of the primary monitor)
-				POINT p;
-				GetCursorPos(&p);
-				mouse_x = p.x;
-				mouse_y = p.y;
-                io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
-            }
-            else
-            {
-                // Single viewport mode: mouse position in client window coordinates (io.MousePos is (0,0) when the mouse is on the upper-left corner of the app window)
-				glfwGetCursorPos(window, &mouse_x, &mouse_y);
-                io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
-            }
-        }
-        for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
-            io.MouseDown[i] |= (::GetKeyState(VK_LBUTTON + i) & 0x80) != 0;
+		if (focused)
+		{
+			if (io.WantSetMousePos)
+			{
+				glfwSetCursorPos(window, (double)(mouse_pos_backup.x - viewport->Pos.x), (double)(mouse_pos_backup.y - viewport->Pos.y));
+			}
+			else
+			{
+				double mouse_x, mouse_y;
+				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+				{
+					// Multi-viewport mode: mouse position in OS absolute coordinates (io.MousePos is (0,0) when the mouse is on the upper-left of the primary monitor)
+					POINT p;
+					GetCursorPos(&p);
+					mouse_x = p.x;
+					mouse_y = p.y;
+					io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
+				}
+				else
+				{
+					// Single viewport mode: mouse position in client window coordinates (io.MousePos is (0,0) when the mouse is on the upper-left corner of the app window)
+					glfwGetCursorPos(window, &mouse_x, &mouse_y);
+					io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
+				}
+			}
+			for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
+				io.MouseDown[i] |= (::GetKeyState(VK_LBUTTON + i) & 0x80) != 0;
+		}
 
         // (Optional) When using multiple viewports: set io.MouseHoveredViewport to the viewport the OS mouse cursor is hovering.
         // Important: this information is not easy to provide and many high-level windowing library won't be able to provide it correctly, because

@@ -54,6 +54,20 @@ void callWithTupleNoReturn(void(*f)(Args...), std::tuple<Args...>& args)
 	callFunc<void, void(*)(Args...)>(f, args, typename gens<sizeof...(Args)>::type(), false);
 }
 
+template<typename R, typename T, typename... Args>
+R callWithTuple(T* instance, R(T::*f)(Args...), std::tuple<Args...>& args)
+{
+	using namespace MiscInternal;
+	return callFunc<R>([&] (Args... args) { return (instance->*f)(std::forward<Args>(args)...); }, args, typename gens<sizeof...(Args)>::type(), std::is_void<R>::type{});
+}
+
+template<typename T, typename... Args>
+void callWithTupleNoReturn(T* instance, void(T::*f)(Args...), std::tuple<Args...>& args)
+{
+	using namespace MiscInternal;
+	callFunc<void>([&](Args... args) { (instance->*f)(std::forward<Args>(args)...); } , args, typename gens<sizeof...(Args)>::type(), std::false_type{});
+}
+
 std::string escape(std::string&);
 std::size_t generateHash(const void*, std::size_t);
 std::string prettySize(std::size_t);
