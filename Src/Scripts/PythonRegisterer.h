@@ -101,9 +101,20 @@ namespace Meta
 			int startFunction(const char* name, bool hasReturn);
 			int endFunction();
 
+			int getResult() const;
+
+		protected:
+			template<typename T> int visit(T&);
+
 		protected:
 			Callable* m_callable;
 			PyObject *m_args, *m_keywords;
+
+			std::size_t m_argIndex;
+			int m_result;
+
+			// we store the arg data here. Max 9 of arguments, max size of a 64 bits
+			std::array<char[sizeof(long long)], 9> m_data;
 		};
 
 		std::map<std::string, Callable> m_callables;

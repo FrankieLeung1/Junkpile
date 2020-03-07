@@ -170,6 +170,7 @@ namespace Meta
 		};
 
 	public:
+		struct CallFailure {};
 		template<typename T, typename R, typename... Args>
 		static std::size_t sizeNeeded(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults);
 		template<typename T, typename R, typename... Args> Function(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>*);
@@ -243,7 +244,13 @@ namespace Meta
 		int* m_pointer1{ nullptr };
 		InnerMetaTest* m_pointer2{ nullptr };
 
-		void f(int i, float f) { LOG_F(INFO, "Meta Called! %d %f %s\n", i, f, m_variable4.c_str()); }
+		void f(int i, float f) {
+			LOG_F(INFO, "Meta Called! %d %f %s\n", i, f, m_variable4.c_str());
+		}
+
+		void s(std::string s) {
+			LOG_F(INFO, "Meta Called! %s\n", s.c_str());
+		}
 	};
 
 	// ----------------------- IMPLEMENTATION -----------------------
@@ -444,7 +451,7 @@ namespace Meta
 		if (!CallVisitor<R, std::tuple<Args...>, Args...>::visit(v, names, defaults, defaultCount, args))
 		{
 			LOG_F(ERROR, "Failed to collect args for function call\n");
-			return nullptr;
+			return CallFailure{};
 		}
 		callWithTupleNoReturn((ClassType*)instance, funcPtr, args);
 		return nullptr;
@@ -458,7 +465,7 @@ namespace Meta
 		if (!CallVisitor<R, std::tuple<Args...>, Args...>::visit(v, names, defaults, defaultCount, args))
 		{
 			LOG_F(ERROR, "Failed to collect args for function call\n");
-			return nullptr;
+			return CallFailure{};
 		}
 		return callWithTuple((ClassType*)instance, funcPtr, args);
 	}
@@ -501,7 +508,7 @@ namespace Meta
 	int Function::TypeVisitor<T, Ts...>::visit(Visitor* v, const char** argNames, Any* defaults, std::size_t defaultCount)
 	{
 		int r = 0;
-		if (sizeof...(Ts) <= defaultCount)
+		if (sizeof...(Ts) < defaultCount)
 		{
 			Any& t = defaults[defaultCount - (sizeof...(Ts) + 1)];
 			if(t.isType<int>()) r = v->visit(argNames ? *argNames : nullptr, t.get<int>());
@@ -534,7 +541,7 @@ namespace Meta
 		const auto i = std::tuple_size<Tuple>::value - sizeof...(Args) - 1;
 		if (v->visit(names ? names[i] : nullptr, std::get<i>(args)) != 0)
 		{
-			if ((sizeof...(Args)) > defaultCount)
+			if ((sizeof...(Args)) >= defaultCount)
 				return false;
 
 			std::get<i>(args) = defaults[defaultCount - (sizeof...(Args) + 1)].get<T>();

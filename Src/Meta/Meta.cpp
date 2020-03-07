@@ -233,7 +233,8 @@ Object Meta::instanceMeta<MetaTest>()
 		//.var("object1", &MetaTest::m_object1)
 		//.var("pointer1", &MetaTest::m_pointer1)
 		//.var("pointer2", &MetaTest::m_pointer2)
-		.func("f", &MetaTest::f, { "argi", "argf" }, { 255, 255.9f });
+		.func("f", &MetaTest::f, { "argi", "argf" }, { 255, 255.9f })
+		.func("s", &MetaTest::s, { "s" } /*, { std::string("default") }*/);
 		//.hook([](void*, Visitor* v, void*) { return v->visit("post", std::string("bye")); });
 }
 

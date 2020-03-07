@@ -281,9 +281,25 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	PyCallable* pyCallable = ((PyCallable*)self);
 	Callable* callable = pyCallable->m_callable;
 	Meta::PythonRegisterer::ArgsVisitor visitor(callable, args, kwargs);
-	auto instance = pyCallable->m_instance;
-	instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr, &visitor);
-	return PyLong_FromLong(0);
+	if (visitor.getResult() != 1)
+	{
+		PyErr_SetString(PyExc_TypeError, "Meta::PythonRegisterer::pyCallableCall failed");
+		return NULL;
+	}
+
+	InstanceData* instance = pyCallable->m_instance;
+	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr, &visitor);
+	if (r.isType<Meta::Function::CallFailure>())
+	{
+		PyErr_SetString(PyExc_ValueError, "callWithVisitor failed");
+		return NULL;
+	}
+
+	if (r.isType<int>()) return PyLong_FromLong(r.get<int>());
+	else if(r.isType<float>()) return PyFloat_FromDouble(r.get<float>());
+	else if (r.isType<std::string>()) return PyUnicode_FromString(r.get<std::string>().c_str());
+	else if (r.isType<bool>()) return PyBool_FromLong((int)r.get<bool>());
+	else return PyLong_FromLong(0);
 }
 
 void Meta::PythonRegisterer::pyCallableDealloc(PyObject* object)
@@ -292,22 +308,67 @@ void Meta::PythonRegisterer::pyCallableDealloc(PyObject* object)
 	PyObject_Del(object);
 }
 
-Meta::PythonRegisterer::ArgsVisitor::ArgsVisitor(Callable* callable, PyObject* args, PyObject* keywords) : m_callable(callable), m_args(args), m_keywords(keywords) {}
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, bool&) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, int&) {
-	LOG_F(INFO, "name %s\n", name);
-	return -1; 
+Meta::PythonRegisterer::ArgsVisitor::ArgsVisitor(Callable* callable, PyObject* args, PyObject* keywords) :
+m_callable(callable),
+m_args(args),
+m_keywords(keywords),
+m_argIndex(0),
+m_result(1)
+{
+	CHECK_F(m_data.size() >= callable->m_args.size());
+	memset(m_data.front(), 0xFE, sizeof(decltype(m_data)::value_type) * m_data.size());
+
+	char format[std::tuple_size<decltype(m_data)>() + 2] = { '|' };
+	int i = 1;
+	for (; i <= callable->m_args.size(); ++i)
+	{
+		switch (callable->m_args[i - 1].m_type)
+		{
+		case T_BOOL: format[i] = 'b'; break;
+		case T_INT: format[i] = 'i'; break;
+		case T_FLOAT: format[i] = 'f'; break;
+		case T_STRING: format[i] = 's'; break;
+		case T_OBJECT: format[i] = 'o'; break; 
+		case T_NONE: format[i] = 's'; break;
+		default: LOG_F(FATAL, "todo");
+		}
+	}
+	format[i] = '\0';
+	
+	int r = PyArg_ParseTuple(args, format, m_data[0], m_data[1], m_data[2], m_data[3], m_data[4], m_data[5], m_data[6], m_data[7], m_data[8]);
+	if (r != (int)true)
+	{
+		LOG_F(ERROR, "PyArg_ParseTuple failed %d\n", r);
+		m_result = r;
+	}
 }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, float&) { return -1; }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, std::string&) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, bool*) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, int*) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, float*) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, std::string*) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, void* object, const Object&) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::startObject(const char* name, const Meta::Object& objectInfo) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::endObject() { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::startArray(const char* name) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::endArray(std::size_t) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::startFunction(const char* name, bool hasReturn) { return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::endFunction() { return 0; }
+
+template<typename T>
+int Meta::PythonRegisterer::ArgsVisitor::visit(T& v)
+{
+	CHECK_F(m_result == 1);
+	m_argIndex++;
+	if (*reinterpret_cast<unsigned int*>(m_data[m_argIndex - 1]) == 0xFEFEFEFE)
+		return -1;
+
+	T* vptr = reinterpret_cast<T*>(m_data[m_argIndex - 1]);
+	v = *vptr;
+	return 0;
+}
+
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, bool& v) { return visit(v); }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, int& v) { return visit(v); }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, float& v) { return visit(v); }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, std::string& v) { char* s = nullptr; int r = visit(s); if (r == 0) v = s; return r; }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, bool* v) { return visit(v); }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, int* v) { return visit(v); }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, float* v) { return visit(v); }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, std::string* v) { return visit(v); }
+int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, void* object, const Object&) { return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::startObject(const char* name, const Meta::Object& objectInfo) { return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::endObject() { return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::startArray(const char* name) { return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::endArray(std::size_t) { return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::startFunction(const char* name, bool hasReturn) { return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::endFunction() { return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::getResult() const { return m_result; }

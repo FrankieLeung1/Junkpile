@@ -217,7 +217,7 @@ void AnyWithSize<BufferSize>::copyValueFrom(const AnyWithSize<BufferSize>& other
 		else
 		{
 			newPtr = new char[tSize];
-			other.m_impl->copy(newPtr, (void*)other.m_buffer);
+			other.m_impl->copy(newPtr, other.m_ptr);
 		}
 	}
 

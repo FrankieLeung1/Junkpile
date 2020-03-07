@@ -2,4 +2,5 @@ import Junkpile
 print("instancing\n")
 m = Junkpile.MetaTest()
 print("calling\n")
-m.f(1, 2.0)
+#m.f(2, 5.0)
+#m.s("yay!")

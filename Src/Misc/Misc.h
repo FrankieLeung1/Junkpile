@@ -36,8 +36,8 @@ namespace MiscInternal {
 	template<int ...> struct seq { };
 	template<int n, int ...s> struct gens : gens<n - 1, n - 1, s...> { };
 	template<int ...s> struct gens<0, s...> { typedef seq<s...> type; };
-	template<typename R, typename F, typename Tuple, int ...S> void callFunc(F f, Tuple& args, seq<S...>, std::true_type hasReturn) { f(std::get<S>(args) ...); }
-	template<typename R, typename F, typename Tuple, int ...S> R callFunc(F f, Tuple& args, seq<S...>, std::false_type hasReturn) { return f(std::get<S>(args) ...); }
+	template<typename R, typename F, typename Tuple, int ...S> void callFunc(F f, Tuple& args, seq<S...>, std::true_type noReturn) { f(std::get<S>(args) ...); }
+	template<typename R, typename F, typename Tuple, int ...S> R callFunc(F f, Tuple& args, seq<S...>, std::false_type noReturn) { return f(std::get<S>(args) ...); }
 }
 
 template<typename R, typename... Args>
