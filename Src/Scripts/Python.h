@@ -13,7 +13,7 @@ public:
 	bool isScript(const char* path) const;
 	Script newScript(const char* debugName);
 	void deleteScript(Script);
-	std::tuple<std::string, int> loadScript(Script, const char* buffer, std::size_t);
+	Error loadScript(Script, const char* buffer, std::size_t);
 	bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance);
 
 protected:
@@ -21,6 +21,11 @@ protected:
 	static PythonEnvironment* getThis();
 	static Meta::PythonRegisterer* findRegisterer(const char* name);
 	static PyObject* moduleInit();
+
+public:
+	static PyObject* printMethod(PyObject* self, PyObject* args);
+	static PyObject* printErrorMethod(PyObject* self, PyObject* args);
+	static PyObject* addModuleDependencyMethod(PyObject* self, PyObject* args);;
 
 protected:
 	bool m_pythonInited{ false };

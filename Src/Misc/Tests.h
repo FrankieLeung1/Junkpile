@@ -16,7 +16,7 @@ void physicsTest()
 		it.get<PositionComponent>()->m_position.y = ((std::rand() / (float)RAND_MAX) * 50.0f) + 200.0f;
 		ps->createBox(it.getEntity(), glm::vec3(1.0f), 1);
 
-		em->addListener<CollisionEvent>([=](void*, const EventBase* e) { LOG_F(INFO, "COLLISION %d\n", i);  return EventManager::ListenerResult::Discard; });
+		em->addListener<CollisionEvent>([=](const EventBase* e) { LOG_F(INFO, "COLLISION %d\n", i);  return EventManager::ListenerResult::Discard; });
 	}
 
 	{ // init ground

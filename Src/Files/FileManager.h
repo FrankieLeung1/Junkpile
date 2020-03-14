@@ -3,11 +3,17 @@
 #include <fstream>
 #include "File.h"
 #include "../Resources/ResourceManager.h"
+#include "../Managers/EventManager.h"
 
 struct FileImplWin32 : public FileImpl
 {
 	~FileImplWin32() {};
 	std::vector<char> m_contents;
+};
+
+struct FileChangeEvent : public Event<FileChangeEvent>
+{
+	std::vector<std::string> m_files;
 };
 
 class FileManager : public SingletonResource<FileManager>, FW::FileWatchListener
@@ -44,7 +50,8 @@ protected:
 		float m_time;
 		std::wstring m_file;
 	};
-	std::vector<FileChange> m_fileChanges;
+	std::vector<FileChange> m_bufferedFileChanges;
+	float m_lastFileChange;
 
 	friend class File;
 };

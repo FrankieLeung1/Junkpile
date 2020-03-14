@@ -23,6 +23,9 @@ public:
 
 	const std::string& getPath() const;
 
+	// checks if the file has changed, reloads file if true
+	bool checkChanged();
+
 	class FileLoader : public Loader
 	{
 	public:
@@ -42,7 +45,5 @@ public:
 protected:
 	std::string m_path;
 	std::vector<char> m_contents;
+	time_t m_modification;
 };
-
-extern std::string normalizePath(const char* path);
-extern void normalizePath(std::string& path);

@@ -11,6 +11,7 @@ EventManager::EventManager()
 
 EventManager::~EventManager()
 {
+	clearOneFrameBuffer();
 }
 
 void EventManager::process(float delta)
@@ -37,7 +38,7 @@ void EventManager::process(float delta)
 			current += message->m_size;
 		}
 
-		m_oneFrameBuffer.clear();
+		clearOneFrameBuffer();
 	}
 
 	auto prevIt = m_persistentEvents.before_begin();
@@ -122,4 +123,18 @@ void EventManager::test()
 		t->update();
 		em.process(t->getDelta());
 	}
+}
+
+void EventManager::clearOneFrameBuffer()
+{
+	auto it = m_oneFrameBuffer.begin();
+	auto typeIt = m_oneFrameBufferTypes.begin();
+	while (it != m_oneFrameBuffer.end())
+	{
+		(*typeIt)->destruct(&(*it));
+		std::advance(it, (*typeIt)->getSize());
+		++typeIt;
+	}
+	m_oneFrameBuffer.clear();
+	m_oneFrameBufferTypes.clear();
 }

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-//#include <vld.h>
+#include <vld.h>
 #include <Windows.h>
 #include "../Threading/ThreadPool.h"
 #include "../imgui/ImGuiManager.h"

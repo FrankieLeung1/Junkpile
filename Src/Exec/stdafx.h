@@ -19,7 +19,7 @@
 #include "imgui/imgui.h"
 #include "FileWatcher/FileWatcher.h"
 #include "vk_mem_alloc.h"
-#include "Fossilize/fossilize.hpp"
+//#include "Fossilize/fossilize.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -30,6 +30,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <forward_list>
 #include <string>
 #include <map>
 #include <fstream>

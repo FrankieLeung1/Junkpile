@@ -99,9 +99,9 @@ public:
 
 	State getState() const;
 	bool operator!() const;
-	Resource* operator->();
-	Resource& operator*();
-	operator Resource*();
+	Resource* operator->() const;
+	Resource& operator*() const;
+	operator Resource*() const;
 
 	ResourcePtr<Resource>& operator=(const ResourcePtr<Resource>&);
 	ResourcePtr<Resource>& operator=(ResourcePtr<Resource>&&);
@@ -414,7 +414,7 @@ bool ResourcePtr<Resource>::operator!() const
 }
 
 template<typename Resource>
-Resource* ResourcePtr<Resource>::operator->()
+Resource* ResourcePtr<Resource>::operator->() const
 {
 	waitReady(nullptr);
 
@@ -423,7 +423,7 @@ Resource* ResourcePtr<Resource>::operator->()
 }
 
 template<typename Resource>
-Resource& ResourcePtr<Resource>::operator*()
+Resource& ResourcePtr<Resource>::operator*() const
 {
 	waitReady(nullptr);
 
@@ -432,7 +432,7 @@ Resource& ResourcePtr<Resource>::operator*()
 }
 
 template<typename Resource>
-ResourcePtr<Resource>::operator Resource*()
+ResourcePtr<Resource>::operator Resource*() const
 {
 	waitReady(nullptr);
 

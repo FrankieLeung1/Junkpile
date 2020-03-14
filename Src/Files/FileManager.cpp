@@ -4,7 +4,8 @@
 #include "../Managers/TimeManager.h"
 #include "../Threading/ThreadPool.h"
 
-FileManager::FileManager()
+FileManager::FileManager():
+m_lastFileChange(0)
 {
 	addPath("");
 	addPath("../Res/");
@@ -31,6 +32,21 @@ void FileManager::removePath(const char* path)
 void FileManager::update()
 {
 	m_fileWatcher.update();
+	if (!m_bufferedFileChanges.empty())
+	{
+		ResourcePtr<TimeManager> t;
+		if (t->getTime() - m_lastFileChange > 0.5f)
+		{
+			ResourcePtr<EventManager> events;
+			FileChangeEvent* e = events->addOneFrameEvent<FileChangeEvent>();
+			for(auto& change : m_bufferedFileChanges)
+				e->m_files.push_back(normalizePath(toUtf8(change.m_file)));
+
+			e->m_files.erase(std::unique(e->m_files.begin(), e->m_files.end()), e->m_files.end());
+
+			m_bufferedFileChanges.clear();
+		}
+	}
 }
 
 bool FileManager::exists(const char* path) const
@@ -47,16 +63,16 @@ FileManager::Type FileManager::type(const char* path) const
 	if (t & FILE_ATTRIBUTE_DIRECTORY)
 		return Type::Directory;
 
-	if (t & FILE_ATTRIBUTE_NORMAL)
-		return Type::File;
+	if (t & FILE_ATTRIBUTE_SYSTEM)
+		return Type::Other;
 
-	return Type::Other;
+	return Type::File;
 }
 
 std::vector<std::string> FileManager::files(const char* dir) const
 {
 	std::string path = resolvePath(dir);
-	path.append("/");
+	path.append(1, '/');
 
 	WIN32_FIND_DATAA data;
 	HANDLE hFind = FindFirstFileA((path + "*").c_str(), &data);
@@ -71,7 +87,7 @@ std::vector<std::string> FileManager::files(const char* dir) const
 		do {
 			if (data.cFileName[0] != '.')
 			{
-				r.push_back(path + data.cFileName);
+				r.push_back(normalizePath(path + data.cFileName));
 			}
 		}
 		while (FindNextFileA(hFind, &data));
@@ -105,23 +121,25 @@ void FileManager::handleFileAction(FW::WatchID watchid, const FW::String& dir, c
 	default: actionStr = "modified"; break;
 	}
 
-	LOG_F(INFO, "file %s: %S %S\n", actionStr, dir.c_str(), filename.c_str());
+	LOG_F(1, "file %s: %S %S\n", actionStr, dir.c_str(), filename.c_str());
 
 	FileChange* fileChange = nullptr;
-	auto changeIt = std::find_if(m_fileChanges.begin(), m_fileChanges.end(), [&](const FileChange& f) { return f.m_file == filename; });
-	if (changeIt != m_fileChanges.end())
+	auto changeIt = std::find_if(m_bufferedFileChanges.begin(), m_bufferedFileChanges.end(), [&](const FileChange& f) { return f.m_file == filename; });
+	if (changeIt != m_bufferedFileChanges.end())
 	{
 		fileChange = &(*changeIt);
 	}
 	else
 	{
-		m_fileChanges.emplace_back();
-		fileChange = &m_fileChanges.back();
+		m_bufferedFileChanges.emplace_back();
+		fileChange = &m_bufferedFileChanges.back();
 	}
 
 	ResourcePtr<TimeManager> time;
 	fileChange->m_file = filename;
 	fileChange->m_time = time->getTime();
+
+	m_lastFileChange = fileChange->m_time;
 }
 
 std::string FileManager::resolvePath(const char* path) const

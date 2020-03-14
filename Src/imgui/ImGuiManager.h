@@ -60,5 +60,8 @@ void ImGuiManager::imguiLoop(Pred& pred)
 		update();
 		render();
 		fc->render();
+
+		if (fc->shouldQuit())
+			exit(0); // dirty exit if user closes the window during the imguiLoop
 	}
 }

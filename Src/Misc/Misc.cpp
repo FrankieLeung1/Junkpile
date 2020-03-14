@@ -48,6 +48,29 @@ void bitblt(const BitBltBuffer& dest, int x, int y, int width, int height, const
 	}
 }
 
+bool endsWith(const std::string& s, const char* ending, std::size_t endingSize)
+{
+	if (endingSize <= 0)
+		endingSize = strlen(ending);
+
+	if (s.length() < endingSize)
+		return false;
+	
+	return s.compare(s.length() - endingSize, endingSize, ending) == 0;
+}
+
+std::string toUtf8(const std::wstring& wide)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+	return converter.to_bytes(wide);
+}
+
+std::wstring toWideString(const std::string& s)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+	return converter.from_bytes(s);
+}
+
 std::string escape(std::string& s)
 {
 	const char* escapedChars = "\"";
@@ -80,6 +103,19 @@ std::string prettySize(std::size_t s)
 	else if (s < 1024 * 1024) return stringf("%.2fkb", s / (1024.0));
 	else if (s < 1024 * 1024 * 1024) return stringf("%.2fMB", s / (1024.0 * 1024.0));
 	else return stringf("%.2fGB", s / (1024.0 * 1024.0 * 1024.0));
+}
+
+std::string normalizePath(const char* path)
+{
+	std::string s(path);
+	normalizePath(s);
+	return std::move(s);
+}
+
+std::string& normalizePath(std::string& path)
+{
+	std::replace(path.begin(), path.end(), '\\', '/');
+	return path;
 }
 
 std::size_t generateHash(const void* buffer, std::size_t size)

@@ -20,7 +20,7 @@ struct BitBltBuffer
 void bitblt(const BitBltBuffer& dest, int x, int y, int width, int height, const BitBltBuffer& src, int sx, int sy);
 
 template<int bufferSize = 512>
-std::string stringf(char* fmt, ...)
+std::string stringf(const char* fmt, ...)
 {
 	char buffer[bufferSize];
 	va_list args;
@@ -68,9 +68,14 @@ void callWithTupleNoReturn(T* instance, void(T::*f)(Args...), std::tuple<Args...
 	callFunc<void>([&](Args... args) { (instance->*f)(std::forward<Args>(args)...); } , args, typename gens<sizeof...(Args)>::type(), std::false_type{});
 }
 
+bool endsWith(const std::string& s, const char* ending, std::size_t endingSize = 0);
+std::string toUtf8(const std::wstring&);
+std::wstring toWideString(const std::string&);
 std::string escape(std::string&);
 std::size_t generateHash(const void*, std::size_t);
 std::string prettySize(std::size_t);
+std::string normalizePath(const char* path);
+std::string& normalizePath(std::string& path);
 
 template<typename Container, typename T>
 bool contains(const Container& container, const T& t)
@@ -97,3 +102,23 @@ template<typename T>
 void addTestResource(T r) { Misc::_testResources.push_back(new TestResource(r)); }
 template<typename T, typename... Args> T* createTestResource(Args&&... args) { T* r = new T(std::forward<Args>(args)...);  Misc::_testResources.push_back(new Misc::TestResource<T>(r)); return r; }
 void deleteTestResources();
+
+// I think I just rewrote the TypeHelper in VariableSizedMemoryPool?
+class TypeHelper
+{
+public:
+	virtual void destruct(void*) =0;
+	virtual std::size_t getSize() const =0;
+};
+
+template<typename T>
+class TypeHelperInstance : public TypeHelper
+{
+public:
+	static TypeHelperInstance<T> s_instance;
+	void destruct(void* v) { static_cast<T*>(v)->~T(); }
+	std::size_t getSize() const { return sizeof(T); };
+};
+
+template<typename T>
+TypeHelperInstance<T> TypeHelperInstance<T>::s_instance;

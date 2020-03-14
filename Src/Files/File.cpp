@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <time.h>
 #include "File.h"
 #include "FileManager.h"
 #include "../Misc/Misc.h"
@@ -6,7 +7,9 @@
 File::File(const char* path):
 m_path(path)
 {
-	
+	struct stat s;
+	stat(path, &s);
+	m_modification = s.st_mtime;
 }
 
 File::~File()
@@ -27,6 +30,28 @@ const char* File::getContents() const
 const std::string& File::getPath() const
 {
 	return m_path;
+}
+
+bool File::checkChanged()
+{
+	struct stat s;
+	stat(m_path.c_str(), &s);
+	if (s.st_mtime > m_modification)
+	{
+		std::fstream fstream(m_path, std::ios::in | std::fstream::binary);
+		fstream.seekg(0, fstream.end);
+		std::size_t size = fstream.tellg();
+		fstream.seekg(0, fstream.beg);
+
+		m_contents.resize(size);
+		fstream.read(&m_contents[0], size);
+
+		m_modification = s.st_mtime;
+
+		return true;
+	}
+
+	return false;
 }
 
 File::FileLoader::FileLoader(const char* path, int flags) : m_path(path), m_flags(flags) {}
@@ -68,16 +93,4 @@ File::FileLoader* File::createLoader(const char* path, int flags) { return new F
 std::tuple<bool, std::size_t> File::getSharedHash(const char* path, int flags)
 {
 	return{ true, std::hash<std::string>{}(path) };
-}
-
-std::string normalizePath(const char* path)
-{
-	std::string s(path);
-	normalizePath(s);
-	return std::move(s);
-}
-
-void normalizePath(std::string& path)
-{
-	std::replace(path.begin(), path.end(), '/', '\\');
 }

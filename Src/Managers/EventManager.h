@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Misc/Misc.h"
 #include "../Misc/Callbacks.h"
 #include "../Misc/ResizableMemoryPool.h"
 #include "../Resources/ResourceManager.h"
@@ -36,6 +37,7 @@ public:
 	template<typename EventType> EventType* addOneFrameEvent();
 	template<typename EventType> EventType* addPersistentEvent();
 
+	// todo: filters
 	enum class ListenerResult { Discard, Persist };
 	typedef FunctionBase<ListenerResult, const EventBase*> EventCallback;
 	template<typename Event> void addListener(const EventCallback&);
@@ -49,11 +51,15 @@ public:
 	static void test();
 
 protected:
+	void clearOneFrameBuffer();
+
+protected:
 	typedef VariableSizedMemoryPool<EventCallback, EventCallback::PoolHelper> FunctionPool;
 	std::map<EventBase::Id, FunctionPool> m_listeners;
 	std::map<EventBase::Id, const char*> m_idToName;
 
 	std::vector<char> m_oneFrameBuffer;
+	std::vector<TypeHelper*> m_oneFrameBufferTypes;
 	std::forward_list< std::unique_ptr<EventBase> > m_persistentEvents;
 };
 
@@ -64,6 +70,7 @@ template<typename EventType> EventType* EventManager::addOneFrameEvent()
 	m_idToName[EventType::id()] = typeid(EventType).name();
 
 	std::size_t size = m_oneFrameBuffer.size();
+	m_oneFrameBufferTypes.push_back(&TypeHelperInstance<EventType>::s_instance);
 	m_oneFrameBuffer.insert(m_oneFrameBuffer.end(), sizeof(EventType), 0);
 	EventType* event = new(&m_oneFrameBuffer[size]) EventType();
 	event->m_id = EventType::id();
@@ -90,5 +97,7 @@ template<typename EventType> void EventManager::addListener(const FunctionBase<L
 
 template<typename EventType, typename FunctionType> void EventManager::addListener(FunctionType fn)
 {
+	static_assert(std::is_same<decltype(fn((const EventType*)nullptr)), ListenerResult>::value, "fn must return ListenerResult");
+	// TODO: static_assert the arg types
 	m_listeners[EventType::id()].push_back(makeFunction(fn));
 }

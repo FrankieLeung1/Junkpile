@@ -263,7 +263,7 @@ void Meta::test()
 	o.call<MetaTest, void>("f", &t, 23423, 123.4f);
 
 	ResourcePtr<ScriptManager> s;
-	s->setEditorContent(v.getString().c_str());
+	s->setEditorContent(v.getString().c_str(), nullptr);
 }
 
 }

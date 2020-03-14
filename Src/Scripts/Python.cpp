@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Python.h"
 #include "../Meta/Meta.h"
+#include "../Framework/Framework.h"
 
 PythonEnvironment::PythonEnvironment()
 {
@@ -22,7 +23,28 @@ void PythonEnvironment::init()
 	{
 		m_pythonInited = true;
 		Py_Initialize();
-		PyRun_SimpleString("import Junkpile\nprint=Junkpile.print");
+
+		const char* code =
+			"import Junkpile\n"
+			"import sys\n"
+			"sys.path.append('%s')\n"
+			"class Out:\n"
+			"	def write(self, stuff):\n"
+			"		Junkpile.print(stuff)\n"
+			"sys.stdout = Out()\n"
+			"class Error:\n"
+			"	def write(self, stuff):\n"
+			"		Junkpile.printError(stuff)\n"
+			"sys.stderr = Error()\n"
+			"class MyMetaFinder():\n"
+			"	def find_spec(self, fullname, path, target = None):\n"
+			"		print(type(path))\n"
+			"		if path == None:\n"
+			"			Junkpile.addModuleDependency(fullname, path)\n"
+			"		return None\n"
+			"sys.meta_path.insert(0, MyMetaFinder())";
+		auto r = PyRun_SimpleString(stringf(code, "../Res/Tray/").c_str());
+		LOG_IF_F(FATAL, r != 0, "PyRun_SimpleString failed\n");
 	}
 }
 
@@ -51,23 +73,85 @@ void PythonEnvironment::deleteScript(Script s)
 	LOG_F(FATAL, "todo");
 }
 
-std::tuple<std::string, int> PythonEnvironment::loadScript(Script, const char* buffer, std::size_t size)
+PythonEnvironment::Error PythonEnvironment::loadScript(Script script, const char* buffer, std::size_t size)
 {
 	init();
 
-	// TODO: shouldn't there be a SimpleBuffer function
 	char* b = (char*)alloca(size + 1);
 	memcpy(b, buffer, size);
 	b[size] = '\0';
 	
-	int error = PyRun_SimpleString(b);
-	if (error == 0)
-		return { "", -1 };
+	std::string name = m_scripts[(std::size_t)script].m_debugName.c_str();
+	PyObject* code = Py_CompileString(b, name.c_str(), Py_file_input);
+	if (code != nullptr)
+	{
+		PyObject* global = PyModule_GetDict(PyImport_AddModule("__main__"));
+		PyObject* result = PyEval_EvalCode(code, global, nullptr);
+		if (!PyErr_Occurred())
+		{
+			Py_DECREF(code);
+			Py_XDECREF(result);
+			return {};
+		}
+	}
+	
+	if (PyErr_ExceptionMatches(PyExc_SyntaxError) || PyErr_ExceptionMatches(PyExc_IndentationError) || PyErr_ExceptionMatches(PyExc_TabError))
+	{
+		int line = -1 , offset = -1;
+		char* msg  = nullptr;
+		PyObject *exc = nullptr, *val = nullptr, *trb = nullptr, *obj = nullptr, *filename = nullptr, *errorText = nullptr;
+		PyErr_Fetch(&exc, &val, &trb);
+		PyArg_ParseTuple(val, "sO", &msg, &obj);
+		PyArg_ParseTuple(obj, "OiiO", &filename, &line, &offset, &errorText);
+
+		Error error;
+		error.m_message = msg;
+		error.m_filename = PyUnicode_AsUTF8(filename);
+		error.m_stacktrace = "";
+		error.m_line = line;
+		error.m_offset = offset;
+
+		Py_XDECREF(code);
+		Py_XDECREF(exc);
+		Py_XDECREF(val);
+		Py_XDECREF(trb);
+		return error;
+	}
 	else
-		return { "PyRun_SimpleString failed", 0 };
+	{
+		PyObject *exc = nullptr, *val = nullptr, *traceback = nullptr;
+		PyErr_Fetch(&exc, &val, &traceback);
+
+		PyObject* repr = PyObject_Repr(exc);
+		PyObject* lineNumber = PyObject_GetAttrString(traceback, "tb_lineno");
+		PyObject* frame = PyObject_GetAttrString(traceback, "tb_frame");
+		PyObject* code = PyObject_GetAttrString(frame, "f_code");
+		PyObject* filename = PyObject_GetAttrString(code, "co_filename");
+
+		const char* messageStr = PyUnicode_AsUTF8(val);
+		const char* filenameStr = PyUnicode_AsUTF8(filename);
+
+		Error error;
+		error.m_message = messageStr ? messageStr : PyUnicode_AsUTF8(repr);
+		error.m_filename = filenameStr ? filenameStr : "";
+		error.m_line = PyLong_AsLong(lineNumber);
+		error.m_stacktrace = "";
+		error.m_offset = 0;
+
+		Py_XDECREF(code);
+		Py_XDECREF(exc);
+		Py_XDECREF(val);
+		Py_XDECREF(repr);
+		Py_XDECREF(traceback);
+		Py_XDECREF(lineNumber);
+		Py_XDECREF(frame);
+		Py_XDECREF(code);
+		Py_XDECREF(filename);
+		return error;
+	}
 }
 
-static PyObject* printMethod(PyObject* self, PyObject* args)
+PyObject* PythonEnvironment::printMethod(PyObject* self, PyObject* args)
 {
 	const char* message;
 	if (!PyArg_ParseTuple(args, "s", &message))
@@ -79,8 +163,33 @@ static PyObject* printMethod(PyObject* self, PyObject* args)
 	return PyLong_FromLong(0);
 }
 
+PyObject* PythonEnvironment::printErrorMethod(PyObject* self, PyObject* args)
+{
+	const char* message;
+	if (!PyArg_ParseTuple(args, "s", &message))
+		return NULL;
+
+	char* messageWithFlag = (char*)alloca(strlen(message) + 2);
+	sprintf(messageWithFlag, "\x1%s", message);
+	LOG_F(ERROR, messageWithFlag);
+	return PyLong_FromLong(0);
+}
+
+PyObject* PythonEnvironment::addModuleDependencyMethod(PyObject* self, PyObject* args)
+{
+	const char* name = nullptr, *path = nullptr;
+	if (!PyArg_ParseTuple(args, "sZ", &name, &path))
+		return NULL;
+
+	ResourcePtr<ScriptManager> scripts;
+	scripts->addDependency(name);
+	return PyLong_FromLong(0);
+}
+
 static PyMethodDef JunkpileMethods[] = {
-	{"print",  printMethod, METH_VARARGS, "prints using"},
+	{"print", PythonEnvironment::printMethod, METH_VARARGS, "prints using INFO"},
+	{"printError", PythonEnvironment::printErrorMethod, METH_VARARGS, "prints using ERROR"},
+	{"addModuleDependency", PythonEnvironment::addModuleDependencyMethod, METH_VARARGS, "registers a loaded module"},
 	{NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

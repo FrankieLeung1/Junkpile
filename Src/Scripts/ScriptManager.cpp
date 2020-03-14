@@ -3,12 +3,25 @@
 #include "../imgui/ImGuiManager.h"
 #include "../LuaHelpers.h"
 #include "../Files/FileManager.h"
+#include "../Managers/TimeManager.h"
+#include "../Misc/Misc.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
 
+ScriptManager::Environment::Script ScriptManager::Environment::InvalidScript = reinterpret_cast<void*>(std::numeric_limits<std::size_t>::max());
 ScriptManager::ScriptManager():
 m_state(luaL_newstate())
 {
 	LuaStackCheck::s_defaultState = m_state;
+	ResourcePtr<EventManager> e;
+	ResourcePtr<TimeManager> t;
+
+	/*Timer* timer = createTestResource<Timer>();
+	timer->listen([this](Timer*) { FileChangeEvent c; c.m_files.push_back("Tray\\Test.py"); this->onFileChange(c); });
+	timer->oneShot(0.5);*/
+
+	PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
+
+	e->addListener<FileChangeEvent>([this](const FileChangeEvent* c) { this->onFileChange(*c); return EventManager::ListenerResult::Persist; });
 }
 
 ScriptManager::~ScriptManager()
@@ -26,25 +39,51 @@ void ScriptManager::runScriptsInFolder(const char* path, bool recursive)
 	std::vector<std::string> files = fileManagers->files(path);
 	for (const std::string& current : files)
 	{
-		if (recursive && fileManagers->type(path) == FileManager::Type::Directory)
+		FileManager::Type type = fileManagers->type(current.c_str());
+		if (recursive && type == FileManager::Type::Directory)
 			runScriptsInFolder(current.c_str(), true);
-
-		if (run(current.c_str()))
+		else if (type == FileManager::Type::File && !run(current.c_str()))
 			break;
 	}
 }
 
-bool ScriptManager::run(const char* path)
+bool ScriptManager::run(const char* path, Environment::Script script, Environment::Script owner)
 {
 	for (auto& languages : m_languages)
 	{
 		if (languages->isScript(path))
 		{
-			auto script = languages->newScript(path);
+			m_scripts.emplace_front();
+			ScriptData& data = m_scripts.front();
+			data.m_script = script;
+			data.m_path = path;
+			data.m_env = languages;
 
+			m_callstack.push_back(&data);
+
+			if(script == Environment::InvalidScript)
+				script = languages->newScript(path);
+
+			Environment::Error error;
 			ResourcePtr<File> f(NewPtr, path);
-			std::tuple<std::string, int> e = languages->loadScript(script, f->getContents(), f->getSize());
-			LOG_IF_F(ERROR, std::get<int>(e) > -1, "%s (%d): %s\n", path, std::get<int>(e), std::get<std::string>(e).c_str());
+			do
+			{
+				error = languages->loadScript(script, f->getContents(), f->getSize());
+				m_error = error;
+				if (!error)
+					break;
+
+				char* content = (char*)alloca(f->getSize() + 1);
+				memcpy(content, f->getContents(), f->getSize());
+				content[f->getSize()] = '\0';
+				setEditorContent(content, path);
+
+				ResourcePtr<ImGuiManager> imgui;
+				imgui->imguiLoop([f]() { return f->checkChanged(); });
+			} while (1);
+
+			m_callstack.pop_back();
+
 			return true;
 		}
 	}
@@ -56,10 +95,12 @@ lua_State* ScriptManager::getLua() const
 	return m_state;
 }
 
-void ScriptManager::setEditorContent(const char* content)
+void ScriptManager::setEditorContent(const char* content, const char* pathToSave)
 {
 	initEditor();
 	m_editor->SetText(content);
+	if (pathToSave)	m_editorSavePath = pathToSave;
+	else			m_editorSavePath.clear();
 }
 
 void ScriptManager::initEditor()
@@ -81,56 +122,90 @@ ScriptManager::Environment* ScriptManager::getEnvironment(const char* name) cons
 	return nullptr;
 }
 
+void ScriptManager::onFileChange(const FileChangeEvent& e)
+{
+	std::set<ScriptData*> scriptsToReload, scriptsReloaded;
+	for (auto path : e.m_files)
+	{
+		// direct script
+		for (auto& script : m_scripts)
+		{
+			if (endsWith(script.m_path, path.c_str(), path.length()))
+			{
+				scriptsToReload.insert(&script);
+				break;
+			}
+		}
+
+		// is user of script?
+	userOfScript:
+		for (auto& script : m_scripts)
+		{
+			if (scriptsToReload.find(&script) != scriptsToReload.end())
+				continue;
+
+			for (auto& child : script.m_children)
+			{
+				if (scriptsToReload.find(child) != scriptsToReload.end())
+				{
+					scriptsToReload.insert(&script);
+					goto userOfScript;
+				}
+			}
+		}
+	}
+
+	while (!scriptsToReload.empty())
+	{
+		LOG_F(INFO, "reloading %s\n", e.m_files.front().c_str());
+
+		ScriptData* script = *scriptsToReload.begin();
+		ResourcePtr<File> f(NewPtr, script->m_path.c_str());
+		f->checkChanged();
+		run(script->m_path.c_str(), script->m_script);
+
+		scriptsToReload.erase(scriptsToReload.begin());
+	}
+}
+
+void ScriptManager::addDependency(const char* name)
+{
+	if (m_callstack.empty())
+		return;
+
+	m_callstack.back()->m_dependencies.insert(name);
+}
+
 void ScriptManager::imgui()
 {
 	ResourcePtr<ImGuiManager> imgui;
 	bool* opened = imgui->win("Script Editor");
-	if (!*opened)
+	if (!*opened && !m_error)
 		return;
 
 	initEditor();
 
 	auto cpos = m_editor->GetCursorPosition();
-	ImGui::Begin("Script editor", opened, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::Begin("Script editor", m_error ? nullptr : opened, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGui::SetWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 
 	//ImGui::Button("Open External"); ImGui::SameLine();
-	ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s ", cpos.mLine + 1, cpos.mColumn + 1, m_editor->GetTotalLines(),
+	ImGui::Text("%6d/%-6d %6d lines | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, m_editor->GetTotalLines(),
 		m_editor->IsOverwrite() ? "Ovr" : "Ins",
 		m_editor->CanUndo() ? "*" : " ",
-		m_editor->GetLanguageDefinition().mName.c_str());
+		m_editor->GetLanguageDefinition().mName.c_str(), m_editorSavePath.c_str());
+
+	std::map<int, std::string> markers;
+	markers[m_error.m_line] = m_error.m_message;
+	m_editor->SetErrorMarkers(markers);
 
 	ImGuiIO& io = ImGui::GetIO();
-	if (m_needsToCheckSyntax && (!m_editor->GetErrorMarkers().empty() && m_editor->IsTextChanged()) || (io.MouseDelta.x != 0 || io.MouseDelta.y != 0) ||
-		(io.KeysDown[GLFW_KEY_ENTER] || io.KeysDown[GLFW_KEY_LEFT] || io.KeysDown[GLFW_KEY_RIGHT] || io.KeysDown[GLFW_KEY_UP] || io.KeysDown[GLFW_KEY_DOWN]))
+	if (!m_editorSavePath.empty() && io.KeysDown[GLFW_KEY_LEFT_CONTROL] && io.KeysDown[GLFW_KEY_S])
 	{
+		ResourcePtr<FileManager> f;
 		std::string s = m_editor->GetText();
-		lua_State* state = luaL_newstate();
-		int error = luaL_loadbuffer(state, s.c_str(), s.length(), "");
-
-		if (error == LUA_ERRSYNTAX)
-		{
-			int line;
-			char message[256] = { 0 };
-			const char* error = lua_tostring(state, -1);
-			int top = lua_gettop(state);
-			int r = sscanf_s(error, "[string \"\"]:%d: %[^\t\n]", &line, message, (unsigned int)sizeof(message));
-			CHECK_F(r == 2);
-
-			std::map<int, std::string> markers;
-			markers[std::min(line, m_editor->GetTotalLines())] = message;
-			m_editor->SetErrorMarkers(markers);
-		}
-		else
-		{
-			m_editor->SetErrorMarkers({});
-		}
-
-		lua_close(state);
-	}
-	else if (m_editor->IsTextChanged())
-	{
-		m_needsToCheckSyntax = true;
+		std::vector<char> content(s.begin(), s.end());
+		f->save(m_editorSavePath.c_str(), std::move(content));
 	}
 
 	m_editor->Render("TextEditor");
