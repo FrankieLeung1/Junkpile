@@ -45,6 +45,7 @@ protected:
 	ResourcePtr<Rendering::Device> m_device;
 	GLFWwindow* m_window;
 	std::string m_windowTitle;
+	std::array<int, 4> m_winDimensions;
 	bool m_hasSystemTray;
 	ImVec4 m_clearColour;
 };

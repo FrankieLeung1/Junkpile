@@ -459,6 +459,22 @@ void VulkanFramework::update()
 	POINT point;
 	::GetCursorPos(&point);
 	inputs->setCursorPos((float)point.x, (float)point.y);
+
+	if (inputs->justReleased('F'))
+	{
+		if (glfwGetWindowMonitor(m_window) == nullptr)
+		{
+			glfwGetWindowPos(m_window, &m_winDimensions[0], &m_winDimensions[1]);
+			glfwGetWindowSize(m_window, &m_winDimensions[2], &m_winDimensions[3]);
+
+			const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+			glfwSetWindowMonitor(m_window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+		}
+		else
+		{ 
+			glfwSetWindowMonitor(m_window, nullptr, m_winDimensions[0], m_winDimensions[1], m_winDimensions[2], m_winDimensions[3], 0);
+		}
+	}
 }
 
 void VulkanFramework::render()
