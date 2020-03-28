@@ -155,7 +155,7 @@ void ImGui_ImplGlfw_FocusCallback(GLFWwindow* window, int f)
 	for (int n = 0; n < io.Viewports.Size; n++)
 	{
 		ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)io.Viewports[n]->PlatformUserData;
-		if (data->Window != g_Window)
+		if (data && data->Window != g_Window)
 		{
 			HWND hwnd = glfwGetWin32Window(data->Window);
 			::SetWindowPos(hwnd, glfwGetWin32Window(g_Window), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);

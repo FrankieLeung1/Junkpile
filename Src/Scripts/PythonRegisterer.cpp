@@ -298,7 +298,7 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	if (r.isType<int>()) return PyLong_FromLong(r.get<int>());
 	else if(r.isType<float>()) return PyFloat_FromDouble(r.get<float>());
 	else if (r.isType<std::string>()) return PyUnicode_FromString(r.get<std::string>().c_str());
-	else if (r.isType<bool>()) return PyBool_FromLong((int)r.get<bool>());
+	else if (r.isType<bool>()) return r.get<bool>() ? Py_True : Py_False;
 	else return PyLong_FromLong(0);
 }
 

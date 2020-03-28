@@ -8,7 +8,8 @@
 
 using namespace Rendering;
 
-Shader::Shader()
+Shader::Shader():
+m_module(nullptr)
 {
 
 }
@@ -27,6 +28,11 @@ std::string Shader::getCachePath() const
 {
 	const char* type = (m_type == Type::Vertex ? "vert" : "frag");
 	return stringf("%sShaderCache/%x.%s", Framework::getResPath(), m_hash, type);
+}
+
+vk::ShaderModule Shader::getModule() const
+{
+	return m_module;
 }
 
 void Shader::setCode(Type type, const char* code)
@@ -75,13 +81,17 @@ bool Shader::compile(std::string* outError)
 	ResourcePtr<File> cacheFile(NewPtr, cachePath.c_str());
 	freeModule();
 
-	vk::Device d = device->getDevice();
 	vk::ShaderModuleCreateInfo info = {};
 	info.codeSize = cacheFile->getSize();
 	info.pCode = (uint32_t*)cacheFile->getContents();
-	bool success = d.createShaderModule(&info, nullptr, &m_module) == vk::Result::eSuccess;
-	LOG_IF_F(ERROR, !success, "createShaderModel\n");
-	return success;
+	m_module = device->createObject(info);
+	return true;
+}
+
+void Shader::addBindings(const std::vector<Binding>& bindings)
+{
+	m_bindings.insert(m_bindings.end(), bindings.begin(), bindings.end());
+	CHECK_F(std::unique(m_bindings.begin(), m_bindings.end()) == m_bindings.end());
 }
 
 Shader::Type Shader::getType() const
@@ -94,7 +104,7 @@ void Shader::freeModule()
 	if (m_module)
 	{
 		ResourcePtr<Rendering::Device> device;
-		device->getDevice().destroyShaderModule(m_module);
+		//device->getDevice().destroyShaderModule(m_module);
 		m_module = nullptr;
 	}
 }
@@ -119,6 +129,14 @@ void main()
 
 	ResourcePtr<Shader> vertShader(NewPtr, Shader::Type::Vertex, vertexCode);
 	LOG_IF_F(ERROR, !vertShader->compile(nullptr), "Vertex Failed\n");
+	std::size_t offset = 0;
+	vertShader->addBindings({
+		{ Binding::Type::Constant, 0, vk::Format::eR32G32Sfloat, 0 },
+		{ Binding::Type::Constant, 1, vk::Format::eR32G32Sfloat, offset += sizeof(float) * 2 },
+		{ Binding::Type::Constant, 2, vk::Format::eR8G8B8Unorm,  offset += sizeof(float) * 2 },
+		{ Binding::Type::PushConstant, 0, vk::Format::eR32G32Sfloat, offset += sizeof(int) },
+		{ Binding::Type::PushConstant, 1, vk::Format::eR32G32Sfloat, offset += sizeof(int) }
+	});
 	
 	char pixelCode[] = R";(#version 450 core
 layout(location = 0) out vec4 fColor;
@@ -132,6 +150,9 @@ void main()
 
 	ResourcePtr<Shader> fragShader(NewPtr, Shader::Type::Pixel, pixelCode);
 	LOG_IF_F(ERROR, !fragShader->compile(nullptr), "Pixel Failed\n");
+	fragShader->addBindings({
+		{ Binding::Type::Constant, 0, vk::Format::eR32G32B32A32Sfloat, 0 }
+	});
 }
 
 Shader::ShaderLoader* Shader::createLoader(Type type, const char* code)
@@ -141,7 +162,7 @@ Shader::ShaderLoader* Shader::createLoader(Type type, const char* code)
 
 std::tuple<bool, std::size_t> Shader::getSharedHash(Type type, const char* code)
 {
-	return{true, generateHash(code, strlen(code)) };
+	return {true, generateHash(code, strlen(code)) };
 }
 
 Shader::ShaderLoader::ShaderLoader(Type type, const char* code):
@@ -178,3 +199,9 @@ const char* Shader::ShaderLoader::getTypeName() const
 {
 	return "shader";
 }
+
+Binding::Binding() {}
+Binding::Binding(Type t, int i, vk::Format format, std::size_t offset) : m_type(t), m_index(i), m_format(format), m_offset(offset) {}
+Binding::Binding(Type t, const char* n, vk::Format format, std::size_t offset) : m_type(t), m_name(n), m_format(format), m_offset(offset) {}
+Binding::~Binding() {}
+bool Binding::operator==(const Binding& other) const { return other.m_index == m_index && other.m_type == m_type && other.m_name == m_name; }

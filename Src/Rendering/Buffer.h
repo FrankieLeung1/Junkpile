@@ -6,6 +6,14 @@ namespace Rendering
 	class Buffer
 	{
 	public:
+		struct Format
+		{
+			vk::Format m_format;
+			std::size_t m_size;
+			Format(vk::Format format, std::size_t size) : m_format(format), m_size(size) {}
+		};
+
+	public:
 		enum Type {Vertex, Index, Uniform};
 		enum Usage {Static, Mapped};
 		Buffer(Type, Usage, std::size_t size);
@@ -17,7 +25,12 @@ namespace Rendering
 		void* map();
 		void unmap();
 
+		void setFormat(std::vector<Format>&&, std::size_t stride);
+		const std::vector<Format>& getFormat() const;
+		
+		std::size_t getStride() const;
 		std::size_t getSize() const;
+		vk::Buffer getVkBuffer() const;
 
 	protected:
 		Type m_type;
@@ -26,5 +39,7 @@ namespace Rendering
 		ResourcePtr<Rendering::Device> m_device;
 		vk::Buffer m_buffer;
 		VmaAllocation m_allocation;
+		std::vector<Format> m_format;
+		std::size_t m_stride;
 	};
 }

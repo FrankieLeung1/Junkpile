@@ -7,6 +7,7 @@ namespace Rendering
 {
 	class Unit;
 	class RootUnit;
+	class Shader;
 	class Device : public SingletonResource<Device>
 	{
 	public:
@@ -23,7 +24,13 @@ namespace Rendering
 		void setDevice(vk::Device);
 		void setQueue(vk::Queue);
 		void setPipelineCache(vk::PipelineCache);
+		void setRenderPass(vk::RenderPass);
+		void setFrameBuffer(vk::Framebuffer, const glm::vec2& dimensions);
 
+		void createRenderPass(vk::Format);
+
+		vk::RenderPass getRenderPass() const;
+		std::tuple<vk::Framebuffer, glm::vec2> getFrameBuffer() const;
 		vk::DescriptorPool getDescriptorPool(const std::thread::id& = std::this_thread::get_id());
 
 		VmaAllocator getVMA() const;
@@ -44,8 +51,15 @@ namespace Rendering
 		void endDebugRegion(VkCommandBuffer);
 
 		VkBuffer createTransferBuffer(std::size_t, void* data = nullptr);
-		vk::Sampler* createObject(const vk::SamplerCreateInfo&);
+		vk::Sampler createObject(const vk::SamplerCreateInfo&);
+		vk::DescriptorSetLayout createObject(const vk::DescriptorSetLayoutCreateInfo&);
+		vk::Pipeline createObject(const vk::GraphicsPipelineCreateInfo&);
+		vk::PipelineLayout createObject(const vk::PipelineLayoutCreateInfo&);
+		vk::RenderPass createObject(const vk::RenderPassCreateInfo&, bool force = false);
+		vk::ShaderModule createObject(const vk::ShaderModuleCreateInfo&);
 		template<typename T> T& getObject(std::size_t id) const;
+
+		void destroySwapChainRelatedObjects();
 
 		void imgui();
 
@@ -74,9 +88,14 @@ namespace Rendering
 		vk::Queue m_queue;
 		vk::AllocationCallbacks* m_allocator{ nullptr };
 		vk::PipelineCache m_pipelineCache;
+		vk::RenderPass m_renderPass;
+		vk::Framebuffer m_frameBuffer;
 		VmaAllocator m_vma;
+		Fossilize::StateRecorder m_recorder;
 
-		std::map<std::size_t, Any> m_objects;
+		glm::vec2 m_frameDimensions;
+
+		std::map<Fossilize::Hash, Any> m_objects;
 
 		struct FenceCallbacks
 		{

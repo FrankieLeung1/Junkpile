@@ -14,7 +14,7 @@
     <ProjectGuid>{B3B98DDD-DC71-42CC-ACDF-7E292B57D1CF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Exec</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -61,7 +61,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -84,7 +84,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -98,6 +98,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\External\Fossilize\fossilize.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\fossilize_application_filter.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\fossilize_db.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\fossilize_external_replayer.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\miniz\miniz.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\path.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\varint.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\External\glfw\src\context.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -405,6 +433,7 @@
     <ClCompile Include="..\Src\Rendering\Texture.cpp" />
     <ClCompile Include="..\Src\Rendering\TextureAtlas.cpp" />
     <ClCompile Include="..\Src\Rendering\Unit.cpp" />
+    <ClCompile Include="..\Src\Rendering\Unit_Vulkan.cpp" />
     <ClCompile Include="..\Src\Rendering\VulkanHelpers.cpp" />
     <ClCompile Include="..\Src\Resources\ResourceManager.cpp" />
     <ClCompile Include="..\Src\Scene\TileLevel.cpp" />
@@ -417,6 +446,18 @@
     <ClCompile Include="..\Src\Threading\ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\External\Fossilize\fossilize.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_application_filter.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_db.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_errors.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer_control_block.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer_linux.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer_windows.hpp" />
+    <ClInclude Include="..\External\Fossilize\fossilize_inttypes.h" />
+    <ClInclude Include="..\External\Fossilize\fossilize_types.hpp" />
+    <ClInclude Include="..\External\Fossilize\path.hpp" />
+    <ClInclude Include="..\External\Fossilize\varint.hpp" />
     <ClInclude Include="..\External\glfw\src\cocoa_joystick.h" />
     <ClInclude Include="..\External\glfw\src\cocoa_platform.h" />
     <ClInclude Include="..\External\glfw\src\egl_context.h" />

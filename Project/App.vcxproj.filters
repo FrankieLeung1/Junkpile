@@ -130,6 +130,15 @@
     <Filter Include="External\Python\internal">
       <UniqueIdentifier>{3a1ebcf9-645e-49dd-90c5-741470010fb5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\Fossilize">
+      <UniqueIdentifier>{7eb9afd5-27c1-44c8-bf24-12ba0654c308}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\Fossilize\miniz">
+      <UniqueIdentifier>{fbbd1dc3-ef62-4f00-97c7-dd4d9e23ac2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\dirent">
+      <UniqueIdentifier>{3efd51a8-f961-418c-a9f2-a00ffe1751d5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Exec\stdafx.cpp">
@@ -452,6 +461,30 @@
     </ClCompile>
     <ClCompile Include="..\Src\Scripts\PythonRegisterer.cpp">
       <Filter>Source Files\Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\fossilize.cpp">
+      <Filter>External\Fossilize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\fossilize_application_filter.cpp">
+      <Filter>External\Fossilize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\fossilize_db.cpp">
+      <Filter>External\Fossilize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\fossilize_external_replayer.cpp">
+      <Filter>External\Fossilize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\path.cpp">
+      <Filter>External\Fossilize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\varint.cpp">
+      <Filter>External\Fossilize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\Fossilize\miniz\miniz.c">
+      <Filter>External\Fossilize\miniz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Unit_Vulkan.cpp">
+      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1168,6 +1201,42 @@
     </ClInclude>
     <ClInclude Include="..\Src\Scripts\PythonRegisterer.h">
       <Filter>Header Files\Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_inttypes.h">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_application_filter.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_db.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_errors.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer_control_block.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer_linux.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_external_replayer_windows.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\fossilize_types.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\path.hpp">
+      <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\Fossilize\varint.hpp">
+      <Filter>External\Fossilize</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

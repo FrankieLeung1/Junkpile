@@ -161,10 +161,7 @@ template<typename T> T& AnyWithSize<BufferSize>::get()
 template<std::size_t BufferSize>
 template<typename T> T* AnyWithSize<BufferSize>::getPtr()
 {
-	if (!isType<T>())
-		return nullptr;
-	
-	return &get<T>();
+	return isType<T>() ? &get<T>() : nullptr;
 }
 
 template<std::size_t BufferSize>

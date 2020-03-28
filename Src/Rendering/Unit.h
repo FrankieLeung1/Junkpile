@@ -31,8 +31,9 @@ namespace Rendering
 		template<typename T>
 		struct Binding
 		{
-			Binding(int stage, T value): m_stage(stage), m_value(value) {}
-			int m_stage;
+			Binding(vk::ShaderStageFlags flags, int binding, T value): m_flags(flags), m_binding(binding), m_value(value) {}
+			vk::ShaderStageFlags m_flags;
+			int m_binding;
 			T m_value;
 		};
 		
@@ -40,8 +41,8 @@ namespace Rendering
 		Unit(RootUnit&);
 		Unit(const Unit&);
 		~Unit();
+		
 		void submit();
-
 		bool isEmpty() const;
 
 		Unit& operator=(const Unit&);
@@ -55,6 +56,7 @@ namespace Rendering
 		Unit& in(VkImageLayout);
 		Unit& in(vk::SamplerMipmapMode);
 		Unit& in(vk::CompareOp);
+		Unit& in(vk::ClearColorValue);
 		Unit& in(Named<bool>);
 		Unit& in(Named<float>);
 		Unit& in(Named<vk::Filter>);
@@ -65,12 +67,20 @@ namespace Rendering
 		static void test();
 
 	protected:
+		struct Data;
 		template<typename T> Unit& _in(T);
 		template<typename T> Unit& _out(T&);
-		template<typename T, typename Visitor> T* constructWithVisitor(Visitor);
-		template<typename T> T* getVulkanObject();
+		template<typename T> T getVulkanObject();
+		template<typename T> T createVulkanObject();
+		template<typename T> void reqOrOpt(T&, Any index, bool required);
+		template<typename T> void req(T&, const char* name = nullptr);
+		template<typename T> void opt(T&, const char* name = nullptr);
+		template<typename T> void req(T&, int binding);
+		template<typename T> void opt(T&, int binding);
+		template<typename T> void opt(T& v, const char* name, const T& defaultValue);
+		template<typename T> void opt(T&, int binding, const T& defaultValue);
+		template<typename T> void getBindings(Data* data, std::vector< vk::DescriptorSetLayoutBinding>* bindings, vk::DescriptorType type);
 
-		struct Data;
 		Data& getData();
 
 		void submitCommandBuffers(Rendering::Device*, Device::ThreadResources*, vk::CommandBuffer openBuffer);
@@ -86,8 +96,10 @@ namespace Rendering
 			std::vector<RenderTarget*> m_targets;
 			std::vector<Any> m_settings;
 
-			void* m_sampler;
-			void* m_descriptorSetLayout;
+			vk::Sampler m_sampler;
+			vk::DescriptorSetLayout m_descriptorSetLayout;
+			vk::Pipeline m_pipeline;
+			vk::PipelineLayout m_pipelineLayout;
 			bool m_empty{ true };
 		};
 		std::shared_ptr<Data> m_data;
@@ -111,4 +123,20 @@ namespace Rendering
 		friend class Device;
 		friend class Unit;
 	};
+
+	// ---------------------------------- IMPLEMENTATION ----------------------------------
+	template<typename T>
+	T Unit::getVulkanObject()
+	{
+		try
+		{
+			return createVulkanObject<T>();
+		}
+		catch (std::exception e)
+		{
+			LOG_F(ERROR, "Unable to get vulkan object %s\n", e.what());
+		}
+
+		return {};
+	}
 }

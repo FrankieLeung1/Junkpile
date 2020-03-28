@@ -844,27 +844,28 @@ int ImGui_ImplVulkanH_GetMinImageCountFromPresentMode(VkPresentModeKHR present_m
 }
 
 // Also destroy old swap chain and in-flight frames data, if any.
-void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, VkDevice device, ImGui_ImplVulkanH_Window* wd, const VkAllocationCallbacks* allocator, int w, int h, uint32_t min_image_count)
+void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, VkDevice vkdevice, ImGui_ImplVulkanH_Window* wd, const VkAllocationCallbacks* allocator, int w, int h, uint32_t min_image_count)
 {
     VkResult err;
+    ResourcePtr<Rendering::Device> device;
     VkSwapchainKHR old_swapchain = wd->Swapchain;
-    err = vkDeviceWaitIdle(device);
+    err = vkDeviceWaitIdle(vkdevice);
     check_vk_result(err);
 
     // We don't use ImGui_ImplVulkanH_DestroyWindow() because we want to preserve the old swapchain to create the new one.
     // Destroy old Framebuffer
     for (uint32_t i = 0; i < wd->ImageCount; i++)
     {
-        ImGui_ImplVulkanH_DestroyFrame(device, &wd->Frames[i], allocator);
-        ImGui_ImplVulkanH_DestroyFrameSemaphores(device, &wd->FrameSemaphores[i], allocator);
+        ImGui_ImplVulkanH_DestroyFrame(vkdevice, &wd->Frames[i], allocator);
+        ImGui_ImplVulkanH_DestroyFrameSemaphores(vkdevice, &wd->FrameSemaphores[i], allocator);
     }
     IM_FREE(wd->Frames);
     IM_FREE(wd->FrameSemaphores);
     wd->Frames = NULL;
     wd->FrameSemaphores = NULL;
     wd->ImageCount = 0;
-    if (wd->RenderPass)
-        vkDestroyRenderPass(device, wd->RenderPass, allocator);
+    /*if (wd->RenderPass)
+        vkDestroyRenderPass(vkdevice, wd->RenderPass, allocator);*/
 
     // If min image count was not specified, request different count of images dependent on selected present mode
     if (min_image_count == 0)
@@ -904,14 +905,14 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
             info.imageExtent.width = wd->Width = cap.currentExtent.width;
             info.imageExtent.height = wd->Height = cap.currentExtent.height;
         }
-        err = vkCreateSwapchainKHR(device, &info, allocator, &wd->Swapchain);
+        err = vkCreateSwapchainKHR(vkdevice, &info, allocator, &wd->Swapchain);
         check_vk_result(err);
-        err = vkGetSwapchainImagesKHR(device, wd->Swapchain, &wd->ImageCount, NULL);
+        err = vkGetSwapchainImagesKHR(vkdevice, wd->Swapchain, &wd->ImageCount, NULL);
         check_vk_result(err);
         VkImage backbuffers[16] = {};
         IM_ASSERT(wd->ImageCount >= min_image_count);
         IM_ASSERT(wd->ImageCount < IM_ARRAYSIZE(backbuffers));
-        err = vkGetSwapchainImagesKHR(device, wd->Swapchain, &wd->ImageCount, backbuffers);
+        err = vkGetSwapchainImagesKHR(vkdevice, wd->Swapchain, &wd->ImageCount, backbuffers);
         check_vk_result(err);
 
         IM_ASSERT(wd->Frames == NULL);
@@ -923,7 +924,7 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
             wd->Frames[i].Backbuffer = backbuffers[i];
     }
     if (old_swapchain)
-        vkDestroySwapchainKHR(device, old_swapchain, allocator);
+        vkDestroySwapchainKHR(vkdevice, old_swapchain, allocator);
 
     // Create the Render Pass
     {
@@ -958,8 +959,14 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         info.pSubpasses = &subpass;
         info.dependencyCount = 1;
         info.pDependencies = &dependency;
-        err = vkCreateRenderPass(device, &info, allocator, &wd->RenderPass);
-        check_vk_result(err);
+
+        //if (!ImGui::GetCurrentContext()) // FL: imgui hasn't been initialized yet therefore this is the main window
+        {
+            attachment.loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+            attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+        }
+
+        wd->RenderPass = device->createObject(info, true);
     }
 
     // Create The Image Views
@@ -978,7 +985,7 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         {
             ImGui_ImplVulkanH_Frame* fd = &wd->Frames[i];
             info.image = fd->Backbuffer;
-            err = vkCreateImageView(device, &info, allocator, &fd->BackbufferView);
+            err = vkCreateImageView(vkdevice, &info, allocator, &fd->BackbufferView);
             check_vk_result(err);
         }
     }
@@ -998,7 +1005,7 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         {
             ImGui_ImplVulkanH_Frame* fd = &wd->Frames[i];
             attachment[0] = fd->BackbufferView;
-            err = vkCreateFramebuffer(device, &info, allocator, &fd->Framebuffer);
+            err = vkCreateFramebuffer(vkdevice, &info, allocator, &fd->Framebuffer);
             check_vk_result(err);
         }
     }
@@ -1060,7 +1067,7 @@ void ImGui_ImplVulkanH_DestroyWindow(VkInstance instance, VkDevice device, ImGui
     IM_FREE(wd->FrameSemaphores);
     wd->Frames = NULL;
     wd->FrameSemaphores = NULL;
-    vkDestroyRenderPass(device, wd->RenderPass, allocator);
+    //vkDestroyRenderPass(device, wd->RenderPass, allocator);
     vkDestroySwapchainKHR(device, wd->Swapchain, allocator);
     vkDestroySurfaceKHR(instance, wd->Surface, allocator);
 

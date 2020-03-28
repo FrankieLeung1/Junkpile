@@ -301,6 +301,7 @@ int VulkanFramework::initImGui(bool systemTray)
 	glfwGetFramebufferSize(m_window, &w, &h);
 	glfwSetFramebufferSizeCallback(m_window, glfw_resize_callback);
 	ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
+	wd->ClearEnable = false;
 	SetupVulkanWindow(wd, surface, w, h);
 
 	// Setup Dear ImGui context
@@ -341,6 +342,8 @@ int VulkanFramework::initImGui(bool systemTray)
 	init_info.ImageCount = wd->ImageCount;
 	init_info.CheckVkResultFn = check_vk_result;
 	ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
+
+	m_device->createRenderPass((vk::Format)wd->SurfaceFormat.format);
 
 	// Load Fonts
 	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -439,8 +442,12 @@ void VulkanFramework::update()
 	if (g_SwapChainRebuild)
 	{
 		g_SwapChainRebuild = false;
+		m_device->getDevice().waitIdle();
+		m_device->destroySwapChainRelatedObjects();
+		
 		ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 		ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
+		m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format);
 		g_MainWindowData.FrameIndex = 0;
 	}
 
@@ -460,7 +467,7 @@ void VulkanFramework::update()
 	::GetCursorPos(&point);
 	inputs->setCursorPos((float)point.x, (float)point.y);
 
-	if (inputs->justReleased('F'))
+	if (inputs->isDown(VK_CONTROL) && inputs->justReleased('F'))
 	{
 		if (glfwGetWindowMonitor(m_window) == nullptr)
 		{
@@ -475,6 +482,14 @@ void VulkanFramework::update()
 			glfwSetWindowMonitor(m_window, nullptr, m_winDimensions[0], m_winDimensions[1], m_winDimensions[2], m_winDimensions[3], 0);
 		}
 	}
+
+	ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
+	VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
+	VkResult err = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+	check_vk_result(err);
+
+	ImGui_ImplVulkanH_Frame* f = &wd->Frames[wd->FrameIndex];
+	m_device->setFrameBuffer(f->Framebuffer, { wd->Width, wd->Height });
 }
 
 void VulkanFramework::render()
@@ -591,8 +606,6 @@ void VulkanFramework::FrameRender(ImGui_ImplVulkanH_Window* wd)
 
 	VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
 	VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
-	err = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
-	check_vk_result(err);
 
 	ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
 	{
@@ -618,8 +631,8 @@ void VulkanFramework::FrameRender(ImGui_ImplVulkanH_Window* wd)
 		info.framebuffer = fd->Framebuffer;
 		info.renderArea.extent.width = wd->Width;
 		info.renderArea.extent.height = wd->Height;
-		info.clearValueCount = 1;
-		info.pClearValues = &wd->ClearValue;
+		info.clearValueCount = wd->ClearEnable ? 1 : 0;
+		info.pClearValues = wd->ClearEnable ? &wd->ClearValue : nullptr;
 		vkCmdBeginRenderPass(fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 	}
 

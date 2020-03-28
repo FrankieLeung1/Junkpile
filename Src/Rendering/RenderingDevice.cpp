@@ -17,6 +17,7 @@ m_device(),
 m_queue(),
 m_resourceHandle(ResourcePtr<Device>::EmptyPtr{}),
 m_pipelineCache(),
+m_renderPass(),
 m_vma(nullptr),
 m_rootUnit(new RootUnit()),
 m_selectedUnit(-1),
@@ -30,6 +31,17 @@ Device::~Device()
 	deleteTestResources();
 
 	delete m_rootUnit;
+
+	for (auto& value : m_objects)
+	{
+		Any& any = value.second;
+		if (auto v = any.getPtr<vk::ShaderModule>()) m_device.destroyShaderModule(*v);
+		else if (auto v = any.getPtr<vk::RenderPass>()) m_device.destroyRenderPass(*v);
+		else if (auto v = any.getPtr<vk::PipelineLayout>()) m_device.destroyPipelineLayout(*v);
+		else if (auto v = any.getPtr<vk::Pipeline>()) m_device.destroyPipeline(*v);
+		else if (auto v = any.getPtr<vk::DescriptorSetLayout>()) m_device.destroyDescriptorSetLayout(*v);
+		else if (auto v = any.getPtr<vk::Sampler>()) m_device.destroySampler(*v);
+	}
 
 	for (auto& threadResources : m_threadResources)
 	{
@@ -126,6 +138,64 @@ void Device::setQueue(vk::Queue queue)
 void Device::setPipelineCache(vk::PipelineCache cache)
 {
 	m_pipelineCache = cache;
+}
+
+void Device::setRenderPass(vk::RenderPass renderPass)
+{
+	// TODO: destroy current render pass?
+	m_renderPass = renderPass;
+}
+
+void Device::setFrameBuffer(vk::Framebuffer frameBuffer, const glm::vec2& d)
+{
+	m_frameBuffer = frameBuffer;
+	m_frameDimensions = d;
+}
+
+void Device::createRenderPass(vk::Format format)
+{
+	VkAttachmentDescription attachment = {};
+	attachment.format = (VkFormat)format;
+	attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+	VkAttachmentReference color_attachment = {};
+	color_attachment.attachment = 0;
+	color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &color_attachment;
+	VkSubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	VkRenderPassCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	info.attachmentCount = 1;
+	info.pAttachments = &attachment;
+	info.subpassCount = 1;
+	info.pSubpasses = &subpass;
+	info.dependencyCount = 1;
+	info.pDependencies = &dependency;
+	setRenderPass(createObject(info));
+}
+
+vk::RenderPass Device::getRenderPass() const
+{
+	return m_renderPass;
+}
+
+std::tuple<vk::Framebuffer, glm::vec2> Device::getFrameBuffer() const
+{
+	return std::tie(m_frameBuffer, m_frameDimensions);
 }
 
 RootUnit& Device::getRootUnit()
@@ -225,21 +295,146 @@ VkBuffer Device::createTransferBuffer(std::size_t size, void* data)
 	return buffer;
 }
 
-vk::Sampler* Device::createObject(const vk::SamplerCreateInfo& info)
+vk::Sampler Device::createObject(const vk::SamplerCreateInfo& info)
 {
-	std::size_t hash = ::generateHash(&info, sizeof(info));
+	Fossilize::Hash hash;
+	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_sampler(info, &hash),
+		"Fossilize::Hashing::compute_hash_sampler failed\n");
+
 	auto it = m_objects.find(hash);
 	if (it == m_objects.end())
 	{
 		vk::Result err;
-		vk::Sampler* sampler = nullptr;
-		err = m_device.createSampler(&info, m_allocator, sampler);
+		vk::Sampler sampler;
+		err = m_device.createSampler(&info, m_allocator, &sampler);
 		checkVkResult(err);
+		m_recorder.record_sampler(sampler, info);
 
 		it = m_objects.insert({hash, sampler}).first;
 	}
 
-	return &it->second.get<vk::Sampler>();
+	return it->second.get<vk::Sampler>();
+}
+
+vk::DescriptorSetLayout Device::createObject(const vk::DescriptorSetLayoutCreateInfo& info)
+{
+	Fossilize::Hash hash;
+	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_descriptor_set_layout(m_recorder, info, &hash),
+		"Fossilize::Hashing::compute_hash_descriptor_set_layout failed\n");
+
+	auto it = m_objects.find(hash);
+	if (it == m_objects.end())
+	{
+		vk::Result err;
+		vk::DescriptorSetLayout descriptorSetLayout;
+		err = m_device.createDescriptorSetLayout(&info, m_allocator, &descriptorSetLayout);
+		checkVkResult(err);
+		m_recorder.record_descriptor_set_layout(descriptorSetLayout, info);
+
+		it = m_objects.insert({ hash, descriptorSetLayout }).first;
+	}
+
+	return it->second.get<vk::DescriptorSetLayout>();
+}
+
+vk::Pipeline Device::createObject(const vk::GraphicsPipelineCreateInfo& info)
+{
+	Fossilize::Hash hash;
+	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_graphics_pipeline(m_recorder, info, &hash),
+		"Fossilize::Hashing::compute_hash_pipeline_layout failed\n");
+
+	auto it = m_objects.find(hash);
+	if (it == m_objects.end())
+	{
+		vk::ResultValue<vk::Pipeline> r = m_device.createGraphicsPipeline(m_pipelineCache, info, m_allocator);
+		checkVkResult(r.result);
+		m_recorder.record_graphics_pipeline(r.value, info, nullptr, 0);
+
+		it = m_objects.insert({ hash, r.value }).first;
+	}
+
+	return it->second.get<vk::Pipeline>();
+}
+
+vk::PipelineLayout Device::createObject(const vk::PipelineLayoutCreateInfo& info)
+{
+	Fossilize::Hash hash;
+	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_pipeline_layout(m_recorder, info, &hash),
+		"Fossilize::Hashing::compute_hash_pipeline_layout failed\n");
+
+	auto it = m_objects.find(hash);
+	if (it == m_objects.end())
+	{
+		vk::ResultValue<vk::PipelineLayout> r = m_device.createPipelineLayout(info, m_allocator);
+		checkVkResult(r.result);
+		m_recorder.record_pipeline_layout(r.value, info);
+
+		it = m_objects.insert({ hash, r.value }).first;
+	}
+
+	return it->second.get<vk::PipelineLayout>();
+}
+
+vk::RenderPass Device::createObject(const vk::RenderPassCreateInfo& info, bool force)
+{
+	Fossilize::Hash hash;
+	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_render_pass(info, &hash),
+		"Fossilize::Hashing::compute_hash_render_pass failed\n");
+
+	auto it = m_objects.find(hash);
+	if (force && it != m_objects.end())
+	{
+		//m_device.destroyRenderPass(it->second.get<vk::RenderPass>());
+		m_objects.erase(it);
+		it = m_objects.end();
+	}
+
+	if (it == m_objects.end())
+	{
+		vk::ResultValue<vk::RenderPass> r = m_device.createRenderPass(info, m_allocator);
+		checkVkResult(r.result);
+		m_recorder.record_render_pass(r.value, info);
+
+		it = m_objects.insert({ hash, r.value }).first;
+	}
+
+	return it->second.get<vk::RenderPass>();
+}
+
+vk::ShaderModule Device::createObject(const vk::ShaderModuleCreateInfo& info)
+{
+	Fossilize::Hash hash;
+	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_shader_module(info, &hash),
+		"Fossilize::Hashing::compute_hash_shader_module failed\n");
+
+	auto it = m_objects.find(hash);
+	if (it == m_objects.end())
+	{
+		vk::ResultValue<vk::ShaderModule> r = m_device.createShaderModule(info, m_allocator);
+		checkVkResult(r.result);
+		m_recorder.record_shader_module(r.value, info);
+
+		it = m_objects.insert({ hash, r.value }).first;
+	}
+
+	return it->second.get<vk::ShaderModule>();
+}
+
+void Device::destroySwapChainRelatedObjects()
+{
+	for (auto it = m_objects.begin(); it != m_objects.end();)
+	{
+		auto* rp = it->second.getPtr<vk::RenderPass>();
+		if (rp)
+		{
+			m_device.destroyRenderPass(*rp);
+			it = m_objects.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
 }
 
 void Device::imgui()

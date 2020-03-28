@@ -60,7 +60,28 @@ void Buffer::unmap()
 	vmaUnmapMemory(m_device->getVMA(), m_allocation);
 }
 
+void Buffer::setFormat(std::vector<Format>&& format, std::size_t stride)
+{
+	m_format = std::move(format);
+	m_stride = stride;
+}
+
+const std::vector<Buffer::Format>& Buffer::getFormat() const
+{
+	return m_format;
+}
+
+std::size_t Buffer::getStride() const
+{
+	return m_stride;
+}
+
 std::size_t Buffer::getSize() const
 {
 	return m_size;
+}
+
+vk::Buffer Buffer::getVkBuffer() const
+{
+	return m_buffer;
 }

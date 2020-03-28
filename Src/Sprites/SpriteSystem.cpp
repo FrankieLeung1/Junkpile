@@ -31,6 +31,15 @@ void SpriteSystem::render()
 
 }
 
+void SpriteSystem::imgui()
+{
+	return;
+
+	ImGui::Begin("SpriteSystem");
+		ImGui::ColorEdit4("MyColor##1", (float*)&m_clearColour);
+	ImGui::End();
+}
+
 void SpriteSystem::test(std::function<void(float)>& update, std::function<void()>& render)
 {
 	ResourcePtr<Rendering::Device> device;
@@ -56,13 +65,14 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	Rendering::Buffer* vbuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vert) * 4);
 	{
 		Vert* map = (Vert*)vbuffer->map();
-		float f = 1.0f;
+		float f = 0.5f;
 		map[0] = Vert{ -f, f, 0.0f };
 		map[1] = Vert{ f, f, 0.0f };
 		map[2] = Vert{ -f, -f, 0.0f };
 		map[3] = Vert{ f, -f, 0.0f };
 		vbuffer->unmap();
 	}
+	vbuffer->setFormat({ {vk::Format::eR32G32B32Sfloat, sizeof(Vert)} }, sizeof(Vert));
 
 	Rendering::Buffer* ibuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Index, Rendering::Buffer::Mapped, sizeof(short) * 4);
 	{
@@ -72,33 +82,38 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 
 		ibuffer->unmap();
 	}
+	ibuffer->setFormat({ {vk::Format::eR16Sint, sizeof(short)} }, sizeof(short));
 
-	char vertexCode[] = R";(#version 450 core
-layout(location = 0) in vec2 aPos;
-out gl_PerVertex{ vec4 gl_Position; };
-void main()
-{
-	gl_Position = vec4(aPos, 0, 1);
-});";
+	char vertexCode[] = 
+		"#version 450 core\n"
+		"layout(location = 0) in vec2 aPos;\n"
+		"out gl_PerVertex{ vec4 gl_Position; };\n"
+		"void main()\n"
+		"{\n"
+		"	gl_Position = vec4(aPos, 0, 1);\n"
+		"}";
 
 	ResourcePtr<Rendering::Shader> vertShader(NewPtr, Rendering::Shader::Type::Vertex, vertexCode);
-	LOG_IF_F(ERROR, !vertShader->compile(nullptr), "Vertex Failed\n");
+	//LOG_IF_F(ERROR, !vertShader->compile(nullptr), "Vertex Failed\n");
+	vertShader->addBindings({ {Rendering::Binding::Type::Constant, 0, vk::Format::eR32G32Sfloat, 0 } });
 
-	char pixelCode[] = R";(#version 450 core
-layout(location = 0) out vec4 fColor;
-void main()
-{
-    fColor = vec4(1, 0, 0, 1);
-}
-);";
+	char pixelCode[] =
+		"#version 450 core\n"
+		"layout(location = 0) out vec4 fColor; \n"
+		"void main()\n"
+		"{\n"
+		"	fColor = vec4(1, 0, 0, 1); \n"
+		"}";
 
 	ResourcePtr<Rendering::Shader> fragShader(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
-	LOG_IF_F(ERROR, !fragShader->compile(nullptr), "Pixel Failed\n");
+	//LOG_IF_F(ERROR, !fragShader->compile(nullptr), "Pixel Failed\n");
+	fragShader->addBindings({ {Rendering::Binding::Type::Constant, 0, vk::Format::eR8G8B8Unorm, 0} });
 
 	auto entity = components->addEntity<PositionComponent, SpriteComponent>();
 	SpriteComponent* sprite = entity.get<SpriteComponent>();
 
-	render = [vertShader, fragShader, ibuffer, vbuffer, texture]()
+	auto& clearColour = m_clearColour;
+	render = [vertShader, fragShader, ibuffer, vbuffer, texture, &clearColour]()
 	{
 		ResourcePtr<Rendering::Device> device;
 		Rendering::Unit unit(device->getRootUnit());
@@ -106,7 +121,10 @@ void main()
 		unit.in(ibuffer);
 		unit.in(vertShader);
 		unit.in(fragShader);
-		unit.in(Rendering::Unit::Binding<decltype(texture)>{0, texture});
+		unit.in(std::array<float, 4>{ clearColour.x, clearColour.y, clearColour.z, clearColour.w, });
+		unit.in(Rendering::Unit::Binding<decltype(texture)>{vk::ShaderStageFlagBits::eFragment, 0, texture});
 		unit.submit();
 	};
 }
+
+glm::vec4 SpriteSystem::m_clearColour(0.45f, 0.55f, 0.6f, 1.0f);

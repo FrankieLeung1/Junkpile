@@ -58,7 +58,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//functionTest();
 
 	//WindowRecorder::test();
-	//SpriteSystem::test(update, render);
+	SpriteSystem::test(update, render);
 	/*update = [](float update)
 	{
 
@@ -87,6 +87,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<ScriptManager> sm;
 	ResourcePtr<Rendering::Device> rd;
 	ResourcePtr<InputManager> i;
+	ResourcePtr<SpriteSystem> s;
 	ComponentPtr<PositionComponent> pos(cm.get());
 
 	sm->addEnvironment<PythonEnvironment>();
@@ -101,6 +102,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->registerCallback({ [](EventManager* em) { em->imgui(); }, em.get() });
 	m->registerCallback({ [](ScriptManager* im) { im->imgui(); }, sm.get() });
 	m->registerCallback({ [](Rendering::Device* rd) { rd->imgui(); }, rd.get() });
+	m->registerCallback({ [](SpriteSystem* s) { s->imgui(); }, s.get() });
 
 	TileLevel level;
 	m->registerCallback({ [](TileLevel* level) { level->imgui(); }, &level });
@@ -109,7 +111,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	r.setAutoStartTasks(true);
 
 	sm->registerObject<Meta::MetaTest>("MetaTest");
-	sm->runScriptsInFolder("Tray");
+	//sm->runScriptsInFolder("Tray");
 
 	std::function<void(float)> testUpdate;
 	std::function<void()> testRender;
@@ -130,13 +132,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		if(testUpdate)
 			testUpdate(0.16f);
 
+		if (testRender)
+			testRender();
+
 		rd->submitAll();
 
 		vf->render();
 		m->render();
-
-		if (testRender)
-			testRender();
 	}
 
 	return 0;
