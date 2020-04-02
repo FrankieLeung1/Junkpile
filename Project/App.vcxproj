@@ -14,19 +14,19 @@
     <ProjectGuid>{B3B98DDD-DC71-42CC-ACDF-7E292B57D1CF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Exec</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -63,6 +63,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -85,6 +86,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

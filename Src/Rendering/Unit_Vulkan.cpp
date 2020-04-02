@@ -178,37 +178,26 @@ vk::PipelineLayout Unit::createVulkanObject<vk::PipelineLayout>()
     if (!data.m_pipelineLayout)
     {
         ResourcePtr<Device> device;
-        vk::DescriptorSetLayout set_layout[1] = { getVulkanObject<vk::DescriptorSetLayout>() };
+        vk::DescriptorSetLayout setLayout[1] = { getVulkanObject<vk::DescriptorSetLayout>() };
         vk::PipelineLayoutCreateInfo info = {};
         info.setLayoutCount = 1;
-        info.pSetLayouts = set_layout;
+        info.pSetLayouts = setLayout;
 
-        /*vk::PushConstantRange push_constants[1] = {};
-        push_constants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        push_constants[0].offset = sizeof(float) * 0;
-        push_constants[0].size = sizeof(float) * 4;
-        layout_info.pushConstantRangeCount = 1;
-        layout_info.pPushConstantRanges = push_constants;*/
-
-        std::vector<glm::mat4> vertexPushConstants;
+        std::size_t pushConstantCount = 0;
+        vk::PushConstantRange pushConstantInfo[6] = {};
         for (Any& any : m_data->m_settings)
         {
-            auto* binding = any.getPtr<Binding<glm::mat4>>();
-            if (binding && binding->m_binding == PushConstant && binding->m_flags & vk::ShaderStageFlagBits::eVertex)
+            if (any.isType<PushConstant>())
             {
-                vertexPushConstants.push_back(binding->m_value);
+                auto& pc = any.get<PushConstant>();
+                auto& pcInfo = pushConstantInfo[pushConstantCount++];
+                pcInfo.stageFlags = pc.m_flags;
+                pcInfo.offset = 0;
+                pcInfo.size = (uint32_t)pc.m_value.size();
             }
         }
-
-        vk::PushConstantRange push_constants[1] = {};
-        if (!vertexPushConstants.empty())
-        {
-            push_constants[0].stageFlags = vk::ShaderStageFlagBits::eVertex;
-            push_constants[0].offset = 0;
-            push_constants[0].size = (uint32_t)(sizeof(glm::mat4) * vertexPushConstants.size());
-            info.pushConstantRangeCount = 1;
-            info.pPushConstantRanges = push_constants;
-        }
+        info.pushConstantRangeCount = (uint32_t)pushConstantCount;
+        info.pPushConstantRanges = pushConstantInfo;
 
         data.m_pipelineLayout = device->createObject(info);
     }

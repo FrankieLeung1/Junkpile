@@ -63,15 +63,6 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 
 	struct Vert { glm::vec3 m_position; glm::vec2 m_uv; };
 	Rendering::Buffer* vbuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vert) * 4);
-	/*{
-		Vert* map = (Vert*)vbuffer->map();
-		float f = 500.0f;
-		map[0] = Vert{ { -f, f, 0.0f }, { 0.0f, 1.0f } };
-		map[1] = Vert{ { f, f, 0.0f }, { 1.0f, 1.0f } };
-		map[2] = Vert{ { -f, -f, 0.0f }, { 0.0f, 0.0f } };
-		map[3] = Vert{ { f, -f, 0.0f }, { 1.0f, 0.0f } };
-		vbuffer->unmap();
-	}*/
 	vbuffer->setFormat({
 			{vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)},
 			{vk::Format::eR32G32Sfloat, sizeof(glm::vec2)},
@@ -124,7 +115,6 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	//auto resolution = std::get<1>(device->getFrameBuffer());
 	float halfWidth = 1280.0f / 2.0f, halfHeight = 720.0f / 2.0f;
 	glm::mat4x4 ortho = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight);
-
 	update = [vbuffer, data, atlas](float delta)
 	{
 		ResourcePtr<ComponentManager> components;
@@ -155,6 +145,9 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	auto& clearColour = m_clearColour;
 	render = [vertShader, fragShader, ibuffer, vbuffer, texture, &clearColour, ortho]()
 	{
+		std::vector<char> pushData(sizeof(glm::mat4));
+		memcpy(&pushData[0], &ortho, sizeof(glm::mat4));
+
 		ResourcePtr<Rendering::Device> device;
 		Rendering::Unit unit(device->getRootUnit());
 		unit.in(vbuffer);
@@ -163,7 +156,7 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		unit.in(fragShader);
 		unit.in(std::array<float, 4>{ clearColour.x, clearColour.y, clearColour.z, clearColour.w, });
 		unit.in({vk::ShaderStageFlagBits::eFragment, 0, texture});
-		unit.in({ vk::ShaderStageFlagBits::eVertex, Rendering::Unit::PushConstant, ortho });
+		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
 		
 		unit.submit();
 	};

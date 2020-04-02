@@ -28,7 +28,6 @@ namespace Rendering
 			T m_value;
 		};
 
-		static const int PushConstant = -1;
 		template<typename T>
 		struct Binding
 		{
@@ -36,6 +35,13 @@ namespace Rendering
 			vk::ShaderStageFlags m_flags;
 			int m_binding;
 			T m_value;
+		};
+
+		struct PushConstant
+		{
+			PushConstant(vk::ShaderStageFlags flags, std::vector<char>&& value): m_flags(flags), m_value(std::move(value)) {}
+			vk::ShaderStageFlags m_flags;
+			std::vector<char> m_value;
 		};
 		
 	public:
@@ -63,7 +69,7 @@ namespace Rendering
 		Unit& in(Named<vk::Filter>);
 		Unit& in(Named<vk::SamplerAddressMode>);
 		Unit& in(Binding<ResourcePtr<Texture>>);
-		Unit& in(Binding<glm::mat4x4>);
+		Unit& in(PushConstant);
 		Unit& out(Texture&);
 
 		static void test();
