@@ -56,7 +56,7 @@ namespace Rendering
 		vk::DescriptorSetLayout createObject(const vk::DescriptorSetLayoutCreateInfo&);
 		vk::Pipeline createObject(const vk::GraphicsPipelineCreateInfo&);
 		vk::PipelineLayout createObject(const vk::PipelineLayoutCreateInfo&);
-		vk::RenderPass createObject(const vk::RenderPassCreateInfo&, bool force = false);
+		vk::RenderPass createObject(const vk::RenderPassCreateInfo&);
 		vk::ShaderModule createObject(const vk::ShaderModuleCreateInfo&);
 		template<typename T> T& getObject(std::size_t id) const;
 

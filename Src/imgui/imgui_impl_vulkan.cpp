@@ -960,13 +960,14 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         info.dependencyCount = 1;
         info.pDependencies = &dependency;
 
-        //if (!ImGui::GetCurrentContext()) // FL: imgui hasn't been initialized yet therefore this is the main window
+        if (wd->MainWindow)
         {
+            // this is the main window
             attachment.loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
             attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
         }
 
-        wd->RenderPass = device->createObject(info, true);
+        wd->RenderPass = device->createObject(info);
     }
 
     // Create The Image Views

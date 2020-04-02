@@ -18,8 +18,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-#include "imgui/examples/imgui_impl_glfw.h"
-#include "imgui/examples/imgui_impl_vulkan.h"
+#include "../imgui/imgui_impl_glfw.h"
+#include "../imgui/imgui_impl_vulkan.h"
 
 #include "../Managers/InputManager.h"
 #include "../Rendering/RenderingDevice.h"
@@ -302,6 +302,7 @@ int VulkanFramework::initImGui(bool systemTray)
 	glfwSetFramebufferSizeCallback(m_window, glfw_resize_callback);
 	ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
 	wd->ClearEnable = false;
+	wd->MainWindow = true;
 	SetupVulkanWindow(wd, surface, w, h);
 
 	// Setup Dear ImGui context

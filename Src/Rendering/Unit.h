@@ -28,6 +28,7 @@ namespace Rendering
 			T m_value;
 		};
 
+		static const int PushConstant = -1;
 		template<typename T>
 		struct Binding
 		{
@@ -62,6 +63,7 @@ namespace Rendering
 		Unit& in(Named<vk::Filter>);
 		Unit& in(Named<vk::SamplerAddressMode>);
 		Unit& in(Binding<ResourcePtr<Texture>>);
+		Unit& in(Binding<glm::mat4x4>);
 		Unit& out(Texture&);
 
 		static void test();

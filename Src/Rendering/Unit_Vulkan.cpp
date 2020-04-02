@@ -190,6 +190,26 @@ vk::PipelineLayout Unit::createVulkanObject<vk::PipelineLayout>()
         layout_info.pushConstantRangeCount = 1;
         layout_info.pPushConstantRanges = push_constants;*/
 
+        std::vector<glm::mat4> vertexPushConstants;
+        for (Any& any : m_data->m_settings)
+        {
+            auto* binding = any.getPtr<Binding<glm::mat4>>();
+            if (binding && binding->m_binding == PushConstant && binding->m_flags & vk::ShaderStageFlagBits::eVertex)
+            {
+                vertexPushConstants.push_back(binding->m_value);
+            }
+        }
+
+        vk::PushConstantRange push_constants[1] = {};
+        if (!vertexPushConstants.empty())
+        {
+            push_constants[0].stageFlags = vk::ShaderStageFlagBits::eVertex;
+            push_constants[0].offset = 0;
+            push_constants[0].size = (uint32_t)(sizeof(glm::mat4) * vertexPushConstants.size());
+            info.pushConstantRangeCount = 1;
+            info.pPushConstantRanges = push_constants;
+        }
+
         data.m_pipelineLayout = device->createObject(info);
     }
     return data.m_pipelineLayout;

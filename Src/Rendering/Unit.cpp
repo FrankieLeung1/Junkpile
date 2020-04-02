@@ -173,6 +173,19 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 	buffer.setViewport(0, viewports);
 	buffer.setScissor(0, std::array<vk::Rect2D, 1>{scissor});
 
+	std::vector<glm::mat4> vertexPushConstants;
+	for (Any& any : m_data->m_settings)
+	{
+		auto* binding = any.getPtr<Binding<glm::mat4>>();
+		if (binding && binding->m_binding == PushConstant && binding->m_flags & vk::ShaderStageFlagBits::eVertex)
+		{
+			vertexPushConstants.push_back(binding->m_value);
+		}
+	}
+	if (!vertexPushConstants.empty())
+		buffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, vertexPushConstants.size() * sizeof(glm::mat4), &vertexPushConstants[0]);
+	
+
 	vk::ClearValue clearValues;
 	clearValues.color = getVulkanObject<vk::ClearColorValue>();
 	//clearValues.depthStencil = createVulkanObject<vk::ClearDepthStencilValue>();
@@ -226,6 +239,7 @@ Unit& Unit::in(Named<float> v) { return _in(v); }
 Unit& Unit::in(Named<vk::Filter> v) { return _in(v); }
 Unit& Unit::in(Named<vk::SamplerAddressMode> v) { return _in(v); }
 Unit& Unit::in(Binding<ResourcePtr<Texture>> v) { return _in(v); }
+Unit& Unit::in(Binding<glm::mat4x4> v) { return _in(v); }
 Unit& Unit::out(Texture& v) { return _out(v); }
 
 // RootUnit

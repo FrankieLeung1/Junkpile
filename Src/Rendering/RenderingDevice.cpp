@@ -393,7 +393,7 @@ vk::PipelineLayout Device::createObject(const vk::PipelineLayoutCreateInfo& info
 	return it->second.get<vk::PipelineLayout>();
 }
 
-vk::RenderPass Device::createObject(const vk::RenderPassCreateInfo& info, bool force)
+vk::RenderPass Device::createObject(const vk::RenderPassCreateInfo& info)
 {
 	std::lock_guard<std::mutex> l(m_mutex);
 	Fossilize::Hash hash;
@@ -401,13 +401,6 @@ vk::RenderPass Device::createObject(const vk::RenderPassCreateInfo& info, bool f
 		"Fossilize::Hashing::compute_hash_render_pass failed\n");
 
 	auto it = m_objects.find(hash);
-	if (force && it != m_objects.end())
-	{
-		m_device.destroyRenderPass(it->second.get<vk::RenderPass>());
-		m_objects.erase(it);
-		it = m_objects.end();
-	}
-
 	if (it == m_objects.end())
 	{
 		vk::ResultValue<vk::RenderPass> r = m_device.createRenderPass(info, m_allocator);
