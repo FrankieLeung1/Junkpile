@@ -8,8 +8,8 @@
 
 using namespace Rendering;
 
-TextureAtlas::TextureAtlas(const glm::u8vec4& padding):
-m_padding(padding),
+TextureAtlas::TextureAtlas():
+m_padding(0),
 m_frames()
 {
 
@@ -20,7 +20,7 @@ TextureAtlas::~TextureAtlas()
 
 }
 
-void TextureAtlas::setPadding(const glm::u8vec4& padding)
+void TextureAtlas::setPadding(unsigned int padding)
 {
 	m_padding = padding;
 }
@@ -62,8 +62,8 @@ void TextureAtlas::layoutAtlas()
 		for (int i = 0; i < m_textures.size(); ++i)
 		{
 			rects[i].id = i;
-			rects[i].w = m_textures[i]->getWidth();
-			rects[i].h = m_textures[i]->getHeight();
+			rects[i].w = m_textures[i]->getWidth() + (m_padding);
+			rects[i].h = m_textures[i]->getHeight() + (m_padding);
 		}
 
 		stbrp_node nodes[512];
@@ -81,15 +81,14 @@ void TextureAtlas::layoutAtlas()
 	int pixelSize = m_textures[0]->getPixelSize();
 	setSoftware(width, height, pixelSize);
 	char* pixels = (char*)map();
-
+	unsigned int halfPadding = m_padding / 2;
 	for (int i = 0; i < m_textures.size(); i++)
 	{
 		Texture* st = m_textures[i];
-		//st->setSoftware(width, height, (int)pixelSize);
 		BitBltBuffer d = { pixels, (std::size_t)pixelSize, width, height };
 		BitBltBuffer s = { (char*)st->map(), (std::size_t)st->getPixelSize(), st->getWidth(), st->getHeight() };
 		stbrp_rect* rect = rects + i;
-		bitblt(d, rect->x, rect->y, rect->w, rect->h, s, 0, 0);
+		bitblt(d, rect->x + halfPadding, rect->y + halfPadding, rect->w - m_padding, rect->h - m_padding, s, 0, 0);
 		st->unmap();
 
 		Frame frame;

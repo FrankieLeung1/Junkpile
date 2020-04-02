@@ -8,10 +8,10 @@ namespace Rendering
 	class TextureAtlas : public Texture
 	{
 	public:
-		TextureAtlas(const glm::u8vec4& padding = glm::vec4(0.0f));
+		TextureAtlas();
 		~TextureAtlas();
 
-		void setPadding(const glm::u8vec4&);
+		void setPadding(unsigned int padding);
 
 		int addFrame(Texture*);
 		void addSprite(SpriteData*);
@@ -22,7 +22,7 @@ namespace Rendering
 
 	protected:
 		std::vector<Texture*> m_textures;
-		glm::u8vec4 m_padding;
+		unsigned int m_padding;
 
 		struct Frame
 		{

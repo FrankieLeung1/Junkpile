@@ -52,6 +52,7 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	data.loadFromGif(std::move(spriteFile), *device);
 	atlas->addSprite(&data);
 
+	atlas->setPadding(2);
 	atlas->layoutAtlas();
 	//vf->uploadTexture(&std::get<Rendering::TextureAtlas>(data));
 
