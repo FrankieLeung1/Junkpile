@@ -5,6 +5,11 @@
 #include "EntityIterator.h"
 
 class ComponentManager;
+typedef unsigned int Entity;
+typedef long long ComponentId;
+typedef int SpriteId;
+#define INVALID_ENTITY 0
+
 struct EntityIteratorArgs {
 	int m_index;
 	ComponentId m_id;

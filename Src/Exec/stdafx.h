@@ -30,6 +30,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <list>
 #include <forward_list>
 #include <string>
 #include <map>
@@ -44,6 +45,9 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <locale>
+#include <utility>
+#include <codecvt>
 
 #include "glm/glm/glm.hpp"
 #include "glm/glm/ext.hpp"
