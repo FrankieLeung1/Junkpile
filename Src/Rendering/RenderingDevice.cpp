@@ -48,6 +48,8 @@ Device::~Device()
 		for(auto& transfer : threadResources.second.m_transferBuffers)
 			vmaDestroyBuffer(m_vma, std::get<VkBuffer>(transfer), std::get<VmaAllocation>(transfer));
 
+		
+		m_device.destroyDescriptorPool(threadResources.second.m_persistentDescriptorPool);
 		m_device.destroyDescriptorPool(threadResources.second.m_descriptorPool);
 		m_device.destroyCommandPool(threadResources.second.m_commandPool);
 	}
@@ -81,17 +83,24 @@ vk::DescriptorPool Device::getDescriptorPool(const std::thread::id& id)
 {
 	std::lock_guard<std::mutex> l(m_mutex);
 	auto it = m_threadResources.find(id);
-	if (it == m_threadResources.end())
-	{
-		vk::DescriptorPool pool;
-		checkVkResult(create(&pool));
-		it->second.m_descriptorPool = pool;
-		return pool;
-	}
-	else
+	if (it != m_threadResources.end())
 	{
 		return it->second.m_descriptorPool;
 	}
+	
+	return nullptr;
+}
+
+vk::DescriptorPool Device::getPersistentDescriptorPool(const std::thread::id& id)
+{
+	std::lock_guard<std::mutex> l(m_mutex);
+	auto it = m_threadResources.find(id);
+	if (it != m_threadResources.end())
+	{
+		return it->second.m_persistentDescriptorPool;
+	}
+
+	return nullptr;
 }
 
 VmaAllocator Device::getVMA() const
@@ -264,6 +273,11 @@ void Device::update()
 		(*it->m_callback)();
 		it = m_fenceCallbacks.erase(it);
 	}
+
+	m_device.waitIdle();
+
+	ThreadResources* threadRes = getThreadResources();
+	m_device.resetDescriptorPool(threadRes->m_descriptorPool);
 }
 
 VkBuffer Device::createTransferBuffer(std::size_t size, void* data)
@@ -297,6 +311,7 @@ VkBuffer Device::createTransferBuffer(std::size_t size, void* data)
 
 vk::Sampler Device::createObject(const vk::SamplerCreateInfo& info)
 {
+	std::lock_guard<std::mutex> l(m_mutex);
 	Fossilize::Hash hash;
 	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_sampler(info, &hash),
 		"Fossilize::Hashing::compute_hash_sampler failed\n");
@@ -318,6 +333,7 @@ vk::Sampler Device::createObject(const vk::SamplerCreateInfo& info)
 
 vk::DescriptorSetLayout Device::createObject(const vk::DescriptorSetLayoutCreateInfo& info)
 {
+	std::lock_guard<std::mutex> l(m_mutex);
 	Fossilize::Hash hash;
 	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_descriptor_set_layout(m_recorder, info, &hash),
 		"Fossilize::Hashing::compute_hash_descriptor_set_layout failed\n");
@@ -339,6 +355,7 @@ vk::DescriptorSetLayout Device::createObject(const vk::DescriptorSetLayoutCreate
 
 vk::Pipeline Device::createObject(const vk::GraphicsPipelineCreateInfo& info)
 {
+	std::lock_guard<std::mutex> l(m_mutex);
 	Fossilize::Hash hash;
 	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_graphics_pipeline(m_recorder, info, &hash),
 		"Fossilize::Hashing::compute_hash_pipeline_layout failed\n");
@@ -358,6 +375,7 @@ vk::Pipeline Device::createObject(const vk::GraphicsPipelineCreateInfo& info)
 
 vk::PipelineLayout Device::createObject(const vk::PipelineLayoutCreateInfo& info)
 {
+	std::lock_guard<std::mutex> l(m_mutex);
 	Fossilize::Hash hash;
 	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_pipeline_layout(m_recorder, info, &hash),
 		"Fossilize::Hashing::compute_hash_pipeline_layout failed\n");
@@ -377,6 +395,7 @@ vk::PipelineLayout Device::createObject(const vk::PipelineLayoutCreateInfo& info
 
 vk::RenderPass Device::createObject(const vk::RenderPassCreateInfo& info, bool force)
 {
+	std::lock_guard<std::mutex> l(m_mutex);
 	Fossilize::Hash hash;
 	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_render_pass(info, &hash),
 		"Fossilize::Hashing::compute_hash_render_pass failed\n");
@@ -384,7 +403,7 @@ vk::RenderPass Device::createObject(const vk::RenderPassCreateInfo& info, bool f
 	auto it = m_objects.find(hash);
 	if (force && it != m_objects.end())
 	{
-		//m_device.destroyRenderPass(it->second.get<vk::RenderPass>());
+		m_device.destroyRenderPass(it->second.get<vk::RenderPass>());
 		m_objects.erase(it);
 		it = m_objects.end();
 	}
@@ -403,6 +422,7 @@ vk::RenderPass Device::createObject(const vk::RenderPassCreateInfo& info, bool f
 
 vk::ShaderModule Device::createObject(const vk::ShaderModuleCreateInfo& info)
 {
+	std::lock_guard<std::mutex> l(m_mutex);
 	Fossilize::Hash hash;
 	LOG_IF_F(ERROR, !Fossilize::Hashing::compute_hash_shader_module(info, &hash),
 		"Fossilize::Hashing::compute_hash_shader_module failed\n");
@@ -418,6 +438,19 @@ vk::ShaderModule Device::createObject(const vk::ShaderModuleCreateInfo& info)
 	}
 
 	return it->second.get<vk::ShaderModule>();
+}
+
+vk::DescriptorSet Device::allocateObject(const vk::DescriptorSetAllocateInfo& info)
+{
+	LOG_IF_F(ERROR, info.descriptorSetCount != 1, "descriptorSetCount must be 1\n");
+	vk::ResultValue<std::vector<vk::DescriptorSet>> r = m_device.allocateDescriptorSets(info);
+	checkVkResult(r.result);
+	return r.value.front();
+}
+
+void Device::updateObject(const std::vector<vk::WriteDescriptorSet>& info)
+{
+	m_device.updateDescriptorSets((uint32_t)info.size(), &info[0], 0, nullptr);
 }
 
 void Device::destroySwapChainRelatedObjects()
@@ -625,6 +658,9 @@ void Device::allocateThreadResources(const std::thread::id& id)
 	memcpy(resources.m_commandBuffers, &buffers.value[0], buffers.value.size() * sizeof(vk::CommandBuffer));
 
 	r = create(&resources.m_descriptorPool);
+	checkVkResult(r);
+
+	r = create(&resources.m_persistentDescriptorPool);
 	checkVkResult(r);
 
 	m_threadResources[id] = resources;

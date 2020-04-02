@@ -5,7 +5,6 @@
 #include "EntityIterator.h"
 
 class ComponentManager;
-
 struct EntityIteratorArgs {
 	int m_index;
 	ComponentId m_id;

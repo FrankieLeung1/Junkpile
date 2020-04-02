@@ -3,6 +3,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "../Misc/Misc.h"
+#include "Texture.h"
 
 // there's a lot of looping here, hopefully it's ok
 
@@ -78,21 +79,21 @@ vk::Sampler Unit::createVulkanObject<vk::Sampler>()
         ResourcePtr<Device> device;
 		vk::SamplerCreateInfo info;
         opt(info.flags);
-        req(info.magFilter, "magFilter");
-        req(info.minFilter, "minFilter");
-        req(info.mipmapMode);
-        req(info.addressModeU, "addressModeU");
-        req(info.addressModeV, "addressModeV");
-        req(info.addressModeW, "addressModeW");
-        req(info.mipLodBias, "mipLodBias");
-        req(info.anisotropyEnable, "anisotropyEnable");
-        req(info.maxAnisotropy, "maxAnisotropy");
-        req(info.compareEnable, "compareEnable");
-        req(info.compareOp);
-        req(info.minLod, "minLod");
-        req(info.maxLod, "maxLod");
-        req(info.borderColor);
-        req(info.unnormalizedCoordinates, "unnormalizedCoordinates");
+        opt(info.magFilter, "magFilter");
+        opt(info.minFilter, "minFilter");
+        opt(info.mipmapMode);
+        opt(info.addressModeU, "addressModeU");
+        opt(info.addressModeV, "addressModeV");
+        opt(info.addressModeW, "addressModeW");
+        opt(info.mipLodBias, "mipLodBias");
+        opt(info.anisotropyEnable, "anisotropyEnable");
+        opt(info.maxAnisotropy, "maxAnisotropy");
+        opt(info.compareEnable, "compareEnable");
+        opt(info.compareOp);
+        opt(info.minLod, "minLod");
+        opt(info.maxLod, "maxLod");
+        opt(info.borderColor);
+        opt(info.unnormalizedCoordinates, "unnormalizedCoordinates");
         data.m_sampler = device->createObject(info);
 	}
 
@@ -111,6 +112,7 @@ inline void Unit::getBindings(Data* data, std::vector< vk::DescriptorSetLayoutBi
             binding.descriptorType = type;
             binding.stageFlags = b->m_flags;
             binding.binding = b->m_binding;
+            binding.descriptorCount = 1;
             if(std::find(bindings->begin(), bindings->end(), binding) == bindings->end())
                 bindings->push_back(binding);
         }
@@ -120,13 +122,45 @@ inline void Unit::getBindings(Data* data, std::vector< vk::DescriptorSetLayoutBi
 }
 
 template<>
+vk::DescriptorSet Unit::createVulkanObject<vk::DescriptorSet>()
+{
+    Data& data = getData();
+    if (!data.m_descriptorSet)
+    {
+        ResourcePtr<Device> device;
+        auto layout = getVulkanObject<vk::DescriptorSetLayout>();
+        vk::DescriptorSetAllocateInfo info;
+        info.descriptorPool = device->getDescriptorPool();
+        info.descriptorSetCount = 1;
+        info.pSetLayouts = &layout;
+        data.m_descriptorSet = device->allocateObject(info);
+
+        std::vector<vk::WriteDescriptorSet> writes;
+        std::list<vk::DescriptorImageInfo> imageInfos;
+        for (auto& any : data.m_settings)
+        {
+            auto* bind = any.getPtr<Binding<ResourcePtr<Texture>>>();
+            if (bind)
+            {
+                Texture* texture = bind->m_value;
+                imageInfos.emplace_front(texture->getSampler(0).getVulkanObject<vk::Sampler>(), texture->getImageView() , texture->getImageLayout());
+                writes.emplace_back(data.m_descriptorSet, bind->m_binding, 0, (uint32_t)imageInfos.size(), vk::DescriptorType::eCombinedImageSampler, &imageInfos.front());
+            }
+        }
+
+        device->updateObject(writes);
+    }
+    return data.m_descriptorSet;
+}
+
+template<>
 vk::DescriptorSetLayout Unit::createVulkanObject<vk::DescriptorSetLayout>()
 {
 	Data& data = getData();
     if (!data.m_descriptorSetLayout)
     {
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
-        getBindings<ResourcePtr<Texture>>(&data, &bindings, vk::DescriptorType::eSampler);
+        getBindings<ResourcePtr<Texture>>(&data, &bindings, vk::DescriptorType::eCombinedImageSampler);
 
         ResourcePtr<Device> device;
         vk::DescriptorSetLayoutCreateInfo info;

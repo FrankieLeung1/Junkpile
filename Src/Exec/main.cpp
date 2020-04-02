@@ -39,7 +39,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 {
 	//Any::test();
 	//Meta::LuaRegisterer::test();
-	//Sprite::test();
+	Sprite::test();
 	//physicsTest();
 
 	/*struct Test
@@ -130,7 +130,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		vf->update();
 		m->update();
 		if(testUpdate)
-			testUpdate(0.16f);
+			testUpdate(t->getDelta());
 
 		if (testRender)
 			testRender();

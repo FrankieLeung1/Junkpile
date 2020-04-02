@@ -20,7 +20,7 @@ public:
 		int m_id;
 		float m_time;
 		float m_duration;
-		Rendering::Texture* m_texture;
+		std::shared_ptr<Rendering::Texture> m_texture;
 	};
 	std::vector<FrameData> m_frames;
 

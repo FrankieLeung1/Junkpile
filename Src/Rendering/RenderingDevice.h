@@ -31,7 +31,8 @@ namespace Rendering
 
 		vk::RenderPass getRenderPass() const;
 		std::tuple<vk::Framebuffer, glm::vec2> getFrameBuffer() const;
-		vk::DescriptorPool getDescriptorPool(const std::thread::id& = std::this_thread::get_id());
+		vk::DescriptorPool getDescriptorPool(const std::thread::id & = std::this_thread::get_id());
+		vk::DescriptorPool getPersistentDescriptorPool(const std::thread::id & = std::this_thread::get_id());
 
 		VmaAllocator getVMA() const;
 		VkAllocationCallbacks* getAllocator() const;
@@ -58,6 +59,10 @@ namespace Rendering
 		vk::RenderPass createObject(const vk::RenderPassCreateInfo&, bool force = false);
 		vk::ShaderModule createObject(const vk::ShaderModuleCreateInfo&);
 		template<typename T> T& getObject(std::size_t id) const;
+
+		vk::DescriptorSet allocateObject(const vk::DescriptorSetAllocateInfo&);
+
+		void updateObject(const std::vector<vk::WriteDescriptorSet>&);
 
 		void destroySwapChainRelatedObjects();
 
@@ -95,8 +100,6 @@ namespace Rendering
 
 		glm::vec2 m_frameDimensions;
 
-		std::map<Fossilize::Hash, Any> m_objects;
-
 		struct FenceCallbacks
 		{
 			vk::Fence m_fence;
@@ -112,6 +115,7 @@ namespace Rendering
 
 			std::vector< std::tuple<VkBuffer, VmaAllocation> > m_transferBuffers;
 			vk::DescriptorPool m_descriptorPool;
+			vk::DescriptorPool m_persistentDescriptorPool;
 		};
 		std::map<std::thread::id, ThreadResources> m_threadResources;
 
@@ -120,6 +124,8 @@ namespace Rendering
 		// imgui
 		int m_selectedUnit;
 		int m_selectedInOut;
+
+		std::map<Fossilize::Hash, Any> m_objects;
 
 		friend class VulkanFramework;
 		friend class Unit;

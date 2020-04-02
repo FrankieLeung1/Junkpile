@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ComponentManager.h"
+
 typedef unsigned int Entity;
 typedef long long ComponentId;
 typedef int SpriteId;

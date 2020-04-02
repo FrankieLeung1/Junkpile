@@ -37,7 +37,7 @@ void TextureAtlas::addSprite(SpriteData* sprite)
 {
 	for (SpriteData::FrameData& frame : sprite->m_frames)
 	{
-		int id = addFrame(frame.m_texture);
+		int id = addFrame(frame.m_texture.get());
 		CHECK_F(id == frame.m_id);
 	}
 }

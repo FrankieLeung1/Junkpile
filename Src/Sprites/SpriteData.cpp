@@ -17,8 +17,8 @@ SpriteData::SpriteData()
 
 SpriteData::~SpriteData()
 {
-	for(std::vector<FrameData>::iterator it = m_frames.begin(); it != m_frames.end(); ++it)
-		delete it->m_texture;
+	/*for(std::vector<FrameData>::iterator it = m_frames.begin(); it != m_frames.end(); ++it)
+		delete it->m_texture;*/
 }
 
 static void frame(void* ud, GIF_WHDR* whdr)
@@ -27,7 +27,7 @@ static void frame(void* ud, GIF_WHDR* whdr)
 	SpriteData* sprite = static_cast<SpriteData*>(ud);
 	SpriteData::FrameData data;
 	data.m_duration = (float)whdr->time / 100.0f;
-	data.m_texture = new Rendering::Texture;
+	data.m_texture = std::make_shared<Rendering::Texture>();
 
 	// build RGBA data
 	struct RGBA { unsigned char r, g, b, a; };

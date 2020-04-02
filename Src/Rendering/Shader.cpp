@@ -81,6 +81,8 @@ bool Shader::compile(std::string* outError)
 	ResourcePtr<File> cacheFile(NewPtr, cachePath.c_str());
 	freeModule();
 
+	//LOG_IF_F(ERROR, !cacheFile, "failed to open shader cache %s\n", cachePath.c_str());
+
 	vk::ShaderModuleCreateInfo info = {};
 	info.codeSize = cacheFile->getSize();
 	info.pCode = (uint32_t*)cacheFile->getContents();

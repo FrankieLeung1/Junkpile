@@ -6,6 +6,7 @@ typedef void* ImTextureID;
 namespace Rendering
 {
 	class Device;
+	class Unit;
 	class Texture : public Resource, public DataSource, public RenderTarget
 	{
 	public:
@@ -40,6 +41,12 @@ namespace Rendering
 		void setVkImageRT(vk::Image image, VmaAllocation memory);
 		vk::Image getVkImageRT();
 
+		vk::ImageView getImageView();
+		vk::ImageLayout getImageLayout() const;
+
+		void setSampler(std::size_t index, const Unit&);
+		Unit& getSampler(std::size_t index);
+
 	//protected:
 		void createDeviceObjects(Device*);
 
@@ -49,6 +56,8 @@ namespace Rendering
 
 		std::vector<char> m_textureData;
 		ResourcePtr<Rendering::Device> m_device;
+		std::map<std::size_t, Unit> m_samplers;
+		std::unique_ptr<Unit> m_defaultSampler;
 
 		struct VulkanImpl;
 		struct VulkanImplImgui;

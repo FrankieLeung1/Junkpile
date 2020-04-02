@@ -214,7 +214,7 @@ void VulkanFramework::SetupVulkan(const char** extensions, uint32_t extensions_c
 	m_device->setQueue(g_Queue);
 	m_device->setPipelineCache(g_PipelineCache);
 	m_device->allocateThreadResources(std::this_thread::get_id());
-	g_DescriptorPool = m_device->getDescriptorPool();
+	g_DescriptorPool = m_device->getPersistentDescriptorPool();
 }
 
 static LONG_PTR oldProc;

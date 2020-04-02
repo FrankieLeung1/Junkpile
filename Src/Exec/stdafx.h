@@ -46,6 +46,7 @@
 #include <stdlib.h>
 
 #include "glm/glm/glm.hpp"
+#include "glm/glm/ext.hpp"
 #include <vulkan/vulkan.h>
 
 #define VULKAN_HPP_ASSERT CHECK_F

@@ -32,7 +32,9 @@ m_width(-1),
 m_height(-1),
 m_pixelSize(-1),
 m_p(new VulkanImplImgui()),
-m_textureData()
+m_textureData(),
+m_samplers(),
+m_defaultSampler()
 {
 	memset(m_p, 0x00, sizeof(VulkanImplImgui));
 }
@@ -92,7 +94,7 @@ void Texture::createDeviceObjects(Device* device)
 	{
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = device->getDescriptorPool();
+		allocInfo.descriptorPool = device->getPersistentDescriptorPool();
 		allocInfo.descriptorSetCount = 1;
 		allocInfo.pSetLayouts = &m_p->m_descriptorSetLayout;
 		err = vkAllocateDescriptorSets(device->getDevice(), &allocInfo, &m_p->m_descriptorSet);
@@ -450,9 +452,58 @@ void Texture::setVkImageRT(vk::Image image, VmaAllocation memory)
 
 	m_p->m_image = image;
 	m_p->m_memory = memory;
+	m_mode = Mode::DEVICE_LOCAL;
 }
 
 vk::Image Texture::getVkImageRT()
 {
 	return m_p->m_image;
+}
+
+vk::ImageView Texture::getImageView()
+{
+	if(!m_p->m_view)
+	{
+		ResourcePtr<Device> device;
+		VkImageViewCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		info.image = m_p->m_image;
+		info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		info.format = VK_FORMAT_R8G8B8A8_UNORM;
+		info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		info.subresourceRange.levelCount = 1;
+		info.subresourceRange.layerCount = 1;
+		auto err = vkCreateImageView(device->getDevice(), &info, nullptr, &m_p->m_view);
+		checkVkResult(err);
+	}
+
+	return m_p->m_view;
+}
+
+vk::ImageLayout Texture::getImageLayout() const
+{
+	if (m_mode == Mode::DEVICE_LOCAL)
+		return vk::ImageLayout::eShaderReadOnlyOptimal;
+	else
+		return vk::ImageLayout::eGeneral;
+}
+
+void Texture::setSampler(std::size_t index, const Unit& unit)
+{
+	m_samplers.insert(std::make_pair(index, unit));
+}
+
+Unit& Texture::getSampler(std::size_t index)
+{
+	auto it = m_samplers.find(index);
+	if (it != m_samplers.end())
+		return it->second;
+
+	if (!m_defaultSampler)
+	{
+		ResourcePtr<Device> device;
+		m_defaultSampler = std::make_unique<Unit>(device->getRootUnit());
+	}
+
+	return *m_defaultSampler;
 }

@@ -135,11 +135,12 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 	Data& d = getData();
 	Texture* bindTextures[4] = {};
 	Buffer *vertices = nullptr, * indices = nullptr;
+	auto pipelineLayout = getVulkanObject<vk::PipelineLayout>();
 	auto pipeline = getVulkanObject<vk::Pipeline>();
-	auto layout = getVulkanObject<vk::DescriptorSetLayout>();
+	auto descriptorSet = getVulkanObject<vk::DescriptorSet>();
 	std::array<vk::Viewport, 1> viewports = { getVulkanObject<vk::Viewport>() };
 	auto scissor = getVulkanObject<vk::Rect2D>();
-	if (!layout || !pipeline) return false;
+	if (!pipeline) return false;
 
 	for (Any& any : d.m_settings)
 	{
@@ -168,6 +169,7 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 	std::array<vk::DeviceSize, 1> vertexOffset = { 0 };
 	buffer.bindVertexBuffers(0, vBuffer, vertexOffset);
 	buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+	buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, std::array<vk::DescriptorSet, 1>{descriptorSet}, std::array<uint32_t, 0>{0});
 	buffer.setViewport(0, viewports);
 	buffer.setScissor(0, std::array<vk::Rect2D, 1>{scissor});
 

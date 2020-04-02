@@ -98,6 +98,7 @@ namespace Rendering
 
 			vk::Sampler m_sampler;
 			vk::DescriptorSetLayout m_descriptorSetLayout;
+			vk::DescriptorSet m_descriptorSet;
 			vk::Pipeline m_pipeline;
 			vk::PipelineLayout m_pipelineLayout;
 			bool m_empty{ true };
