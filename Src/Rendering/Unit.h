@@ -43,6 +43,12 @@ namespace Rendering
 			vk::ShaderStageFlags m_flags;
 			std::vector<char> m_value;
 		};
+
+		struct Draw
+		{
+			Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance): m_vertexCount(vertexCount), m_instanceCount(instanceCount), m_firstVertex(firstVertex), m_firstInstance(firstInstance) {}
+			uint32_t m_vertexCount, m_instanceCount, m_firstVertex, m_firstInstance;
+		};
 		
 	public:
 		Unit(RootUnit&);
@@ -70,6 +76,7 @@ namespace Rendering
 		Unit& in(Named<vk::SamplerAddressMode>);
 		Unit& in(Binding<ResourcePtr<Texture>>);
 		Unit& in(PushConstant);
+		Unit& in(Draw);
 		Unit& out(Texture&);
 
 		static void test();

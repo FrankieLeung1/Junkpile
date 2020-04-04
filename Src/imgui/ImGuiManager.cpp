@@ -8,6 +8,9 @@ ImGuiManager::ImGuiManager() :
 	m_persistence(NewPtr, "imgui.lua", File::CreateIfDoesNotExist)
 {
 	//setMicrosoftStyle();
+
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; });
 }
 
 ImGuiManager::~ImGuiManager()
@@ -27,11 +30,6 @@ void ImGuiManager::update()
 		fn.call();
 
 	ImGui::EndFrame();
-}
-
-void ImGuiManager::render()
-{
-	
 }
 
 bool* ImGuiManager::win(const char* name, const char* category)

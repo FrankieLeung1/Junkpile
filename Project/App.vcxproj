@@ -438,7 +438,9 @@
     <ClCompile Include="..\Src\Rendering\Unit_Vulkan.cpp" />
     <ClCompile Include="..\Src\Rendering\VulkanHelpers.cpp" />
     <ClCompile Include="..\Src\Resources\ResourceManager.cpp" />
+    <ClCompile Include="..\Src\Scene\CameraSystem.cpp" />
     <ClCompile Include="..\Src\Scene\TileLevel.cpp" />
+    <ClCompile Include="..\Src\Scene\TransformSystem.cpp" />
     <ClCompile Include="..\Src\Scripts\Python.cpp" />
     <ClCompile Include="..\Src\Scripts\PythonRegisterer.cpp" />
     <ClCompile Include="..\Src\Scripts\ScriptManager.cpp" />
@@ -690,7 +692,9 @@
     <ClInclude Include="..\Src\Rendering\Unit.h" />
     <ClInclude Include="..\Src\Rendering\VulkanHelpers.h" />
     <ClInclude Include="..\Src\Resources\ResourceManager.h" />
+    <ClInclude Include="..\Src\Scene\CameraSystem.h" />
     <ClInclude Include="..\Src\Scene\TileLevel.h" />
+    <ClInclude Include="..\Src\Scene\TransformSystem.h" />
     <ClInclude Include="..\Src\Scripts\Python.h" />
     <ClInclude Include="..\Src\Scripts\PythonRegisterer.h" />
     <ClInclude Include="..\Src\Scripts\ScriptManager.h" />

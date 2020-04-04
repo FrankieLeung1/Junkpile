@@ -137,8 +137,6 @@ public:
 	template<typename Resource, typename... Args> ResourceData* addRef(Args&&...);
 	void release(ResourceData*);
 
-	void process();
-
 	void imgui();
 
 protected:

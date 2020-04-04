@@ -90,12 +90,6 @@ bool Shader::compile(std::string* outError)
 	return true;
 }
 
-void Shader::addBindings(const std::vector<Binding>& bindings)
-{
-	m_bindings.insert(m_bindings.end(), bindings.begin(), bindings.end());
-	CHECK_F(std::unique(m_bindings.begin(), m_bindings.end()) == m_bindings.end());
-}
-
 Shader::Type Shader::getType() const
 {
 	return m_type;
@@ -130,15 +124,7 @@ void main()
 });";
 
 	ResourcePtr<Shader> vertShader(NewPtr, Shader::Type::Vertex, vertexCode);
-	LOG_IF_F(ERROR, !vertShader->compile(nullptr), "Vertex Failed\n");
 	std::size_t offset = 0;
-	vertShader->addBindings({
-		{ Binding::Type::Constant, 0, vk::Format::eR32G32Sfloat, 0 },
-		{ Binding::Type::Constant, 1, vk::Format::eR32G32Sfloat, offset += sizeof(float) * 2 },
-		{ Binding::Type::Constant, 2, vk::Format::eR8G8B8Unorm,  offset += sizeof(float) * 2 },
-		{ Binding::Type::PushConstant, 0, vk::Format::eR32G32Sfloat, offset += sizeof(int) },
-		{ Binding::Type::PushConstant, 1, vk::Format::eR32G32Sfloat, offset += sizeof(int) }
-	});
 	
 	char pixelCode[] = R";(#version 450 core
 layout(location = 0) out vec4 fColor;
@@ -151,10 +137,6 @@ void main()
 );";
 
 	ResourcePtr<Shader> fragShader(NewPtr, Shader::Type::Pixel, pixelCode);
-	LOG_IF_F(ERROR, !fragShader->compile(nullptr), "Pixel Failed\n");
-	fragShader->addBindings({
-		{ Binding::Type::Constant, 0, vk::Format::eR32G32B32A32Sfloat, 0 }
-	});
 }
 
 Shader::ShaderLoader* Shader::createLoader(Type type, const char* code)

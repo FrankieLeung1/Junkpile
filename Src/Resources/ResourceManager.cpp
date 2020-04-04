@@ -160,11 +160,6 @@ void ResourceManager::release(ResourceData* data)
 	}
 }
 
-void ResourceManager::process()
-{
-
-}
-
 void ResourceManager::imgui()
 {
 	ResourcePtr<ImGuiManager> im;

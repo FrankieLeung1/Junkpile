@@ -26,6 +26,7 @@ public:
 		T& operator*();
 		T* operator->();
 		Iterator operator+(std::size_t i);
+		std::size_t operator-(const Iterator&) const;
 		Iterator& operator++();
 		Iterator operator++(int);
 		bool operator!=(const Iterator&) const;
@@ -76,6 +77,13 @@ m_size(0)
 template<typename T, typename TypeHelper>
 VariableSizedMemoryPool<T, TypeHelper>::~VariableSizedMemoryPool()
 {
+	auto it = begin();
+	while (it != end())
+	{
+		auto next = it; ++next;
+		TypeHelper::destruct(&(*it));
+		it = next;
+	}
 }
 
 template<typename T, typename TypeHelper>
@@ -188,6 +196,19 @@ typename VariableSizedMemoryPool<T, TypeHelper>::Iterator VariableSizedMemoryPoo
 	Iterator it = *this;
 	it.advance(i);
 	return it;
+}
+
+template<typename T, typename TypeHelper>
+std::size_t VariableSizedMemoryPool<T, TypeHelper>::Iterator::operator-(const Iterator& other) const
+{
+	std::size_t diff = 0;
+	Iterator it = *this;
+	while (it != other)
+	{
+		it.advance(1);
+		diff++;
+	}
+	return diff;
 }
 
 template<typename T, typename TypeHelper>

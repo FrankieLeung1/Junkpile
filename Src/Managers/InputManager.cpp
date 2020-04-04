@@ -1,10 +1,14 @@
 #include "stdafx.h"
 #include "InputManager.h"
+#include "EventManager.h"
 
 InputManager::InputManager():
 m_wantsTrayContext(false)
 {
 	memset(m_keys, sizeof(m_keys), 0x00);
+
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
 }
 
 InputManager::~InputManager()
@@ -66,7 +70,9 @@ void InputManager::setWantsTrayContext(bool b)
 
 void InputManager::setCursorPos(float x, float y)
 {
-	m_x = x; 
+	m_prevX = m_x;
+	m_prevY = m_y;
+	m_x = x;
 	m_y = y;
 }
 

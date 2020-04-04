@@ -23,19 +23,23 @@ void EventManager::process(float delta)
 
 		while (current < end)
 		{
-			EventBase* message = (EventBase*)current;
+			EventBase* event = (EventBase*)current;
 
-			FunctionPool& listeners = m_listeners[message->m_id];
-			for (auto it = listeners.begin(); it != listeners.end();)
+			std::map<int, FunctionPool>& map = m_listeners[event->m_id];
+			for (auto it = map.rbegin(); it != map.rend(); ++it)
 			{
-				ListenerResult r = (*it)(message);
-				if (r == ListenerResult::Discard)
-					it = listeners.erase(it);
-				else
-					++it;
+				FunctionPool& listeners = it->second;
+				for (auto it = listeners.begin(); it != listeners.end();)
+				{
+					ListenerResult r = (*it)(event);
+					if (r == ListenerResult::Discard)
+						it = listeners.erase(it);
+					else
+						++it;
+				}
 			}
 
-			current += message->m_size;
+			current += event->m_size;
 		}
 
 		clearOneFrameBuffer();
@@ -44,18 +48,20 @@ void EventManager::process(float delta)
 	auto prevIt = m_persistentEvents.before_begin();
 	for (auto& it = m_persistentEvents.begin(); it != m_persistentEvents.end();)
 	{
-		FunctionPool& listeners = m_listeners[(*it)->m_id];
-		for (auto& listener = listeners.begin(); listener != listeners.end();)
-		{
-			EventBase* event = it->get();
-			ListenerResult r = (*listener)(event);
-			if (r == ListenerResult::Discard)
-				listener = listeners.erase(listener);
-			else
-				++listener;
-		}
-
 		PersistentEvent<void>* event = (PersistentEvent<void>*)(it->get());
+		std::map<int, FunctionPool>& map = m_listeners[event->m_id];
+		for (auto it = map.rbegin(); it != map.rend(); ++it)
+		{
+			FunctionPool& listeners = it->second;
+			for (auto& listener = listeners.begin(); listener != listeners.end();)
+			{
+				ListenerResult r = (*listener)(event);
+				if (r == ListenerResult::Discard)
+					listener = listeners.erase(listener);
+				else
+					++listener;
+			}
+		}
 
 		if (event->m_eventLife >= event->m_eventDeath)
 		{
@@ -113,7 +119,15 @@ void EventManager::test()
 	test->m_eventDeath = 5.0f;
 	em.addListener<TestEvent>([](const EventBase* b) {
 		TestEvent* t = (TestEvent*)b;
-		LOG_F(INFO, "We did it! %f %f\n", t->m_eventLife, t->m_eventDeath);
+		LOG_F(INFO, "Persistent! %f %f\n", t->m_eventLife, t->m_eventDeath);
+		return EventManager::ListenerResult::Persist;
+	});
+
+	struct TestEventOneShot : Event<TestEventOneShot> {};
+	em.addOneFrameEvent<TestEventOneShot>();
+	em.addListener<TestEventOneShot>([](const EventBase* b) {
+		TestEventOneShot* t = (TestEventOneShot*)b;
+		LOG_F(INFO, "One Shot!\n");
 		return EventManager::ListenerResult::Persist;
 	});
 

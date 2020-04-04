@@ -10,6 +10,8 @@
 #include "../Rendering/Unit.h"
 #include "../Rendering/Buffer.h"
 #include "../Misc/Misc.h"
+#include "../Scene/CameraSystem.h"
+#include "../Scene/TransformSystem.h"
 
 SpriteSystem::SpriteSystem()
 {
@@ -44,6 +46,7 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 {
 	ResourcePtr<Rendering::Device> device;
 	ResourcePtr<ComponentManager> components;
+	ResourcePtr<TransformSystem> transforms;
 	ResourcePtr<SpriteSystem> sprites;
 	ResourcePtr<File> spriteFile(NewPtr, "TestGif.gif");
 
@@ -51,10 +54,8 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	ResourcePtr<Rendering::TextureAtlas> atlas = g_resourceManager->addLoadedResource(new Rendering::TextureAtlas, "Texture Atlas");
 	data.loadFromGif(std::move(spriteFile), *device);
 	atlas->addSprite(&data);
-
 	atlas->setPadding(2);
 	atlas->layoutAtlas();
-	//vf->uploadTexture(&std::get<Rendering::TextureAtlas>(data));
 
 	ResourcePtr<Rendering::Texture> texture(ResourcePtr<Rendering::Texture>::NoOwnershipPtr{}, createTestResource<Rendering::Texture>());
 	Rendering::Unit upload = device->createUnit();
@@ -88,13 +89,11 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		"layout(location = 0) out vec2 UV;\n"
 		"void main()\n"
 		"{\n"
-		//"	gl_Position = vec4(aPos, 0, 1);\n"
 		"	gl_Position = pushConsts.vp * vec4(aPos.xy, 0.0, 1.0);\n"
 		"	UV = aUV;\n"
 		"}";
 
 	ResourcePtr<Rendering::Shader> vertShader(NewPtr, Rendering::Shader::Type::Vertex, vertexCode);
-	//vertShader->addBindings({ {Rendering::Binding::Type::Constant, 0, vk::Format::eR32G32Sfloat, 0 } });
 
 	char pixelCode[] =
 		"#version 450 core\n"
@@ -104,18 +103,15 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		"void main()\n"
 		"{\n"
 		"	fColor = texture(sTexture, UV.st);\n"
-		//"	fColor = vec4(UV, 0.0, 1.0);\n"
 		"}";
 
 	ResourcePtr<Rendering::Shader> fragShader(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
-	//fragShader->addBindings({ {Rendering::Binding::Type::Constant, 0, vk::Format::eR8G8B8Unorm, 0} });
-
 	auto entity = components->addEntity<PositionComponent, SpriteComponent>();
 	SpriteComponent* sprite = entity.get<SpriteComponent>();
 
-	//auto resolution = std::get<1>(device->getFrameBuffer());
-	float halfWidth = 1280.0f / 2.0f, halfHeight = 720.0f / 2.0f;
-	glm::mat4x4 ortho = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight);
+	auto camera = components->addEntity<TransformComponent, CameraComponent>().getEntity();
+	ResourcePtr<CameraSystem> cameras;
+
 	update = [vbuffer, data, atlas](float delta)
 	{
 		ResourcePtr<ComponentManager> components;
@@ -140,24 +136,27 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 			map[3] = Vert{ { halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
 		}
 		
-		vbuffer->unmap();		
+		vbuffer->unmap();
 	};
 
 	auto& clearColour = m_clearColour;
-	render = [vertShader, fragShader, ibuffer, vbuffer, texture, &clearColour, ortho]()
+	render = [vertShader, fragShader, ibuffer, vbuffer, texture, &clearColour, camera]()
 	{
-		std::vector<char> pushData(sizeof(glm::mat4));
-		memcpy(&pushData[0], &ortho, sizeof(glm::mat4));
-
 		ResourcePtr<Rendering::Device> device;
+		ResourcePtr<CameraSystem> cameras;
+		glm::mat4x4 cameraMatrix = cameras->getMatrix(camera);
+		std::vector<char> pushData(sizeof(glm::mat4));
+		memcpy(&pushData[0], &cameraMatrix, sizeof(glm::mat4));
+
 		Rendering::Unit unit(device->getRootUnit());
 		unit.in(vbuffer);
 		unit.in(ibuffer);
 		unit.in(vertShader);
 		unit.in(fragShader);
 		unit.in(std::array<float, 4>{ clearColour.x, clearColour.y, clearColour.z, clearColour.w, });
-		unit.in({vk::ShaderStageFlagBits::eFragment, 0, texture});
+		unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
 		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
+		unit.in({ 4, 1, 0, 0 });
 		
 		unit.submit();
 	};

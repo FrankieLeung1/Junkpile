@@ -39,8 +39,6 @@ namespace Rendering
 		void setCode(Type, const char*);
 		bool compile(std::string*);
 
-		void addBindings(const std::vector<Binding>& bindings);
-
 		Type getType() const;
 		static void test();
 
@@ -68,8 +66,6 @@ namespace Rendering
 		Type m_type;
 		std::string m_code;
 		std::size_t m_hash;
-
-		std::vector<Binding> m_bindings;
 		
 		vk::ShaderModule m_module;
 	};

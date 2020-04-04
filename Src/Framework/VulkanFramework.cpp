@@ -25,6 +25,7 @@
 #include "../Rendering/RenderingDevice.h"
 #include "../Rendering/Texture.h"
 #include "../Misc/Misc.h"
+#include "../Managers/EventManager.h"
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #ifdef _DEBUG
@@ -87,6 +88,10 @@ m_clearColour(0.45f, 0.55f, 0.6f, 1.0f),
 m_windowTitle("App Window")
 {
 	initImGui(false);
+
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 9);
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->render(); return EventManager::ListenerResult::Persist; }, -10);
 }
 
 VulkanFramework::~VulkanFramework()
@@ -345,6 +350,7 @@ int VulkanFramework::initImGui(bool systemTray)
 	ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 
 	m_device->createRenderPass((vk::Format)wd->SurfaceFormat.format);
+	m_device->setFrameBuffer(nullptr, { wd->Width, wd->Height });
 
 	// Load Fonts
 	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -443,9 +449,6 @@ void VulkanFramework::update()
 	if (g_SwapChainRebuild)
 	{
 		g_SwapChainRebuild = false;
-		m_device->getDevice().waitIdle();
-		m_device->destroySwapChainRelatedObjects();
-		
 		ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 		ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
 		m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format);

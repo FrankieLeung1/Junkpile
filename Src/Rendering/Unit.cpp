@@ -162,12 +162,15 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 		}
 	}
 
-	if(!vertices || !indices || !bindTextures[0])
+	if(!vertices || !bindTextures[0])
 		return false;
 
 	vk::Buffer vBuffer = vertices->getVkBuffer();
 	std::array<vk::DeviceSize, 1> vertexOffset = { 0 };
 	buffer.bindVertexBuffers(0, vBuffer, vertexOffset);
+	if(indices)
+		buffer.bindIndexBuffer(indices->getVkBuffer(), 0, indices->getStride() == 4 ? vk::IndexType::eUint32 : vk::IndexType::eUint16);
+
 	buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 	buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, std::array<vk::DescriptorSet, 1>{descriptorSet}, std::array<uint32_t, 0>{0});
 	buffer.setViewport(0, viewports);
@@ -195,7 +198,14 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 	renderPassInfo.pClearValues = &clearValues;
 	renderPassInfo.renderArea = scissor;
 	buffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-	buffer.draw(4, 1, 0, 0);
+	for (Any& any : m_data->m_settings)
+	{
+		if (any.isType<Draw>())
+		{
+			const Draw& d = any.get<Draw>();
+			buffer.draw(d.m_vertexCount, d.m_instanceCount, d.m_firstVertex, d.m_firstInstance);
+		}
+	}
 	buffer.endRenderPass();
 	
 	return true;
@@ -238,6 +248,7 @@ Unit& Unit::in(Named<vk::Filter> v) { return _in(v); }
 Unit& Unit::in(Named<vk::SamplerAddressMode> v) { return _in(v); }
 Unit& Unit::in(Binding<ResourcePtr<Texture>> v) { return _in(v); }
 Unit& Unit::in(PushConstant v) { return _in(v); }
+Unit& Unit::in(Draw v) { return _in(v); }
 Unit& Unit::out(Texture& v) { return _out(v); }
 
 // RootUnit

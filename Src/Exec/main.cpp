@@ -116,29 +116,23 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	std::function<void(float)> testUpdate;
 	std::function<void()> testRender;
 	tests(testUpdate, testRender);
-
-	while (!vf->shouldQuit())
-	{
-		i->update();
-		rd->update();
-		t->update();
-		f->update();
-		ps->processWorld(0.16f);
-		ps->process(0.16f);
-		r.process();
-		em->process(t->getDelta());
-		vf->update();
-		m->update();
-		if(testUpdate)
-			testUpdate(t->getDelta());
+	em->addListener<UpdateEvent>([testUpdate, testRender](const UpdateEvent* e) {
+		if (testUpdate)
+			testUpdate(e->m_delta);
 
 		if (testRender)
 			testRender();
+		
+		return EventManager::ListenerResult::Persist; 
+	});
 
-		rd->submitAll();
+	while (!vf->shouldQuit())
+	{
+		t->update();
 
-		vf->render();
-		m->render();
+		auto* update = em->addOneFrameEvent<UpdateEvent>();
+		update->m_delta = t->getDelta();
+		em->process(update->m_delta);
 	}
 
 	return 0;

@@ -60,11 +60,11 @@ namespace Rendering
 		vk::ShaderModule createObject(const vk::ShaderModuleCreateInfo&);
 		template<typename T> T& getObject(std::size_t id) const;
 
+		void destroyObject(vk::RenderPass);
+
 		vk::DescriptorSet allocateObject(const vk::DescriptorSetAllocateInfo&);
 
 		void updateObject(const std::vector<vk::WriteDescriptorSet>&);
-
-		void destroySwapChainRelatedObjects();
 
 		void imgui();
 

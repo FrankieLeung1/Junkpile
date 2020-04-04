@@ -43,6 +43,9 @@ m_world(nullptr)
 	m_world->setGravity(btVector3(0, 10, 0));
 
 	m_world->setInternalTickCallback([](btDynamicsWorld* world, btScalar timeStep) { ((PhysicsSystem*)world->getWorldUserInfo())->tickCallback(world, timeStep); }, this);
+
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->processWorld(0.16f); this->process(0.16f); return EventManager::ListenerResult::Persist; }, 9);
 }
 
 PhysicsSystem::~PhysicsSystem()

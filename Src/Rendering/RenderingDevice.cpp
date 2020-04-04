@@ -6,6 +6,7 @@
 #include "../imgui/ImGuiManager.h"
 #include "../Managers/InputManager.h"
 #include "../Misc/Misc.h"
+#include "../Managers/EventManager.h"
 #include "Unit.h"
 
 using namespace Rendering;
@@ -23,6 +24,9 @@ m_rootUnit(new RootUnit()),
 m_selectedUnit(-1),
 m_selectedInOut(-1)
 {
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->submitAll(); return EventManager::ListenerResult::Persist; }, -9);
 	
 }
 
@@ -446,19 +450,16 @@ void Device::updateObject(const std::vector<vk::WriteDescriptorSet>& info)
 	m_device.updateDescriptorSets((uint32_t)info.size(), &info[0], 0, nullptr);
 }
 
-void Device::destroySwapChainRelatedObjects()
+void Device::destroyObject(vk::RenderPass pass)
 {
-	for (auto it = m_objects.begin(); it != m_objects.end();)
+	for (auto& it = m_objects.begin(); it != m_objects.end(); ++it)
 	{
 		auto* rp = it->second.getPtr<vk::RenderPass>();
-		if (rp)
+		if (rp  && *rp == pass)
 		{
 			m_device.destroyRenderPass(*rp);
-			it = m_objects.erase(it);
-		}
-		else
-		{
-			++it;
+			m_objects.erase(it);
+			return;
 		}
 	}
 }

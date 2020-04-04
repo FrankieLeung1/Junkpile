@@ -27,4 +27,5 @@ protected:
 	int m_keys[256];
 	bool m_hasFocus;
 	float m_x, m_y;
+	float m_prevX, m_prevY;
 };

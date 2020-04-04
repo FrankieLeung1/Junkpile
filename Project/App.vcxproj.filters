@@ -486,6 +486,12 @@
     <ClCompile Include="..\Src\Rendering\Unit_Vulkan.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Scene\CameraSystem.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Scene\TransformSystem.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1237,6 +1243,12 @@
     </ClInclude>
     <ClInclude Include="..\External\Fossilize\varint.hpp">
       <Filter>External\Fossilize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scene\CameraSystem.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scene\TransformSystem.h">
+      <Filter>Header Files\Scene</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

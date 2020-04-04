@@ -20,7 +20,6 @@ public:
 	void setMicrosoftStyle();
 
 	void update();
-	void render();
 
 	bool* win(const char* name, const char* category = nullptr);
 
@@ -58,7 +57,6 @@ void ImGuiManager::imguiLoop(Pred& pred)
 	while (!pred())
 	{
 		update();
-		render();
 		fc->render();
 
 		if (fc->shouldQuit())

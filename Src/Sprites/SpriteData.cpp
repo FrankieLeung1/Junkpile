@@ -62,7 +62,7 @@ static void frame(void* ud, GIF_WHDR* whdr)
 		for (int x = 0; x < whdr->frxd; x++)
 		{
 			uint8_t index = whdr->bptr[(y * whdr->frxd) + x];
-			if (index != whdr->tran)
+			if (index != whdr->tran && index != whdr->bkgd)
 			{
 				current->r = whdr->cpal[index].R;
 				current->g = whdr->cpal[index].G;
