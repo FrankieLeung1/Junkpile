@@ -8,7 +8,7 @@ m_wantsTrayContext(false)
 	memset(m_keys, sizeof(m_keys), 0x00);
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 11);
 }
 
 InputManager::~InputManager()

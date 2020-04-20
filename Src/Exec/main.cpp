@@ -34,12 +34,13 @@
 #include "../Sprites/Sprite.h"
 #include "../Misc/ClassMask.h"
 #include "../Misc/WindowRecorder.h"
+#include "../Generators/TextureGenerator.h"
 
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
 {
 	//Any::test();
 	//Meta::LuaRegisterer::test();
-	Sprite::test();
+	//Sprite::test();
 	//physicsTest();
 
 	/*struct Test
@@ -56,6 +57,8 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//Rendering::Shader::test();
 	//EventManager::test();
 	//functionTest();
+
+	//TextureGenerator::test();
 
 	//WindowRecorder::test();
 	SpriteSystem::test(update, render);
@@ -76,7 +79,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	loguru::init(__argc, __argv);
 	initLoggingForVisualStudio("App.log");
 
-	ResourceManager r;
+	ResourceManager r; r.init();
 	ResourcePtr<VulkanFramework> vf;
 	ResourcePtr<TimeManager> t;
 	ResourcePtr<FileManager> f;
@@ -110,7 +113,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	r.startLoading();
 	r.setAutoStartTasks(true);
 
-	sm->registerObject<Meta::MetaTest>("MetaTest");
+	//sm->registerObject<Meta::MetaTest>("MetaTest");
 	//sm->runScriptsInFolder("Tray");
 
 	std::function<void(float)> testUpdate;
@@ -123,7 +126,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		if (testRender)
 			testRender();
 		
-		return EventManager::ListenerResult::Persist; 
+		return EventManager::ListenerResult::Persist;
 	});
 
 	while (!vf->shouldQuit())
@@ -132,8 +135,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 		auto* update = em->addOneFrameEvent<UpdateEvent>();
 		update->m_delta = t->getDelta();
+		update->m_frame = t->getFrame();
 		em->process(update->m_delta);
 	}
 
+	deleteTestResources();
 	return 0;
 }

@@ -10,6 +10,14 @@
 #include "../Resources/ResourceManager.h"
 
 using namespace Rendering;
+Unit::Unit() :
+m_data(std::make_shared<Data>()),
+m_submitted(false)
+{
+	ResourcePtr<Device> device;
+	m_data->m_root = &device->getRootUnit();
+}
+
 Unit::Unit(RootUnit& root):
 m_data(std::make_shared<Data>()),
 m_submitted(false)

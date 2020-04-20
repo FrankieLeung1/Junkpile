@@ -56,6 +56,11 @@ int LuaRegisterer::visit(const char* name, std::string*)
 	return 0;
 }
 
+int LuaRegisterer::visit(const char* name, void** object, const Object&)
+{
+	return 0;
+}
+
 int LuaRegisterer::visit(const char* name, void* object, const Object&)
 {
 	return 0;
@@ -81,7 +86,7 @@ int LuaRegisterer::endArray(std::size_t)
 	return 0;
 }
 
-int LuaRegisterer::startFunction(const char* name, bool hasReturn)
+int LuaRegisterer::startFunction(const char* name, bool hasReturn, bool isConstructor)
 {
 	return 0;
 }

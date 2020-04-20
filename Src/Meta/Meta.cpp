@@ -16,7 +16,8 @@ m_baseType(type)
 Object::Object(const char* name):
 Base(sizeof(Object), BaseType::Object),
 m_name(name),
-m_factory()
+m_factory(),
+m_copyOperator(nullptr)
 {
 
 }
@@ -30,6 +31,7 @@ Object::~Object()
 		case Base::BaseType::Object: static_cast<Object&>(it).~Object(); break;
 		case Base::BaseType::Variable: static_cast<Variable&>(it).~Variable(); break;
 		case Base::BaseType::Function: static_cast<Function&>(it).~Function(); break;
+		case Base::BaseType::StaticFunction: static_cast<StaticFunction&>(it).~StaticFunction(); break;
 		case Base::BaseType::Hook: static_cast<Hook&>(it).~Hook(); break;
 		}
 	}
@@ -71,6 +73,24 @@ Any Object::callWithVisitor(const char* name, void* instance, Visitor* v)
 	return nullptr;
 }
 
+Any Object::callWithVisitor(const char* name, Visitor* v)
+{
+	for (const auto& it : m_variables)
+	{
+		if (it.m_baseType == Base::BaseType::StaticFunction)
+		{
+			StaticFunction& func = (StaticFunction&)it;
+			if (strcmp(name, func.getName()) == 0)
+			{
+				return func.callWithVisitor(v);
+			}
+		}
+	}
+
+	LOG_F(ERROR, "callWithVisitor failed (%s)\n", name);
+	return nullptr;
+}
+
 void* Object::construct()
 {
 	if (!m_factory)
@@ -90,6 +110,11 @@ void Object::destruct(void* v)
 		return;
 	}
 	m_factory.destruct(v);
+}
+
+void Object::copyTo(void* dest, void* src) const
+{
+	m_copyOperator(dest, src);
 }
 
 int Object::visit(Visitor* v, void* o) const
@@ -118,6 +143,13 @@ int Object::visit(Visitor* v, void* o) const
 			{
 				Function& func = (Function&)it;
 				func.visit(v, o);
+			}
+			break;
+
+			case Base::BaseType::StaticFunction:
+			{
+				StaticFunction& func = (StaticFunction&)it;
+				func.visit(v);
 			}
 			break;
 
@@ -159,7 +191,7 @@ int Meta::Function::visit(Visitor* v, void* object)
 		}
 	}
 
-	return m_implementation->visit(v, m_name, object, argNames, defaults, m_defaultCount);
+	return m_implementation->visit(v, m_name, object, false, argNames, defaults, m_defaultCount);
 }
 
 Any Meta::Function::callWithVisitor(Visitor* v, void* ptr)
@@ -169,6 +201,42 @@ Any Meta::Function::callWithVisitor(Visitor* v, void* ptr)
 }
 
 const char* Meta::Function::getName() const
+{
+	return m_name;
+}
+
+StaticFunction::~StaticFunction()
+{
+
+}
+
+int Meta::StaticFunction::visit(Visitor* v)
+{
+	const char** argNames = m_argCount ? (const char**)(this + 1) : nullptr;
+	Any* defaults = nullptr;
+	if (m_defaultCount > 0)
+	{
+		if (argNames)
+		{
+			char* bytes = (char*)(this + 1);
+			defaults = (Any*)(bytes + (m_argCount * sizeof(char*)));
+		}
+		else
+		{
+			defaults = (Any*)(this + 1);
+		}
+	}
+
+	return m_implementation->visit(v, m_name, m_isConstructor, nullptr, argNames, defaults, m_defaultCount);
+}
+
+Any StaticFunction::callWithVisitor(Visitor* v)
+{
+	const char** bytes = (const char**)(this + 1);
+	return m_implementation->callWithVisitor(v, m_pointerBuffer, nullptr, m_argCount ? bytes : nullptr, (Any*)(bytes + m_argCount), m_defaultCount);
+}
+
+const char* StaticFunction::getName() const
 {
 	return m_name;
 }
@@ -243,6 +311,39 @@ Object Meta::instanceMeta<MetaTest::InnerMetaTest>()
 {
 	return Object("InnerMetaTest")
 		.var("variable1", &MetaTest::InnerMetaTest::m_variable1);
+}
+
+template<> Object Meta::instanceMeta<glm::vec4>()
+{
+	return Object("glm::vec4")
+		.defaultFactory<glm::vec4>()
+		.constructor<glm::vec4, float, float, float, float>()
+		.copyOperator<glm::vec4>()
+		.var("x", &glm::vec4::x)
+		.var("y", &glm::vec4::y)
+		.var("z", &glm::vec4::z)
+		.var("w", &glm::vec4::w);
+}
+
+template<> Object Meta::instanceMeta<glm::vec3>()
+{
+	return Object("glm::vec3")
+		.defaultFactory<glm::vec3>()
+		.constructor<glm::vec3, float, float, float>()
+		.copyOperator<glm::vec3>()
+		.var("x", &glm::vec3::x)
+		.var("y", &glm::vec3::y)
+		.var("z", &glm::vec3::z);
+}
+
+template<> Object Meta::instanceMeta<glm::vec2>()
+{
+	return Object("glm::vec2")
+		.defaultFactory<glm::vec2>()
+		.constructor<glm::vec2, float, float>()
+		.copyOperator<glm::vec2>()
+		.var("x", &glm::vec2::x)
+		.var("y", &glm::vec2::y);
 }
 
 void Meta::test()

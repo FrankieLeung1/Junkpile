@@ -13,7 +13,7 @@ m_lastFileChange(0)
 	m_fileWatcher.addWatch(L"../Res/", this, true);
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; });
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
 }
 
 FileManager::~FileManager()

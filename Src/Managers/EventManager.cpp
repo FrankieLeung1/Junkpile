@@ -11,15 +11,17 @@ EventManager::EventManager()
 
 EventManager::~EventManager()
 {
-	clearOneFrameBuffer();
+	clearEventBuffer(m_oneFrameBuffer, m_oneFrameBufferTypes);
 }
 
 void EventManager::process(float delta)
 {
-	if (!m_oneFrameBuffer.empty())
+	std::vector<char> processingEvents = std::move(m_oneFrameBuffer);
+	std::vector<TypeHelper*> types = std::move(m_oneFrameBufferTypes);
+	while(!processingEvents.empty())
 	{
-		char* current = &m_oneFrameBuffer.front();
-		char* end = &m_oneFrameBuffer.back() + 1;
+		char* current = &processingEvents.front();
+		char* end = &processingEvents.back() + 1;
 
 		while (current < end)
 		{
@@ -42,7 +44,7 @@ void EventManager::process(float delta)
 			current += event->m_size;
 		}
 
-		clearOneFrameBuffer();
+		clearEventBuffer(processingEvents, types);
 	}
 
 	auto prevIt = m_persistentEvents.before_begin();
@@ -139,16 +141,16 @@ void EventManager::test()
 	}
 }
 
-void EventManager::clearOneFrameBuffer()
+void EventManager::clearEventBuffer(std::vector<char>& buffer, std::vector<TypeHelper*>& types)
 {
-	auto it = m_oneFrameBuffer.begin();
-	auto typeIt = m_oneFrameBufferTypes.begin();
-	while (it != m_oneFrameBuffer.end())
+	auto it = buffer.begin();
+	auto typeIt = types.begin();
+	while (it != buffer.end())
 	{
 		(*typeIt)->destruct(&(*it));
 		std::advance(it, (*typeIt)->getSize());
 		++typeIt;
 	}
-	m_oneFrameBuffer.clear();
-	m_oneFrameBufferTypes.clear();
+	buffer.clear();
+	types.clear();
 }

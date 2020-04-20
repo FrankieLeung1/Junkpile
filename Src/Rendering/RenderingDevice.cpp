@@ -16,7 +16,7 @@ m_instance(),
 m_physicalDevice(),
 m_device(),
 m_queue(),
-m_resourceHandle(ResourcePtr<Device>::EmptyPtr{}),
+m_resourceHandle(EmptyPtr),
 m_pipelineCache(),
 m_renderPass(),
 m_vma(nullptr),
@@ -25,15 +25,13 @@ m_selectedUnit(-1),
 m_selectedInOut(-1)
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->submitAll(); return EventManager::ListenerResult::Persist; }, -9);
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 11);
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->submitAll(); return EventManager::ListenerResult::Persist; }, -10);
 	
 }
 
 Device::~Device()
 {
-	deleteTestResources();
-
 	delete m_rootUnit;
 
 	for (auto& value : m_objects)
@@ -249,35 +247,13 @@ void Device::submitAll()
 	submitInfo.pCommandBuffers = &commandBuffer;
 	submitInfo.commandBufferCount = 1;
 	m_queue.submit(1, &submitInfo, vk::Fence());
-	m_device.waitIdle();
 
 	m_rootUnit->m_submitted.clear();
 	resources.m_commandBuffersUsed = 0;
 }
 
-void Device::waitFor(vk::Fence fence, FunctionBase<void>* f)
-{
-	std::lock_guard<std::mutex> l(m_mutex);
-	m_fenceCallbacks.push_back({ fence, f });
-}
-
 void Device::update()
 {
-	for (auto it = m_fenceCallbacks.begin(); it != m_fenceCallbacks.end();)
-	{
-		vk::Result r = m_device.waitForFences(1, &it->m_fence, true, 0);
-		checkVkResult(r);
-
-		if (r == vk::Result::eTimeout)
-		{
-			++it;
-			continue;
-		}
-
-		(*it->m_callback)();
-		it = m_fenceCallbacks.erase(it);
-	}
-
 	m_device.waitIdle();
 
 	ThreadResources* threadRes = getThreadResources();

@@ -31,6 +31,14 @@ struct PersistentEvent : public Event<T>
 struct UpdateEvent : public Event<UpdateEvent>
 {
 	float m_delta;
+	unsigned int m_frame;
+};
+
+struct ResourceStateChanged : public Event<ResourceStateChanged>
+{
+	ResourceData* m_resourceData;
+	ResourceData::State m_newState;
+	ResourceStateChanged(ResourceData* data = nullptr, ResourceData::State state = ResourceData::State::WAITING) :m_resourceData(data), m_newState(state) {}
 };
 
 class EventManager : public SingletonResource<EventManager>
@@ -56,7 +64,7 @@ public:
 	static void test();
 
 protected:
-	void clearOneFrameBuffer();
+	void clearEventBuffer(std::vector<char>&, std::vector<TypeHelper*>&);
 
 protected:
 	typedef VariableSizedMemoryPool<EventCallback, EventCallback::PoolHelper> FunctionPool;

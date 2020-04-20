@@ -6,6 +6,11 @@
 template<std::size_t BufferSize>
 class AnyWithSize
 {
+
+protected:
+	template<typename T, bool ptr = std::is_pointer<T>::value, bool v = std::is_same<T, void*>::value, bool c = std::is_const<std::remove_pointer<T>::type>::value>
+	struct IsAssignablePointer : public std::bool_constant<false> {};
+	template<typename T> struct IsAssignablePointer<T, true, false, false> : public std::bool_constant<true>{ };
 public:
 	AnyWithSize();
 	template<typename T> AnyWithSize(T&&);
@@ -14,9 +19,14 @@ public:
 	AnyWithSize(AnyWithSize<BufferSize>&);
 	~AnyWithSize();
 
-	template<typename T> bool isType() const;
+	void reset();
+
+	template<typename T, bool = std::is_copy_assignable<T>::value, bool = IsAssignablePointer<T>::value> bool isType() const;
 	template<typename T> T& get();
 	template<typename T> T* getPtr();
+	void* toVoidPtr();
+	void copyTo(void*);
+	void copyDerefTo(void*);
 
 	operator bool() const;
 	bool operator!() const;
@@ -45,15 +55,25 @@ protected:
 		virtual void destruct(void*) =0;
 		virtual void copy(void* dest, void* copy) =0;
 		virtual std::size_t getSize() const =0;
+		virtual void* toVoidPtr(void*) const = 0;
+		virtual void copyTo(void* dest, void* memory) const = 0;
+		virtual void copyDerefTo(void* dest, void* memory) const = 0;
 	};
 
-	template<typename T>
-	struct Impl : public ImplBase
+	template<typename T, bool canCopy> struct ImplCopy;
+	template<typename T> struct ImplCopy<T, true> : public ImplBase { void copyTo(void* dest, void* memory) const; };
+	template<typename T> struct ImplCopy<T, false> : public ImplBase { void copyTo(void* dest, void* memory) const; };
+	template<typename T, bool canCopy, bool isPtr> struct ImplCopyDerefTo : public ImplCopy<T, canCopy> { void copyDerefTo(void*, void*) const; };
+	template<typename T> struct ImplCopyDerefTo<T, true, true> : public ImplCopy<T, true> { void copyDerefTo(void*, void*) const; };
+
+	template<typename T, bool canCopy, bool isPtr>
+	struct Impl : public ImplCopyDerefTo<T, canCopy, isPtr>
 	{
-		static Impl<T> Instance;
+		static Impl<T, canCopy, isPtr> Instance;
 		void destruct(void*);
 		void copy(void* dest, void* copy);
 		std::size_t getSize() const;
+		void* toVoidPtr(void*) const;
 	};
 protected:
 	ImplBase* m_impl;
@@ -110,9 +130,15 @@ AnyWithSize<BufferSize>::~AnyWithSize()
 }
 
 template<std::size_t BufferSize>
-template<typename T> bool AnyWithSize<BufferSize>::isType() const
+void AnyWithSize<BufferSize>::reset()
 {
-	return (static_cast<void*>(m_impl) == static_cast<void*>(&Impl<T>::Instance));
+	destruct();
+}
+
+template<std::size_t BufferSize>
+template<typename T, bool c, bool p> bool AnyWithSize<BufferSize>::isType() const
+{
+	return (static_cast<void*>(m_impl) == static_cast<void*>(&Impl<T, c, p>::Instance));
 }
 
 template<std::size_t BufferSize>
@@ -130,14 +156,14 @@ AnyWithSize<BufferSize>& AnyWithSize<BufferSize>::assignT(T&& t, std::false_type
 }
 
 template<std::size_t BufferSize>
-template<typename T> 
+template<typename T>
 AnyWithSize<BufferSize>& AnyWithSize<BufferSize>::assignT(T t)
 {
 	static_assert(BufferSize >= sizeof(char*), "BufferSize must fit a pointer");
 	using plainT = std::remove_reference<T>::type;
 
 	destruct();
-	m_impl = &Impl<plainT>::Instance;
+	m_impl = &Impl<plainT, std::is_copy_assignable<plainT>::value, IsAssignablePointer<plainT>::value>::Instance;
 	if (BufferSize >= sizeof(plainT))
 	{
 		new(m_buffer) plainT(std::forward<T&&>(t));
@@ -162,6 +188,33 @@ template<std::size_t BufferSize>
 template<typename T> T* AnyWithSize<BufferSize>::getPtr()
 {
 	return isType<T>() ? &get<T>() : nullptr;
+}
+
+template<std::size_t BufferSize>
+void* AnyWithSize<BufferSize>::toVoidPtr()
+{
+	if (!m_impl)
+		return nullptr;
+
+	return m_impl->toVoidPtr(usingInternalBuffer() ? &m_buffer : m_ptr);
+}
+
+template<std::size_t BufferSize>
+void AnyWithSize<BufferSize>::copyTo(void* dest)
+{
+	if (!m_impl)
+		return;
+
+	m_impl->copyTo(dest, usingInternalBuffer() ? &m_buffer : m_ptr);
+}
+
+template<std::size_t BufferSize>
+void AnyWithSize<BufferSize>::copyDerefTo(void* dest)
+{
+	if (!m_impl)
+		return;
+
+	m_impl->copyDerefTo(dest, usingInternalBuffer() ? &m_buffer : m_ptr);
 }
 
 template<std::size_t BufferSize>
@@ -276,29 +329,67 @@ void AnyWithSize<BufferSize>::destruct()
 }
 
 template<std::size_t BufferSize>
-template<typename T>
-void AnyWithSize<BufferSize>::Impl<T>::destruct(void* m)
+template<typename T, bool c, bool p>
+void AnyWithSize<BufferSize>::Impl<T, c, p>::destruct(void* m)
 {
 	static_cast<T*>(m)->~T();
 }
 
 template<std::size_t BufferSize>
-template<typename T>
-void AnyWithSize<BufferSize>::Impl<T>::copy(void* dest, void* copy)
+template<typename T, bool c, bool p>
+void AnyWithSize<BufferSize>::Impl<T, c, p>::copy(void* dest, void* copy)
 {
 	new(dest)T(*static_cast<T*>(copy));
 }
 
 template<std::size_t BufferSize>
-template<typename T>
-std::size_t AnyWithSize<BufferSize>::Impl<T>::getSize() const
+template<typename T, bool c, bool p>
+std::size_t AnyWithSize<BufferSize>::Impl<T, c, p>::getSize() const
 {
 	return sizeof(T);
 }
 
 template<std::size_t BufferSize>
+template<typename T, bool c, bool p>
+void* AnyWithSize<BufferSize>::Impl<T, c, p>::toVoidPtr(void* m) const
+{
+	T* v = static_cast<T*>(m);
+	return (void*)(v);
+}
+
+template<std::size_t BufferSize>
 template<typename T>
-typename AnyWithSize<BufferSize>::Impl<T> AnyWithSize<BufferSize>::Impl<T>::Instance;
+void AnyWithSize<BufferSize>::ImplCopy<T, true>::copyTo(void* dest, void* memory) const
+{
+	*static_cast<T*>(dest) = *static_cast<T*>(memory);
+}
+
+template<std::size_t BufferSize>
+template<typename T>
+void AnyWithSize<BufferSize>::ImplCopy<T, false>::copyTo(void* dest, void* memory) const
+{
+	LOG_F(FATAL, "%s copy not implemented\n", typeid(T).name());
+}
+
+template<std::size_t BufferSize>
+template<typename T, bool canCopy, bool isPtr> 
+void AnyWithSize<BufferSize>::ImplCopyDerefTo<T, canCopy, isPtr>::copyDerefTo(void*, void*) const
+{
+	LOG_F(FATAL, "%s is not a pointer\n", typeid(T).name());
+}
+
+template<std::size_t BufferSize>
+template<typename T>
+void AnyWithSize<BufferSize>::ImplCopyDerefTo<T, true, true>::copyDerefTo(void* dest, void* memory) const
+{
+	auto d = *static_cast<T*>(dest);
+	auto s = *static_cast<T*>(memory);
+	*d = *s;
+}
+
+template<std::size_t BufferSize>
+template<typename T, bool c, bool p>
+typename AnyWithSize<BufferSize>::Impl<T, c, p> AnyWithSize<BufferSize>::Impl<T, c, p>::Instance;
 
 template<std::size_t BufferSize>
 void AnyWithSize<BufferSize>::test()

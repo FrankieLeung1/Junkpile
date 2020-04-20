@@ -18,12 +18,13 @@ namespace Meta
 		int visit(const char* name, int&);
 		int visit(const char* name, float&);
 		int visit(const char* name, std::string&);
+		int visit(const char* name, void* object, const Object&);
 
 		int visit(const char* name, bool*);
 		int visit(const char* name, int*);
 		int visit(const char* name, float*);
 		int visit(const char* name, std::string*);
-		int visit(const char* name, void* object, const Object&);
+		int visit(const char* name, void** object, const Object&);
 
 		int startObject(const char* name, const Meta::Object& objectInfo);
 		int endObject();
@@ -31,7 +32,7 @@ namespace Meta
 		int startArray(const char* name);
 		int endArray(std::size_t);
 
-		int startFunction(const char* name, bool hasReturn);
+		int startFunction(const char* name, bool hasReturn, bool isConstructor);
 		int endFunction();
 
 	protected:
@@ -69,9 +70,11 @@ namespace Meta
 				Any m_default;
 			};
 			std::vector<Arg> m_args;
+			Arg m_return;
 			std::string m_name;
 
-			PyObject* m_callablePyObject;
+			bool m_isConstructor{ false };
+			//PyObject* m_callablePyObject;
 		};
 
 		struct InstanceData;
@@ -89,16 +92,18 @@ namespace Meta
 			int visit(const char* name, int&);
 			int visit(const char* name, float&);
 			int visit(const char* name, std::string&);
+			int visit(const char* name, const char*&);
 			int visit(const char* name, bool*);
 			int visit(const char* name, int*);
 			int visit(const char* name, float*);
 			int visit(const char* name, std::string*);
 			int visit(const char* name, void* object, const Object&);
+			int visit(const char* name, void** object, const Object&);
 			int startObject(const char* name, const Meta::Object& objectInfo);
 			int endObject();
 			int startArray(const char* name);
 			int endArray(std::size_t);
-			int startFunction(const char* name, bool hasReturn);
+			int startFunction(const char* name, bool hasReturn, bool isConstructor);
 			int endFunction();
 
 			int getResult() const;
@@ -114,10 +119,10 @@ namespace Meta
 			int m_result;
 
 			// we store the arg data here. Max 9 of arguments, max size of a 64 bits
-			std::array<char[sizeof(long long)], 9> m_data;
+			std::array<void*, 9> m_data;
 		};
 
-		std::map<std::string, Callable> m_callables;
+		std::vector<Callable> m_callables;
 		Callable* m_visitingFunction;
 		std::string m_name;
 		std::string m_nameWithModule; // Junkpile. + m_name
@@ -127,7 +132,7 @@ namespace Meta
 		struct InstanceData
 		{
 			PyObject_HEAD
-			void* m_ptr;
+			Any m_ptr;
 			PythonRegisterer* m_class;
 		};
 

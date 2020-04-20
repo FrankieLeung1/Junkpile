@@ -7,7 +7,6 @@
 class ComponentManager;
 typedef unsigned int Entity;
 typedef long long ComponentId;
-typedef int SpriteId;
 #define INVALID_ENTITY 0
 
 struct EntityIteratorArgs {

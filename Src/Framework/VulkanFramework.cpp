@@ -90,8 +90,8 @@ m_windowTitle("App Window")
 	initImGui(false);
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 9);
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->render(); return EventManager::ListenerResult::Persist; }, -10);
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->render(); return EventManager::ListenerResult::Persist; }, -11);
 }
 
 VulkanFramework::~VulkanFramework()
@@ -459,12 +459,9 @@ void VulkanFramework::update()
 	BYTE keyboardState[256];
 	GetKeyboardState(keyboardState);
 	for(int i = 0; i < countof(keyboardState); ++i)
-	{
 		inputs->setIsDown(i, (keyboardState[i] & 0xF0) != 0);
-	}
 
-	// TODO: maybe include viewports?
-	int focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED);
+	int focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED) && !ImGui::GetIO().WantCaptureKeyboard;
 	inputs->setHasFocus(focused != 0);
 
 	POINT point;
@@ -482,7 +479,7 @@ void VulkanFramework::update()
 			glfwSetWindowMonitor(m_window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
 		}
 		else
-		{ 
+		{
 			glfwSetWindowMonitor(m_window, nullptr, m_winDimensions[0], m_winDimensions[1], m_winDimensions[2], m_winDimensions[3], 0);
 		}
 	}

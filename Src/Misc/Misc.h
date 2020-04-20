@@ -40,32 +40,32 @@ namespace MiscInternal {
 	template<typename R, typename F, typename Tuple, int ...S> R callFunc(F f, Tuple& args, seq<S...>, std::false_type noReturn) { return f(std::get<S>(args) ...); }
 }
 
-template<typename R, typename... Args>
-R callWithTuple(R(*f)(Args...), std::tuple<Args...>& args)
+template<typename R, typename Tuple, typename... Args>
+R callWithTuple(R(*f)(Args...), Tuple& args)
 {
 	using namespace MiscInternal;
 	return callFunc<R, R(*)(Args...)>(f, args, typename gens<sizeof...(Args)>::type(), std::is_void<R>::type{});
 }
 
-template<typename... Args>
-void callWithTupleNoReturn(void(*f)(Args...), std::tuple<Args...>& args)
+template<typename Tuple, typename... Args>
+void callWithTupleNoReturn(void(*f)(Args...), Tuple& args)
 {
 	using namespace MiscInternal;
 	callFunc<void, void(*)(Args...)>(f, args, typename gens<sizeof...(Args)>::type(), false);
 }
 
-template<typename R, typename T, typename... Args>
-R callWithTuple(T* instance, R(T::*f)(Args...), std::tuple<Args...>& args)
+template<typename R, typename T, typename Tuple, typename... Args>
+R callWithTuple(void* instance, R(T::*f)(Args...), Tuple& args)
 {
 	using namespace MiscInternal;
-	return callFunc<R>([&] (Args... args) { return (instance->*f)(std::forward<Args>(args)...); }, args, typename gens<sizeof...(Args)>::type(), std::is_void<R>::type{});
+	return callFunc<R>([&] (Args... args) { return ((T*)instance->*f)(std::forward<Args>(args)...); }, args, typename gens<sizeof...(Args)>::type(), std::is_void<R>::type{});
 }
 
-template<typename T, typename... Args>
-void callWithTupleNoReturn(T* instance, void(T::*f)(Args...), std::tuple<Args...>& args)
+template<typename T, typename Tuple, typename... Args>
+void callWithTupleNoReturn(void* instance, void(T::*f)(Args...), Tuple& args)
 {
 	using namespace MiscInternal;
-	callFunc<void>([&](Args... args) { (instance->*f)(std::forward<Args>(args)...); } , args, typename gens<sizeof...(Args)>::type(), std::false_type{});
+	callFunc<void>([&](Args... args) { ((T*)instance->*f)(std::forward<Args>(args)...); } , args, typename gens<sizeof...(Args)>::type(), std::false_type{});
 }
 
 bool endsWith(const std::string& s, const char* ending, std::size_t endingSize = 0);

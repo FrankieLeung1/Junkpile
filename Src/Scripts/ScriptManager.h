@@ -1,10 +1,17 @@
 #pragma once
 
 #include "../Resources/ResourceManager.h"
+#include "../Managers/EventManager.h"
 
 struct lua_State;
 class TextEditor;
 struct FileChangeEvent;
+struct ScriptReloadedEvent : public Event<ScriptReloadedEvent>
+{
+	// TODO: replace this with Script or something
+	std::vector<std::string> m_paths;
+};
+
 namespace Meta { class Object; }
 class ScriptManager : public SingletonResource<ScriptManager>
 {

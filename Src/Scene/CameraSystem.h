@@ -2,6 +2,7 @@
 #include "../Resources/ResourceManager.h"
 #include "../ECS/ComponentManager.h"
 
+struct UpdateEvent;
 struct CameraComponent : public Component<CameraComponent>
 {
 	static constexpr const char* m_cid = "Camera";
@@ -25,6 +26,8 @@ class CameraSystem : public SingletonResource<CameraSystem>
 public:
 	CameraSystem();
 	~CameraSystem();
+
+	void update(const UpdateEvent*);
 
 	glm::mat4x4 getMatrix(Entity) const;
 

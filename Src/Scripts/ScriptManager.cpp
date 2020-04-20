@@ -15,12 +15,6 @@ m_state(luaL_newstate())
 	ResourcePtr<EventManager> e;
 	ResourcePtr<TimeManager> t;
 
-	/*Timer* timer = createTestResource<Timer>();
-	timer->listen([this](Timer*) { FileChangeEvent c; c.m_files.push_back("Tray\\Test.py"); this->onFileChange(c); });
-	timer->oneShot(0.5);*/
-
-	PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
-
 	e->addListener<FileChangeEvent>([this](const FileChangeEvent* c) { this->onFileChange(*c); return EventManager::ListenerResult::Persist; });
 }
 
@@ -124,7 +118,7 @@ ScriptManager::Environment* ScriptManager::getEnvironment(const char* name) cons
 
 void ScriptManager::onFileChange(const FileChangeEvent& e)
 {
-	std::set<ScriptData*> scriptsToReload, scriptsReloaded;
+	std::set<ScriptData*> scriptsToReload;
 	for (auto path : e.m_files)
 	{
 		// direct script
@@ -155,6 +149,8 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 		}
 	}
 
+	ResourcePtr<EventManager> events;
+	ScriptReloadedEvent* scriptEvent = events->addOneFrameEvent<ScriptReloadedEvent>();
 	while (!scriptsToReload.empty())
 	{
 		LOG_F(INFO, "reloading %s\n", e.m_files.front().c_str());
@@ -163,7 +159,7 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 		ResourcePtr<File> f(NewPtr, script->m_path.c_str());
 		f->checkChanged();
 		run(script->m_path.c_str(), script->m_script);
-
+		scriptEvent->m_paths.push_back(script->m_path);
 		scriptsToReload.erase(scriptsToReload.begin());
 	}
 }

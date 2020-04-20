@@ -22,7 +22,6 @@ void ImGuiManager::update()
 {
 	ResourcePtr<FrameworkClass> vf;
 
-	// Start the Dear ImGui frame
 	vf->newFrameImGui();
 	ImGui::NewFrame();
 

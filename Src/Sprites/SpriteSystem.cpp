@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SpriteSystem.h"
+#include "SpriteManager.h"
 #include "SpriteData.h"
 #include "../Files/File.h"
 #include "../Rendering/Shader.h"
@@ -48,9 +49,10 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	ResourcePtr<ComponentManager> components;
 	ResourcePtr<TransformSystem> transforms;
 	ResourcePtr<SpriteSystem> sprites;
-	ResourcePtr<File> spriteFile(NewPtr, "TestGif.gif");
+	ResourcePtr<SpriteManager> spriteManager;
+	//ResourcePtr<File> spriteFile(NewPtr, "TestGif.gif");
 
-	SpriteData data;
+	/*SpriteData data;
 	ResourcePtr<Rendering::TextureAtlas> atlas = g_resourceManager->addLoadedResource(new Rendering::TextureAtlas, "Texture Atlas");
 	data.loadFromGif(std::move(spriteFile), *device);
 	atlas->addSprite(&data);
@@ -61,10 +63,11 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	Rendering::Unit upload = device->createUnit();
 	upload.in(atlas);
 	upload.out(*texture);
-	upload.submit();
+	upload.submit();*/
 
+	const int spriteCount = 1;
 	struct Vert { glm::vec3 m_position; glm::vec2 m_uv; };
-	Rendering::Buffer* vbuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vert) * 4);
+	Rendering::Buffer* vbuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vert) * 4 * spriteCount);
 	vbuffer->setFormat({
 			{vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)},
 			{vk::Format::eR32G32Sfloat, sizeof(glm::vec2)},
@@ -106,42 +109,59 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		"}";
 
 	ResourcePtr<Rendering::Shader> fragShader(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
-	auto entity = components->addEntity<PositionComponent, SpriteComponent>();
-	SpriteComponent* sprite = entity.get<SpriteComponent>();
+	
+	for (int i = 0; i < spriteCount; i++)
+	{
+		auto entity = components->addEntity<TransformComponent, SpriteComponent>();
+		SpriteComponent* sprite = entity.get<SpriteComponent>();
+		sprite->m_sprite = spriteManager->getSprite("TestGif.gif");
+		TransformComponent* transform = entity.get<TransformComponent>();
+		transform->m_position.x = (i * 100.0f);
+	}
 
 	auto camera = components->addEntity<TransformComponent, CameraComponent>().getEntity();
 	ResourcePtr<CameraSystem> cameras;
 
-	update = [vbuffer, data, atlas](float delta)
+	update = [vbuffer, spriteManager /*data, atlas*/](float delta)
 	{
 		ResourcePtr<ComponentManager> components;
-		EntityIterator<SpriteComponent> it(components, true);
+		EntityIterator<TransformComponent, SpriteComponent> it(components, true);
 		Vert* map = (Vert*)vbuffer->map();
 		while (it.next())
 		{
 			auto sprite = it.get<SpriteComponent>();
 			sprite->m_time += delta;
 
-			glm::vec2 uv1, uv2;
-			const SpriteData::FrameData& frame = data.getFrame(sprite->m_time);
-			std::tie(uv1, uv2) = atlas->getUV(frame.m_id);
+			std::tuple<SpriteData*, Rendering::TextureAtlas*> spriteData = spriteManager->getSpriteData(sprite->m_sprite);
+			if (!std::get<1>(spriteData))
+				continue; // still loading
 
+			glm::vec2 uv1, uv2;
+			const SpriteData::FrameData& frame = std::get<0>(spriteData)->getFrame(sprite->m_time);
+			std::tie(uv1, uv2) = std::get<1>(spriteData)->getUV(frame.m_id);
+
+			TransformComponent* transform = it.get<TransformComponent>();
 			float scale = 1.0f;
 			float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale;
 			float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale;
 
-			map[0] = Vert{ { -halfWidth, halfHeight, 0.0f }, { uv1.x, uv2.y } };
-			map[1] = Vert{ { halfWidth, halfHeight, 0.0f }, { uv2.x, uv2.y } };
-			map[2] = Vert{ { -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv1.y } };
-			map[3] = Vert{ { halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
+			map[0] = Vert{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv2.y } } ;
+			map[1] = Vert{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv2.y } };
+			map[2] = Vert{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv1.y } };
+			map[3] = Vert{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
+			map += 4;
 		}
 		
 		vbuffer->unmap();
 	};
 
 	auto& clearColour = m_clearColour;
-	render = [vertShader, fragShader, ibuffer, vbuffer, texture, &clearColour, camera]()
+	render = [vertShader, fragShader, ibuffer, vbuffer, spriteManager, &clearColour, camera]()
 	{
+		ResourcePtr<ComponentManager> components;
+		EntityIterator<SpriteComponent> it(components, true);
+		int i = 0;
+
 		ResourcePtr<Rendering::Device> device;
 		ResourcePtr<CameraSystem> cameras;
 		glm::mat4x4 cameraMatrix = cameras->getMatrix(camera);
@@ -154,11 +174,25 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		unit.in(vertShader);
 		unit.in(fragShader);
 		unit.in(std::array<float, 4>{ clearColour.x, clearColour.y, clearColour.z, clearColour.w, });
-		unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
-		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
-		unit.in({ 4, 1, 0, 0 });
 		
-		unit.submit();
+		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
+
+		while (it.next())
+		{
+			auto sprite = it.get<SpriteComponent>();
+			std::tuple<SpriteData*, Rendering::TextureAtlas*> spriteData = spriteManager->getSpriteData(sprite->m_sprite);
+			ResourcePtr<Rendering::Texture> texture(NoOwnershipPtr, std::get<1>(spriteData));
+			if (!std::get<1>(spriteData))
+				continue; // still loading
+
+			if(i == 0)
+				unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
+
+			unit.in({ 4, 1, (uint32_t)i++ * 4, 0 });
+		}
+
+		if(i > 0)
+			unit.submit();
 	};
 }
 

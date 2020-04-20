@@ -95,7 +95,7 @@ void SpriteData::addFrame(const FrameData& fd)
 const SpriteData::FrameData& SpriteData::getFrame(float time) const
 {
 	float totalDuration = getDuration();
-	while (time > totalDuration)
+	while (time >= totalDuration)
 		time -= totalDuration;
 
 	std::vector<FrameData>::const_iterator it = m_frames.begin();

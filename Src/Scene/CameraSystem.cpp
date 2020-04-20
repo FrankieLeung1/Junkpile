@@ -2,15 +2,42 @@
 #include "CameraSystem.h"
 #include "../Rendering/RenderingDevice.h"
 #include "TransformSystem.h"
+#include "../Managers/EventManager.h"
+#include "../Managers/InputManager.h"
 
 CameraSystem::CameraSystem()
 {
-
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](const UpdateEvent* e) { this->update(e); return EventManager::ListenerResult::Persist; });
 }
 
 CameraSystem::~CameraSystem()
 {
 
+}
+
+void CameraSystem::update(const UpdateEvent* e)
+{
+	ResourcePtr<ComponentManager> components;
+	ResourcePtr<InputManager> inputs;
+	float speed = 1.0f;
+
+	glm::vec3 transformVector(0.0f);
+	if (inputs->isDown('W')) transformVector.y -= 1;
+	if (inputs->isDown('A')) transformVector.x -= 1;
+	if (inputs->isDown('S')) transformVector.y += 1;
+	if (inputs->isDown('D')) transformVector.x += 1;
+	if (inputs->isDown(VK_LSHIFT)) speed *= 2.0f;
+	if (transformVector == glm::vec3(0.0f))
+		return;
+
+	transformVector = glm::normalize(transformVector) * (e->m_delta * speed);
+
+	EntityIterator<TransformComponent, CameraComponent> it(components, true);
+	while (it.next())
+	{
+		it.get<TransformComponent>()->m_position += transformVector;
+	}
 }
 
 glm::mat4x4 CameraSystem::getMatrix(Entity e) const

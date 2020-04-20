@@ -61,10 +61,14 @@ bool Shader::compile(std::string* outError)
 			write(process, m_code.c_str(), m_code.size());
 			closeWrite(process);
 
-			while (!getExitCode(process, nullptr))
+			int errorCode;
+			while (!getExitCode(process, &errorCode))
+				;
+
+			if (errorCode != 0)
 			{
 				char buffer[1024] = { '\0' };
-				readError(process, buffer, sizeof(buffer) - 1);
+				read(process, buffer, sizeof(buffer) - 1);
 				if (buffer[0] != '\0' && strcmp(buffer, "stdin\r\n") != 0)
 					error << buffer;
 			}
@@ -167,6 +171,7 @@ Shader* Shader::ShaderLoader::load(std::tuple<int, std::string>* error)
 	if (!shader->compile(&std::get<1>(*error)))
 	{
 		std::get<0>(*error) = -1;
+		LOG_F(ERROR, "Failed to compile shader \"%s\"\n%s\n", getDebugName().c_str(), std::get<1>(*error).c_str());
 		delete shader;
 		shader = nullptr;
 	}

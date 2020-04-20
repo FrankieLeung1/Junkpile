@@ -51,6 +51,7 @@ namespace Rendering
 		};
 		
 	public:
+		Unit();
 		Unit(RootUnit&);
 		Unit(const Unit&);
 		~Unit();

@@ -14,13 +14,6 @@
 	#include <structmember.h>
 #endif
 
-#include "lua/src/lua.hpp"
-#include "loguru/loguru.hpp"
-#include "imgui/imgui.h"
-#include "FileWatcher/FileWatcher.h"
-#include "vk_mem_alloc.h"
-#include "Fossilize/fossilize.hpp"
-
 #include <algorithm>
 #include <chrono>
 #include <forward_list>
@@ -49,6 +42,15 @@
 #include <utility>
 #include <codecvt>
 
+#include "lua/src/lua.hpp"
+#include "loguru/loguru.hpp"
+#include "imgui/imgui.h"
+#include "FileWatcher/FileWatcher.h"
+#include "vk_mem_alloc.h"
+#include "Fossilize/fossilize.hpp"
+#include "openfbx/ofbx.h"
+#include "CImg.h"
+
 #include "glm/glm/glm.hpp"
 #include "glm/glm/ext.hpp"
 #include <vulkan/vulkan.h>
@@ -65,4 +67,5 @@
 #include "btBulletDynamicsCommon.h"
 
 #include "../Framework/VulkanFramework.h"
+
 typedef VulkanFramework FrameworkClass;

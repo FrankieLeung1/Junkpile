@@ -1,6 +1,7 @@
 #pragma once
 
 class ThreadPool;
+class EventManager;
 
 class Resource
 {
@@ -70,7 +71,14 @@ struct ResourceData
 };
 
 struct NewPtr_t {};
+struct EmptyPtr_t {};
+struct NoOwnershipPtr_t {};
+struct TakeOwnershipPtr_t {};
+
 extern NewPtr_t NewPtr;
+extern EmptyPtr_t EmptyPtr;
+extern NoOwnershipPtr_t NoOwnershipPtr;
+extern TakeOwnershipPtr_t TakeOwnershipPtr;
 
 template<typename Resource>
 class ResourcePtr
@@ -79,10 +87,10 @@ public:
 	typedef ResourceData::State State;
 
 public:
-	struct EmptyPtr {};
-	ResourcePtr(EmptyPtr);
-	struct NoOwnershipPtr {};
-	ResourcePtr(NoOwnershipPtr, Resource*);
+	
+	ResourcePtr(EmptyPtr_t);
+	ResourcePtr(NoOwnershipPtr_t, Resource*);
+	ResourcePtr(TakeOwnershipPtr_t, Resource*, const char* name = "", std::size_t hash = 0);
 	ResourcePtr(const ResourcePtr<Resource>&);
 
 	template<typename... Args> ResourcePtr(NewPtr_t = NewPtr, Args&&... args);
@@ -105,6 +113,7 @@ public:
 
 	ResourcePtr<Resource>& operator=(const ResourcePtr<Resource>&);
 	ResourcePtr<Resource>& operator=(ResourcePtr<Resource>&&);
+	bool operator==(const ResourceData*) const;
 
 	static ResourcePtr<Resource> fromResourceData(ResourceData*);
 
@@ -117,16 +126,21 @@ template<typename T, typename ...Ts>
 bool ready(std::tuple<int, std::string>* error, const ResourcePtr<T>&, const Ts&...);
 template<typename T> bool ready(std::tuple<int, std::string>* error, const ResourcePtr<T>&);
 
+struct ResourceStateChanged;
 class ResourceManager
 {
 public:
 	ResourceManager();
 	~ResourceManager();
 
+	void init();
+
 	void startLoading();
 	bool isLoading() const;
 
 	void setAutoStartTasks(bool);
+
+	void update();
 
 	void setFreeResources(bool);
 	void freeUnreferenced(bool freeSingleton = false);
@@ -158,6 +172,7 @@ protected:
 
 	std::queue<Task> m_loadingTasks;
 	std::mutex m_loadingTaskMutex;
+	std::vector<ResourceStateChanged> m_notificationQueue;
 
 	ResourcePtr<ThreadPool> m_threadPool;
 	std::atomic<unsigned int> m_tasksInProgress;
@@ -277,20 +292,27 @@ ResourcePtr<Resource> ResourceManager::addLoadedResource(Resource* resource, con
 }
 
 template<typename Resource>
-ResourcePtr<Resource>::ResourcePtr(EmptyPtr):
+ResourcePtr<Resource>::ResourcePtr(EmptyPtr_t):
 m_data(nullptr)
 {
 
 }
 
 template<typename Resource>
-ResourcePtr<Resource>::ResourcePtr(NoOwnershipPtr, Resource* resource):
+ResourcePtr<Resource>::ResourcePtr(NoOwnershipPtr_t, Resource* resource):
 m_data(new ResourceData())
 {
 	m_data->m_state = State::UNMANAGED;
 	m_data->m_owns = false;
 	m_data->m_refCount = 1;
 	m_data->m_resource = resource;
+}
+
+template<typename Resource>
+ResourcePtr<Resource>::ResourcePtr(TakeOwnershipPtr_t, Resource* resource, const char* name, std::size_t hash):
+m_data(nullptr)
+{
+	*this = g_resourceManager->addLoadedResource(resource, name, hash);
 }
 
 template<typename Resource>
@@ -462,9 +484,15 @@ ResourcePtr<Resource>& ResourcePtr<Resource>::operator=(ResourcePtr<Resource>&& 
 }
 
 template<typename Resource>
+bool ResourcePtr<Resource>::operator==(const ResourceData* data) const
+{
+	return m_data == data;
+}
+
+template<typename Resource>
 ResourcePtr<Resource> ResourcePtr<Resource>::fromResourceData(ResourceData* data)
 {
-	ResourcePtr<Resource> result(ResourcePtr<Resource>::EmptyPtr{});
+	ResourcePtr<Resource> result(EmptyPtr);
 	result.m_data = data;
 	return result;
 }

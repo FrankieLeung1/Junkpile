@@ -3,12 +3,16 @@
 #include "ResourceManager.h"
 #include "../Threading/ThreadPool.h"
 #include "../imgui/ImGuiManager.h"
+#include "../Managers/EventManager.h"
 
 NewPtr_t NewPtr;
+EmptyPtr_t EmptyPtr;
+NoOwnershipPtr_t NoOwnershipPtr;
+TakeOwnershipPtr_t TakeOwnershipPtr;
 ResourceManager* g_resourceManager = nullptr;
 ResourceManager::ResourceManager():
 m_resources(),
-m_threadPool(ResourcePtr<ThreadPool>::EmptyPtr{}),
+m_threadPool(EmptyPtr),
 m_tasksInProgress(0),
 m_autoStartTasks(false)
 {
@@ -37,6 +41,12 @@ ResourceManager::~ResourceManager()
 		LOG_IF_F(WARNING, !resource.m_singleton, "Resource (%s) not freed, still has %d references\n", resource.m_debugName, resource.m_refCount);
 	}
 	m_resources.clear();
+}
+
+void ResourceManager::init()
+{
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; });
 }
 
 void ResourceManager::startLoading()
@@ -70,18 +80,24 @@ void ResourceManager::startLoading()
 			if (resource)
 			{
 				// Resource Loaded
-				std::lock_guard<std::mutex> l(task.m_data->m_mutex);
+				std::lock_guard<std::recursive_mutex> l1(rm->m_resourceMutex);
+				std::lock_guard<std::mutex> l2(task.m_data->m_mutex);
 				task.m_data->m_state = ResourceData::State::LOADED;
 				task.m_data->m_resource = resource;
 				delete task.m_loader;
+
+				rm->m_notificationQueue.emplace_back(task.m_data, task.m_data->m_state);
 			}
 			else if (std::get<int>(errors) != 0)
 			{
 				// Failed to load resource
-				std::lock_guard<std::mutex> l(task.m_data->m_mutex);
+				std::lock_guard<std::recursive_mutex> l1(rm->m_resourceMutex);
+				std::lock_guard<std::mutex> l2(task.m_data->m_mutex);
 				task.m_data->m_state = ResourceData::State::FAILED;
 				task.m_data->m_error = errors;
 				delete task.m_loader;
+
+				rm->m_notificationQueue.emplace_back(task.m_data, task.m_data->m_state);
 			}
 			else
 			{
@@ -158,6 +174,19 @@ void ResourceManager::release(ResourceData* data)
 	{
 		freeUnreferenced();
 	}
+}
+
+void ResourceManager::update()
+{
+	std::lock_guard<std::recursive_mutex> l(m_resourceMutex);
+	for (const ResourceStateChanged& e : m_notificationQueue)
+	{
+		ResourcePtr<EventManager> events;
+		auto* dest = events->addOneFrameEvent<ResourceStateChanged>();
+		dest->m_resourceData = e.m_resourceData;
+		dest->m_newState = e.m_newState;
+	}
+	m_notificationQueue.clear();
 }
 
 void ResourceManager::imgui()

@@ -139,6 +139,15 @@
     <Filter Include="External\dirent">
       <UniqueIdentifier>{3efd51a8-f961-418c-a9f2-a00ffe1751d5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\openfbx">
+      <UniqueIdentifier>{e58d9f06-0966-4ef9-8e4b-9d9d7f9521da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Generators">
+      <UniqueIdentifier>{c32eaa4b-8938-4f04-93bf-22d03a8aa603}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Generators">
+      <UniqueIdentifier>{a15c902b-9b68-4d2c-ac5a-909c8f113a4b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Exec\stdafx.cpp">
@@ -491,6 +500,18 @@
     </ClCompile>
     <ClCompile Include="..\Src\Scene\TransformSystem.cpp">
       <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Sprites\SpriteManager.cpp">
+      <Filter>Source Files\Sprites</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\openfbx\ofbx.cpp">
+      <Filter>External\openfbx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Generators\TextureGenerator.cpp">
+      <Filter>Source Files\Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Generators\Generator.cpp">
+      <Filter>Source Files\Generators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1249,6 +1270,18 @@
     </ClInclude>
     <ClInclude Include="..\Src\Scene\TransformSystem.h">
       <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Sprites\SpriteManager.h">
+      <Filter>Header Files\Sprites</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\openfbx\ofbx.h">
+      <Filter>External\openfbx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Generators\TextureGenerator.h">
+      <Filter>Header Files\Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Generators\Generator.h">
+      <Filter>Header Files\Generators</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

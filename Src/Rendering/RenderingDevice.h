@@ -41,8 +41,6 @@ namespace Rendering
 		Unit createUnit();
 		void submitAll();
 
-		void waitFor(vk::Fence, FunctionBase<void>*);
-
 		void update();
 
 		template<typename Object>
@@ -99,13 +97,6 @@ namespace Rendering
 		Fossilize::StateRecorder m_recorder;
 
 		glm::vec2 m_frameDimensions;
-
-		struct FenceCallbacks
-		{
-			vk::Fence m_fence;
-			FunctionBase<void>* m_callback;
-		};
-		std::vector<FenceCallbacks> m_fenceCallbacks;
 
 		struct ThreadResources
 		{

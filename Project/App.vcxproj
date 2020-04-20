@@ -348,6 +348,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\External\openfbx\ofbx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\External\screen_capture_lite\src\SCCommon.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -407,6 +411,8 @@
     <ClCompile Include="..\Src\Files\FileManager.cpp" />
     <ClCompile Include="..\Src\Framework\Framework.cpp" />
     <ClCompile Include="..\Src\Framework\VulkanFramework.cpp" />
+    <ClCompile Include="..\Src\Generators\Generator.cpp" />
+    <ClCompile Include="..\Src\Generators\TextureGenerator.cpp" />
     <ClCompile Include="..\Src\imgui\ImGuiManager.cpp" />
     <ClCompile Include="..\Src\imgui\imgui_impl_glfw.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -446,6 +452,7 @@
     <ClCompile Include="..\Src\Scripts\ScriptManager.cpp" />
     <ClCompile Include="..\Src\Sprites\Sprite.cpp" />
     <ClCompile Include="..\Src\Sprites\SpriteData.cpp" />
+    <ClCompile Include="..\Src\Sprites\SpriteManager.cpp" />
     <ClCompile Include="..\Src\Sprites\SpriteSystem.cpp" />
     <ClCompile Include="..\Src\Threading\ThreadPool.cpp" />
   </ItemGroup>
@@ -506,6 +513,7 @@
     <ClInclude Include="..\External\lua\src\lundump.h" />
     <ClInclude Include="..\External\lua\src\lvm.h" />
     <ClInclude Include="..\External\lua\src\lzio.h" />
+    <ClInclude Include="..\External\openfbx\ofbx.h" />
     <ClInclude Include="..\External\Python\include\abstract.h" />
     <ClInclude Include="..\External\Python\include\asdl.h" />
     <ClInclude Include="..\External\Python\include\ast.h" />
@@ -660,6 +668,8 @@
     <ClInclude Include="..\Src\Framework\Framework.h" />
     <ClInclude Include="..\Src\Framework\NullFramework.h" />
     <ClInclude Include="..\Src\Framework\VulkanFramework.h" />
+    <ClInclude Include="..\Src\Generators\Generator.h" />
+    <ClInclude Include="..\Src\Generators\TextureGenerator.h" />
     <ClInclude Include="..\Src\imgui\ImGuiManager.h" />
     <ClInclude Include="..\Src\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="..\Src\imgui\imgui_impl_vulkan.h" />
@@ -700,6 +710,7 @@
     <ClInclude Include="..\Src\Scripts\ScriptManager.h" />
     <ClInclude Include="..\Src\Sprites\Sprite.h" />
     <ClInclude Include="..\Src\Sprites\SpriteData.h" />
+    <ClInclude Include="..\Src\Sprites\SpriteManager.h" />
     <ClInclude Include="..\Src\Sprites\SpriteSystem.h" />
     <ClInclude Include="..\Src\Threading\ThreadPool.h" />
   </ItemGroup>

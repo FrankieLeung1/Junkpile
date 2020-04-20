@@ -214,7 +214,7 @@ vk::Pipeline Unit::createVulkanObject<vk::Pipeline>()
         vk::GraphicsPipelineCreateInfo info;
         opt(info.flags);
 
-        ResourcePtr<Shader> vertexShader(ResourcePtr<Shader>::EmptyPtr{}), fragShader(ResourcePtr<Shader>::EmptyPtr{});
+        ResourcePtr<Shader> vertexShader(EmptyPtr), fragShader(EmptyPtr);
         req(vertexShader, "Vertex");
         req(fragShader, "Frag");
 

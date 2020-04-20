@@ -55,6 +55,11 @@ int Serializer::visit(const char* name, std::string* s)
 	return writeValue(name, '"' + stringf("0x%p", s) + '"');
 }
 
+int Serializer::visit(const char* name, void** object, const Object&)
+{
+	return writeValue(name, '"' + stringf("0x%p", object) + '"');
+}
+
 int Serializer::visit(const char* name, void* object, const Object&)
 {
 	return writeValue(name, '"' + stringf("0x%p", object) + '"');
@@ -98,7 +103,7 @@ int Serializer::endArray(std::size_t)
 	return 0;
 }
 
-int Serializer::startFunction(const char* name, bool hasReturn)
+int Serializer::startFunction(const char* name, bool hasReturn, bool isConstructor)
 {
 	return 0;
 }

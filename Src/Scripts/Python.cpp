@@ -129,6 +129,7 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, const char
 		PyObject* filename = PyObject_GetAttrString(code, "co_filename");
 
 		const char* messageStr = PyUnicode_AsUTF8(val);
+		if (!messageStr) messageStr = PyUnicode_AsUTF8(PyObject_Repr(val));
 		const char* filenameStr = PyUnicode_AsUTF8(filename);
 
 		Error error;

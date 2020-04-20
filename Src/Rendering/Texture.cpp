@@ -225,7 +225,7 @@ void Texture::setHostVisible(int width, int height, int pixelSize)
 	}
 
 	Rendering::Unit unit = device->createUnit();
-	unit.in(ResourcePtr<Rendering::Texture>(ResourcePtr<Rendering::Texture>::NoOwnershipPtr{}, this));
+	unit.in(ResourcePtr<Rendering::Texture>(NoOwnershipPtr, this));
 	unit.in(VK_IMAGE_LAYOUT_GENERAL);
 	unit.submit();
 }
