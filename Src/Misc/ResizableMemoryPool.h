@@ -47,6 +47,7 @@ public:
 	~VariableSizedMemoryPool();
 
 	void reserve(std::size_t size);
+	void move_back(VariableSizedMemoryPool<T, TypeHelper>&);
 	template<typename NewElement> NewElement* push_back(const NewElement&);
 	template<typename NewElement, typename... Ts> NewElement* emplace_back(Ts&&...);
 	template<typename NewElement, typename... Ts> NewElement* emplace_back_with_size(std::size_t size, Ts&&...);
@@ -63,7 +64,7 @@ protected:
 	char* allocateBack(std::size_t);
 
 	std::vector<char> m_buffer;
-	std::size_t m_size; // actual used size; m_buffer.size() is our capacity
+	std::size_t m_size; // actual used size (in bytes); m_buffer.size() is our capacity
 };
 
 // ----------------------- IMPLEMENTATION ----------------------- 
@@ -95,6 +96,18 @@ void VariableSizedMemoryPool<T, TypeHelper>::reserve(std::size_t size)
 	std::vector<char> newBuffer(size);
 	TypeHelper::copy(newBuffer.data(), m_buffer.data(), m_size);
 	m_buffer = std::move(newBuffer);
+}
+
+template<typename T, typename TypeHelper>
+void VariableSizedMemoryPool<T, TypeHelper>::move_back(VariableSizedMemoryPool<T, TypeHelper>& m)
+{
+	if (!m.m_size)
+		return;
+
+	void* newMemory = allocateBack(m.m_size);
+	TypeHelper::move(newMemory, m.m_buffer.data(), m.m_size);
+	m.m_buffer.clear();
+	m.m_size = 0;
 }
 
 template<typename T, typename TypeHelper>

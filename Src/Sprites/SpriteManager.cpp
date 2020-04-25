@@ -17,7 +17,9 @@ m_nextSpriteId(1)
 
 SpriteManager::~SpriteManager()
 {
-
+	m_atlases.clear();
+	m_nameSprites.clear();
+	m_idSprites.clear();
 }
 
 SpriteId SpriteManager::getSprite(const char* path)

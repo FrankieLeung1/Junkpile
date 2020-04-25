@@ -80,7 +80,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	initLoggingForVisualStudio("App.log");
 
 	ResourceManager r; r.init();
-	ResourcePtr<VulkanFramework> vf;
+	ResourcePtr<VulkanFramework> vf; vf->init(VulkanFramework::AppType::ImGuiOnly);
 	ResourcePtr<TimeManager> t;
 	ResourcePtr<FileManager> f;
 	ResourcePtr<ImGuiManager> m;
@@ -139,6 +139,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		em->process(update->m_delta);
 	}
 
+	ResourcePtr<Rendering::Device> d;
+	d->waitIdle();
 	deleteTestResources();
 	return 0;
 }

@@ -18,6 +18,18 @@ void EventManager::process(float delta)
 {
 	std::vector<char> processingEvents = std::move(m_oneFrameBuffer);
 	std::vector<TypeHelper*> types = std::move(m_oneFrameBufferTypes);
+
+	for (auto& queuedListeners : m_queuedListeners)
+	{
+		std::map<int, FunctionPool>& eventListeners = m_listeners[queuedListeners.first];
+		for (auto& eventListener : queuedListeners.second)
+		{
+			eventListeners[eventListener.first].move_back(eventListener.second);
+		}
+	}
+
+	m_queuedListeners.clear();
+
 	while(!processingEvents.empty())
 	{
 		char* current = &processingEvents.front();

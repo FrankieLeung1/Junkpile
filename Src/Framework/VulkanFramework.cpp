@@ -21,6 +21,7 @@
 #include "../imgui/imgui_impl_glfw.h"
 #include "../imgui/imgui_impl_vulkan.h"
 
+#include "../Managers/TimeManager.h"
 #include "../Managers/InputManager.h"
 #include "../Rendering/RenderingDevice.h"
 #include "../Rendering/Texture.h"
@@ -85,10 +86,9 @@ static void glfw_resize_callback(GLFWwindow*, int w, int h)
 
 VulkanFramework::VulkanFramework():
 m_clearColour(0.45f, 0.55f, 0.6f, 1.0f),
-m_windowTitle("App Window")
+m_windowTitle("App Window"),
+m_inited(false)
 {
-	initImGui(false);
-
 	ResourcePtr<EventManager> events;
 	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
 	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->render(); return EventManager::ListenerResult::Persist; }, -11);
@@ -107,6 +107,13 @@ VulkanFramework::~VulkanFramework()
 
 	glfwDestroyWindow(m_window);
 	glfwTerminate();
+}
+
+void VulkanFramework::init(AppType type)
+{
+	CHECK_F(!m_inited);
+	m_inited = true;
+	initImGui(type);
 }
 
 void VulkanFramework::SetupVulkan(const char** extensions, uint32_t extensions_count)
@@ -241,7 +248,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	return CallWindowProc((WNDPROC)oldProc, hWnd, uMsg, wParam, lParam);
 }
 
-int VulkanFramework::initImGui(bool systemTray)
+int VulkanFramework::initImGui(AppType type)
 {
 	// Setup GLFW window
 	glfwSetErrorCallback(glfw_error_callback);
@@ -249,6 +256,8 @@ int VulkanFramework::initImGui(bool systemTray)
 		return 1;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	if(type == AppType::ImGuiOnly)
+		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 	m_window = glfwCreateWindow(1280, 720, m_windowTitle.c_str(), NULL, NULL);
 
 	// Setup Vulkan
@@ -261,7 +270,7 @@ int VulkanFramework::initImGui(bool systemTray)
 #ifdef _WIN32
 	// icon: https://www.flaticon.com/free-icon/garbage_2197789
 
-	if (systemTray)
+	if (type == AppType::SystemTray)
 	{
 		HWND hwnd = glfwGetWin32Window(m_window);
 		NOTIFYICONDATA	nid = { 0 };		// Data fields	
@@ -318,7 +327,7 @@ int VulkanFramework::initImGui(bool systemTray)
 																//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-	io.ConfigViewportsNoTaskBarIcon = true;
+	io.ConfigViewportsNoTaskBarIcon = !(type == AppType::ImGuiOnly);
 	//io.ConfigViewportsNoAutoMerge = true;
 	//io.ConfigViewportsNoDefaultParent = true;
 
@@ -396,6 +405,7 @@ int VulkanFramework::initImGui(bool systemTray)
 		check_vk_result(err);
 	}
 
+	m_appType = type;
 	return 0;
 }
 
@@ -491,6 +501,17 @@ void VulkanFramework::update()
 
 	ImGui_ImplVulkanH_Frame* f = &wd->Frames[wd->FrameIndex];
 	m_device->setFrameBuffer(f->Framebuffer, { wd->Width, wd->Height });
+
+	if (m_appType == AppType::ImGuiOnly)
+	{
+		ResourcePtr<TimeManager> time;
+		if (time->getTime() > 10) // it takes a while for imgui to create viewports, give it a bit
+		{
+			ImGuiPlatformIO* io = &ImGui::GetPlatformIO();
+			if (io->Viewports.size() <= 2)
+				setShouldQuit(true);
+		}
+	}
 }
 
 void VulkanFramework::render()
@@ -520,6 +541,11 @@ void VulkanFramework::setShouldQuit(bool b)
 bool VulkanFramework::shouldQuit() const
 {
 	return glfwWindowShouldClose(m_window) != 0;
+}
+
+VulkanFramework::AppType VulkanFramework::getAppType() const
+{
+	return m_appType;
 }
 
 ImGui_ImplVulkanH_Window* VulkanFramework::getMainWindowData() const
@@ -568,6 +594,7 @@ void VulkanFramework::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceK
 #else
 	VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
+
 	wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(g_PhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
 	//printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 

@@ -50,20 +50,6 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	ResourcePtr<TransformSystem> transforms;
 	ResourcePtr<SpriteSystem> sprites;
 	ResourcePtr<SpriteManager> spriteManager;
-	//ResourcePtr<File> spriteFile(NewPtr, "TestGif.gif");
-
-	/*SpriteData data;
-	ResourcePtr<Rendering::TextureAtlas> atlas = g_resourceManager->addLoadedResource(new Rendering::TextureAtlas, "Texture Atlas");
-	data.loadFromGif(std::move(spriteFile), *device);
-	atlas->addSprite(&data);
-	atlas->setPadding(2);
-	atlas->layoutAtlas();
-
-	ResourcePtr<Rendering::Texture> texture(ResourcePtr<Rendering::Texture>::NoOwnershipPtr{}, createTestResource<Rendering::Texture>());
-	Rendering::Unit upload = device->createUnit();
-	upload.in(atlas);
-	upload.out(*texture);
-	upload.submit();*/
 
 	const int spriteCount = 1;
 	struct Vert { glm::vec3 m_position; glm::vec2 m_uv; };
@@ -120,9 +106,7 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	}
 
 	auto camera = components->addEntity<TransformComponent, CameraComponent>().getEntity();
-	ResourcePtr<CameraSystem> cameras;
-
-	update = [vbuffer, spriteManager /*data, atlas*/](float delta)
+	update = [vbuffer, spriteManager](float delta)
 	{
 		ResourcePtr<ComponentManager> components;
 		EntityIterator<TransformComponent, SpriteComponent> it(components, true);

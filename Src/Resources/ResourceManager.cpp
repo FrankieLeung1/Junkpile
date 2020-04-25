@@ -38,7 +38,8 @@ ResourceManager::~ResourceManager()
 	freeUnreferenced(true);
 	for (auto& resource : m_resources)
 	{
-		LOG_IF_F(WARNING, !resource.m_singleton, "Resource (%s) not freed, still has %d references\n", resource.m_debugName, resource.m_refCount);
+		if(!resource.m_singleton)
+			LOG_F(WARNING, "Resource (%s) not freed, still has %d references\n", resource.m_debugName.c_str(), resource.m_refCount);
 	}
 	m_resources.clear();
 }

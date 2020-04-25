@@ -53,7 +53,6 @@ public:
 	// todo: filters
 	enum class ListenerResult { Discard, Persist };
 	typedef FunctionBase<ListenerResult, const EventBase*> EventCallback;
-	template<typename Event> void addListener(const EventCallback&, int priority = 0);
 	template<typename Event, typename FunctionType> void addListener(FunctionType, int priority = 0);
 
 	void process(float delta);
@@ -69,6 +68,7 @@ protected:
 protected:
 	typedef VariableSizedMemoryPool<EventCallback, EventCallback::PoolHelper> FunctionPool;
 	std::map<EventBase::Id, std::map<int, FunctionPool> > m_listeners;
+	std::map<EventBase::Id, std::map<int, FunctionPool> > m_queuedListeners;
 	std::map<EventBase::Id, const char*> m_idToName;
 
 	std::vector<char> m_oneFrameBuffer;
@@ -103,14 +103,9 @@ template<typename EventType> EventType* EventManager::addPersistentEvent()
 	return (EventType*)m_persistentEvents.front().get();
 }
 
-template<typename EventType> void EventManager::addListener(const FunctionBase<ListenerResult, const EventBase*>& listener, int priority)
-{
-	m_listeners[EventType::id()][priority].push_back(listener);
-}
-
 template<typename EventType, typename FunctionType> void EventManager::addListener(FunctionType fn, int priority)
 {
 	static_assert(std::is_same<decltype(fn((const EventType*)nullptr)), ListenerResult>::value, "fn must return ListenerResult");
 	// TODO: static_assert the arg types
-	m_listeners[EventType::id()][priority].push_back(makeFunction(fn));
+	m_queuedListeners[EventType::id()][priority].push_back(makeFunction(fn));
 }

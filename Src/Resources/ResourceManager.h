@@ -91,6 +91,7 @@ public:
 	ResourcePtr(EmptyPtr_t);
 	ResourcePtr(NoOwnershipPtr_t, Resource*);
 	ResourcePtr(TakeOwnershipPtr_t, Resource*, const char* name = "", std::size_t hash = 0);
+	ResourcePtr(ResourcePtr<Resource>&&);
 	ResourcePtr(const ResourcePtr<Resource>&);
 
 	template<typename... Args> ResourcePtr(NewPtr_t = NewPtr, Args&&... args);
@@ -313,6 +314,13 @@ ResourcePtr<Resource>::ResourcePtr(TakeOwnershipPtr_t, Resource* resource, const
 m_data(nullptr)
 {
 	*this = g_resourceManager->addLoadedResource(resource, name, hash);
+}
+
+template<typename Resource>
+ResourcePtr<Resource>::ResourcePtr(ResourcePtr<Resource>&& m):
+m_data(m.m_data)
+{
+	m.m_data = nullptr;
 }
 
 template<typename Resource>

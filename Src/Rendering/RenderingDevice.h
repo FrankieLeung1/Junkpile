@@ -68,6 +68,8 @@ namespace Rendering
 
 		void allocateThreadResources(const std::thread::id&);
 
+		void waitIdle();
+
 	public:
 		static std::tuple<bool, std::size_t> getSharedHash();
 		static Loader* createLoader(); // not used since this is a singleton resource

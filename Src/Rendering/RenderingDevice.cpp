@@ -254,7 +254,7 @@ void Device::submitAll()
 
 void Device::update()
 {
-	m_device.waitIdle();
+	waitIdle(); // todo: use a different set of resources per image in swap chain
 
 	ThreadResources* threadRes = getThreadResources();
 	m_device.resetDescriptorPool(threadRes->m_descriptorPool);
@@ -634,6 +634,11 @@ void Device::allocateThreadResources(const std::thread::id& id)
 	checkVkResult(r);
 
 	m_threadResources[id] = resources;
+}
+
+void Device::waitIdle()
+{
+	m_device.waitIdle();
 }
 
 void Device::beginDebugRegion(VkCommandBuffer, const char*)

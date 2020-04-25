@@ -263,7 +263,7 @@ Function<Signature, Functor>::~Function()
 template<typename Signature, typename Functor>
 void Function<Signature, Functor>::placementMove(void* dest)
 {
-	auto f = new(dest) Function<Signature, Functor>(m_fn);
+	auto f = new(dest) Function<Signature, Functor>(std::move(m_fn));
 }
 
 template<typename Signature, typename Functor>
