@@ -5,11 +5,21 @@
 #include "../Misc/ResizableMemoryPool.h"
 #include "../Resources/ResourceManager.h"
 
-struct EventBase 
+class EventBase 
 {
+public:
+	void discardListener();
+	void discardEvent();
+
+protected:
 	typedef unsigned long long Id;
 	Id m_id;
 	std::size_t m_size;
+
+private:
+	bool m_discardListener;
+	bool m_discardEvent;
+	friend class EventManager;
 };
 
 template<typename T>
@@ -50,9 +60,7 @@ public:
 	template<typename EventType> EventType* addOneFrameEvent();
 	template<typename EventType> EventType* addPersistentEvent();
 
-	// todo: filters
-	enum class ListenerResult { Discard, Persist };
-	typedef FunctionBase<ListenerResult, const EventBase*> EventCallback;
+	typedef FunctionBase<void, EventBase*> EventCallback;
 	template<typename Event, typename FunctionType> void addListener(FunctionType, int priority = 0);
 
 	void process(float delta);
@@ -105,7 +113,7 @@ template<typename EventType> EventType* EventManager::addPersistentEvent()
 
 template<typename EventType, typename FunctionType> void EventManager::addListener(FunctionType fn, int priority)
 {
-	static_assert(std::is_same<decltype(fn((const EventType*)nullptr)), ListenerResult>::value, "fn must return ListenerResult");
+	//static_assert(std::is_same<decltype(fn((EventType*)nullptr)), ListenerResult>::value, "fn must return ListenerResult");
 	// TODO: static_assert the arg types
 	m_queuedListeners[EventType::id()][priority].push_back(makeFunction(fn));
 }

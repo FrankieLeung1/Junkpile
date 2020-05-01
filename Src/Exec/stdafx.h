@@ -49,13 +49,17 @@
 #include "vk_mem_alloc.h"
 #include "Fossilize/fossilize.hpp"
 #include "openfbx/ofbx.h"
+#include <cstdio>
 #include "CImg.h"
+
+#define LODEPNG_NO_COMPILE_DISK
+#include "lodepng/lodepng.h"
 
 #include "glm/glm/glm.hpp"
 #include "glm/glm/ext.hpp"
 #include <vulkan/vulkan.h>
 
-#define VULKAN_HPP_ASSERT CHECK_F
+#define VULKAN_HPP_ASSERT (void)
 #define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
 

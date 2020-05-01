@@ -6,7 +6,7 @@
 
 class ComponentManager;
 typedef unsigned int Entity;
-typedef long long ComponentId;
+typedef std::size_t ComponentId;
 #define INVALID_ENTITY 0
 
 struct EntityIteratorArgs {
@@ -286,7 +286,7 @@ void ComponentManager::setupIterator(std::true_type, EntityIterator< Ts...>& it)
 	using ComponentType = std::tuple_element<i, std::tuple<Ts...> >::type;
 	ComponentType*& component = std::get<i>(it);
 	CHECK_F(component == nullptr, "component already setup");
-	CHECK_F(m_pools.find(ComponentType::componentId()) != m_pools.end(), "couldn't find componentpool for %s", component->m_cid);
+	CHECK_F(m_pools.find(ComponentType::componentId()) != m_pools.end(), "couldn't find componentpool for %s", typeid(ComponentType).name());
 
 	ResizeableMemoryPool& buffer = m_pools[ComponentType::componentId()].m_buffer;
 	component = buffer.empty() ? nullptr : (ComponentType*)&buffer[0];
@@ -322,7 +322,10 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 
 		// dead component pointer, skip
 		if (args.m_vp == nullptr)
+		{
+			foundAllComponents = false;
 			return true;
+		}
 
 		Entity e = *(Entity*)args.m_vp;
 		ResizeableMemoryPool& buffer = this->m_pools[args.m_id].m_buffer;
@@ -374,7 +377,8 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 template<typename Component> 
 ComponentManager::ComponentPool* ComponentManager::getPool()
 {
-	return &m_pools[Component::componentId()];
+	auto it = m_pools.find(Component::componentId());
+	return it != m_pools.end() ? &(it->second) : nullptr;
 }
 
 template<typename Component> 

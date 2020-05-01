@@ -59,18 +59,16 @@ template<typename T>
 void Timer::listen(T fn)
 {
 	ResourcePtr<EventManager> e;
-	auto listener = [=](const TimerEvent* t)
+	auto listener = [=](TimerEvent* t)
 	{
 		if (t->m_timer == this)
 		{
 			switch(t->m_type)
 			{
 			case TimerEvent::Trigger: fn(this); break;
-			case TimerEvent::Deleted: return EventManager::ListenerResult::Discard;
+			case TimerEvent::Deleted: t->discardListener();
 			}
 		}
-
-		return EventManager::ListenerResult::Persist;
 	};
 	e->addListener<TimerEvent>(listener);
 }

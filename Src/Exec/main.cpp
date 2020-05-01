@@ -35,6 +35,11 @@
 #include "../Misc/ClassMask.h"
 #include "../Misc/WindowRecorder.h"
 #include "../Generators/TextureGenerator.h"
+#include "../Misc/GrindstoneEditor.h"
+#include "../Models/ModelSystem.h"
+#include "../Scene/TransformSystem.h"
+
+//#define GRINDSTONE_EDITOR
 
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
 {
@@ -61,7 +66,8 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//TextureGenerator::test();
 
 	//WindowRecorder::test();
-	SpriteSystem::test(update, render);
+	//SpriteSystem::test(update, render);
+	ModelSystem::test();
 	/*update = [](float update)
 	{
 
@@ -79,8 +85,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	loguru::init(__argc, __argv);
 	initLoggingForVisualStudio("App.log");
 
+	VulkanFramework::AppType type = VulkanFramework::AppType::MainWindow;
+#ifdef GRINDSTONE_EDITOR
+	type = VulkanFramework::AppType::ImGuiOnly;
+#endif
+
 	ResourceManager r; r.init();
-	ResourcePtr<VulkanFramework> vf; vf->init(VulkanFramework::AppType::ImGuiOnly);
+	ResourcePtr<VulkanFramework> vf; vf->init(type);
 	ResourcePtr<TimeManager> t;
 	ResourcePtr<FileManager> f;
 	ResourcePtr<ImGuiManager> m;
@@ -91,7 +102,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<Rendering::Device> rd;
 	ResourcePtr<InputManager> i;
 	ResourcePtr<SpriteSystem> s;
-	ComponentPtr<PositionComponent> pos(cm.get());
+	ResourcePtr<TransformSystem> transformSystem;
 
 	sm->addEnvironment<PythonEnvironment>();
 	
@@ -107,6 +118,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->registerCallback({ [](Rendering::Device* rd) { rd->imgui(); }, rd.get() });
 	m->registerCallback({ [](SpriteSystem* s) { s->imgui(); }, s.get() });
 
+#ifdef GRINDSTONE_EDITOR
+	GrindstoneEditor ge;
+	m->registerCallback({ [](GrindstoneEditor* ge) { ge->imgui(); }, &ge });
+#endif
+
 	TileLevel level;
 	m->registerCallback({ [](TileLevel* level) { level->imgui(); }, &level });
 
@@ -119,14 +135,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	std::function<void(float)> testUpdate;
 	std::function<void()> testRender;
 	tests(testUpdate, testRender);
-	em->addListener<UpdateEvent>([testUpdate, testRender](const UpdateEvent* e) {
+	em->addListener<UpdateEvent>([testUpdate, testRender](UpdateEvent* e) {
 		if (testUpdate)
 			testUpdate(e->m_delta);
 
 		if (testRender)
 			testRender();
-		
-		return EventManager::ListenerResult::Persist;
 	});
 
 	while (!vf->shouldQuit())

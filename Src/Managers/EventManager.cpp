@@ -19,6 +19,7 @@ void EventManager::process(float delta)
 	std::vector<char> processingEvents = std::move(m_oneFrameBuffer);
 	std::vector<TypeHelper*> types = std::move(m_oneFrameBufferTypes);
 
+	// throw m_queuedListeners into m_listeners
 	for (auto& queuedListeners : m_queuedListeners)
 	{
 		std::map<int, FunctionPool>& eventListeners = m_listeners[queuedListeners.first];
@@ -30,6 +31,7 @@ void EventManager::process(float delta)
 
 	m_queuedListeners.clear();
 
+	// while we got events
 	while(!processingEvents.empty())
 	{
 		char* current = &processingEvents.front();
@@ -39,20 +41,25 @@ void EventManager::process(float delta)
 		{
 			EventBase* event = (EventBase*)current;
 
-			std::map<int, FunctionPool>& map = m_listeners[event->m_id];
-			for (auto it = map.rbegin(); it != map.rend(); ++it)
+			std::map<int, FunctionPool>& listeners = m_listeners[event->m_id];
+			for (auto it = listeners.rbegin(); it != listeners.rend(); ++it)
 			{
-				FunctionPool& listeners = it->second;
-				for (auto it = listeners.begin(); it != listeners.end();)
+				FunctionPool& listenersOfSamePriority = it->second;
+				for (auto it = listenersOfSamePriority.begin(); it != listenersOfSamePriority.end();)
 				{
-					ListenerResult r = (*it)(event);
-					if (r == ListenerResult::Discard)
-						it = listeners.erase(it);
+					event->m_discardEvent = event->m_discardListener = false;
+					(*it)(event);
+					if (event->m_discardEvent)
+						goto endOfEvent;
+
+					if(event->m_discardListener)
+						it = listenersOfSamePriority.erase(it);
 					else
 						++it;
 				}
 			}
 
+		endOfEvent:
 			current += event->m_size;
 		}
 
@@ -69,14 +76,22 @@ void EventManager::process(float delta)
 			FunctionPool& listeners = it->second;
 			for (auto& listener = listeners.begin(); listener != listeners.end();)
 			{
-				ListenerResult r = (*listener)(event);
-				if (r == ListenerResult::Discard)
+				event->m_discardEvent = event->m_discardListener = false;
+				(*listener)(event);
+				if (event->m_discardEvent)
+				{
+					event->m_eventLife = event->m_eventDeath;
+					goto endOfPEvent;
+				}
+
+				if (event->m_discardListener)
 					listener = listeners.erase(listener);
 				else
 					++listener;
 			}
 		}
 
+	endOfPEvent:
 		if (event->m_eventLife >= event->m_eventDeath)
 		{
 			it = m_persistentEvents.erase_after(prevIt);
@@ -131,18 +146,16 @@ void EventManager::test()
 	struct TestEvent : PersistentEvent<TestEvent> {};
 	TestEvent* test = em.addPersistentEvent<TestEvent>();
 	test->m_eventDeath = 5.0f;
-	em.addListener<TestEvent>([](const EventBase* b) {
+	em.addListener<TestEvent>([](EventBase* b) {
 		TestEvent* t = (TestEvent*)b;
 		LOG_F(INFO, "Persistent! %f %f\n", t->m_eventLife, t->m_eventDeath);
-		return EventManager::ListenerResult::Persist;
 	});
 
 	struct TestEventOneShot : Event<TestEventOneShot> {};
 	em.addOneFrameEvent<TestEventOneShot>();
-	em.addListener<TestEventOneShot>([](const EventBase* b) {
+	em.addListener<TestEventOneShot>([](EventBase* b) {
 		TestEventOneShot* t = (TestEventOneShot*)b;
 		LOG_F(INFO, "One Shot!\n");
-		return EventManager::ListenerResult::Persist;
 	});
 
 	ResourcePtr<TimeManager> t;
@@ -165,4 +178,14 @@ void EventManager::clearEventBuffer(std::vector<char>& buffer, std::vector<TypeH
 	}
 	buffer.clear();
 	types.clear();
+}
+
+void EventBase::discardListener()
+{
+	m_discardListener = true;
+}
+
+void EventBase::discardEvent()
+{
+	m_discardEvent = true;
 }

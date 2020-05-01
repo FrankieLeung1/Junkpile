@@ -864,8 +864,8 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
     wd->Frames = NULL;
     wd->FrameSemaphores = NULL;
     wd->ImageCount = 0;
-    if (wd->RenderPass)
-        device->destroyObject(wd->RenderPass);
+    /*if (wd->RenderPass)
+        device->destroyObject(wd->RenderPass);*/
 
     // If min image count was not specified, request different count of images dependent on selected present mode
     if (min_image_count == 0)
@@ -1010,6 +1010,12 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
             check_vk_result(err);
         }
     }
+
+    std::vector<vk::Framebuffer> frameBuffers;
+    for (uint32_t i = 0; i < wd->ImageCount; i++)
+        frameBuffers.push_back(wd->Frames[i].Framebuffer);
+
+    device->setFrameBuffers(wd, frameBuffers);
 }
 
 ImTextureID ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)

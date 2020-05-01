@@ -25,7 +25,10 @@ namespace Rendering
 		void setQueue(vk::Queue);
 		void setPipelineCache(vk::PipelineCache);
 		void setRenderPass(vk::RenderPass);
-		void setFrameBuffer(vk::Framebuffer, const glm::vec2& dimensions);
+		void setFrameBufferDimensions(void* window, const glm::vec2& dimensions);
+		void setFrameBuffers(void* window, const std::vector<vk::Framebuffer>&);
+		void setCurrentWindow(void* window);
+		void setCurrentFrame(std::size_t index);
 
 		void createRenderPass(vk::Format);
 
@@ -85,8 +88,6 @@ namespace Rendering
 	protected:
 		std::mutex m_mutex;
 
-		ResourcePtr<Device> m_resourceHandle;
-
 		vk::Instance m_instance;
 		vk::PhysicalDevice m_physicalDevice;
 		vk::Device m_device;
@@ -94,11 +95,8 @@ namespace Rendering
 		vk::AllocationCallbacks* m_allocator{ nullptr };
 		vk::PipelineCache m_pipelineCache;
 		vk::RenderPass m_renderPass;
-		vk::Framebuffer m_frameBuffer;
 		VmaAllocator m_vma;
 		Fossilize::StateRecorder m_recorder;
-
-		glm::vec2 m_frameDimensions;
 
 		struct ThreadResources
 		{
@@ -110,7 +108,21 @@ namespace Rendering
 			vk::DescriptorPool m_descriptorPool;
 			vk::DescriptorPool m_persistentDescriptorPool;
 		};
-		std::map<std::thread::id, ThreadResources> m_threadResources;
+
+		struct FrameResources
+		{
+			vk::Framebuffer m_frameBuffer;
+			std::map<std::thread::id, ThreadResources> m_threadResources;
+		};
+
+		struct WindowResources
+		{
+			glm::vec2 m_frameDimensions;
+			std::vector<FrameResources*> m_frameResources;
+		};
+		std::map<void*, WindowResources> m_windowResources;
+		FrameResources* m_currentFrameResources;
+		WindowResources* m_currentWindowResources;
 
 		RootUnit* m_rootUnit;
 

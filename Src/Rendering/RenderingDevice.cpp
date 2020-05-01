@@ -16,18 +16,18 @@ m_instance(),
 m_physicalDevice(),
 m_device(),
 m_queue(),
-m_resourceHandle(EmptyPtr),
 m_pipelineCache(),
 m_renderPass(),
 m_vma(nullptr),
 m_rootUnit(new RootUnit()),
 m_selectedUnit(-1),
-m_selectedInOut(-1)
+m_selectedInOut(-1),
+m_currentFrameResources(nullptr),
+m_currentWindowResources(nullptr)
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 11);
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->submitAll(); return EventManager::ListenerResult::Persist; }, -10);
-	
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 11);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->submitAll(); }, -10);
 }
 
 Device::~Device()
@@ -45,15 +45,24 @@ Device::~Device()
 		else if (auto v = any.getPtr<vk::Sampler>()) m_device.destroySampler(*v);
 	}
 
-	for (auto& threadResources : m_threadResources)
+	for (auto& window : m_windowResources)
 	{
-		for(auto& transfer : threadResources.second.m_transferBuffers)
-			vmaDestroyBuffer(m_vma, std::get<VkBuffer>(transfer), std::get<VmaAllocation>(transfer));
+		for (auto& frame : window.second.m_frameResources)
+		{
+			for (auto& thread : frame->m_threadResources)
+			{
+				for (auto& transfer : thread.second.m_transferBuffers)
+					vmaDestroyBuffer(m_vma, std::get<VkBuffer>(transfer), std::get<VmaAllocation>(transfer));
 
-		
-		m_device.destroyDescriptorPool(threadResources.second.m_persistentDescriptorPool);
-		m_device.destroyDescriptorPool(threadResources.second.m_descriptorPool);
-		m_device.destroyCommandPool(threadResources.second.m_commandPool);
+				m_device.destroyDescriptorPool(thread.second.m_persistentDescriptorPool);
+				m_device.destroyDescriptorPool(thread.second.m_descriptorPool);
+				m_device.destroyCommandPool(thread.second.m_commandPool);
+
+				// destroy frame buffer?
+			}
+
+			delete frame;
+		}
 	}
 
 	vmaDestroyAllocator(m_vma);
@@ -84,8 +93,8 @@ vk::Queue Device::getQueue() const
 vk::DescriptorPool Device::getDescriptorPool(const std::thread::id& id)
 {
 	std::lock_guard<std::mutex> l(m_mutex);
-	auto it = m_threadResources.find(id);
-	if (it != m_threadResources.end())
+	auto it = m_currentFrameResources->m_threadResources.find(id);
+	if (it != m_currentFrameResources->m_threadResources.end())
 	{
 		return it->second.m_descriptorPool;
 	}
@@ -96,8 +105,8 @@ vk::DescriptorPool Device::getDescriptorPool(const std::thread::id& id)
 vk::DescriptorPool Device::getPersistentDescriptorPool(const std::thread::id& id)
 {
 	std::lock_guard<std::mutex> l(m_mutex);
-	auto it = m_threadResources.find(id);
-	if (it != m_threadResources.end())
+	auto it = m_currentFrameResources->m_threadResources.find(id);
+	if (it != m_currentFrameResources->m_threadResources.end())
 	{
 		return it->second.m_persistentDescriptorPool;
 	}
@@ -157,10 +166,35 @@ void Device::setRenderPass(vk::RenderPass renderPass)
 	m_renderPass = renderPass;
 }
 
-void Device::setFrameBuffer(vk::Framebuffer frameBuffer, const glm::vec2& d)
+void Device::setFrameBufferDimensions(void* window, const glm::vec2& dimensions)
 {
-	m_frameBuffer = frameBuffer;
-	m_frameDimensions = d;
+	m_windowResources[window].m_frameDimensions = dimensions;
+}
+
+void Device::setFrameBuffers(void* window, const std::vector<vk::Framebuffer>& frames)
+{
+	WindowResources& windowResources = m_windowResources[window];
+	if (windowResources.m_frameResources.empty())
+	{
+		windowResources.m_frameResources.resize(frames.size());
+		for (int i = 0; i < windowResources.m_frameResources.size(); ++i)
+		{
+			FrameResources*& frame = windowResources.m_frameResources[i];
+			frame = new FrameResources();
+			frame->m_frameBuffer = frames[i];
+		}
+	}
+}
+
+void Device::setCurrentWindow(void* window)
+{
+	auto it = m_windowResources.find(window);
+	m_currentWindowResources = &it->second;
+}
+
+void Device::setCurrentFrame(std::size_t index)
+{
+	m_currentFrameResources =  m_currentWindowResources->m_frameResources[index];
 }
 
 void Device::createRenderPass(vk::Format format)
@@ -206,7 +240,7 @@ vk::RenderPass Device::getRenderPass() const
 
 std::tuple<vk::Framebuffer, glm::vec2> Device::getFrameBuffer() const
 {
-	return std::tie(m_frameBuffer, m_frameDimensions);
+	return std::tie(m_currentFrameResources->m_frameBuffer, m_currentWindowResources->m_frameDimensions);
 }
 
 RootUnit& Device::getRootUnit()
@@ -222,9 +256,14 @@ Unit Device::createUnit()
 void Device::submitAll()
 {
 	if (m_rootUnit->m_submitted.empty())
-		return; 
-	auto it = m_threadResources.find(std::this_thread::get_id());
-	if (it == m_threadResources.end())
+	{
+		Unit unit;
+		unit.in(vk::ClearColorValue(std::array<float, 4>{ 0.45f, 0.55f, 0.6f, 1.0f }));
+		unit.submit();
+	}
+
+	auto it = m_currentFrameResources->m_threadResources.find(std::this_thread::get_id());
+	if (it == m_currentFrameResources->m_threadResources.end())
 		return;
 
 	ThreadResources& resources = it->second;
@@ -615,25 +654,28 @@ vk::Result Device::create(vk::CommandPool* pool) const
 
 void Device::allocateThreadResources(const std::thread::id& id)
 {
-	if (m_threadResources.find(id) != m_threadResources.end())
-		return;
+	for (auto& window : m_windowResources)
+	{
+		for (auto& frame : window.second.m_frameResources)
+		{
+			vk::Result r;
+			ThreadResources resources;
+			r = create(&resources.m_commandPool);
+			checkVkResult(r);
 
-	vk::Result r;
-	ThreadResources resources;
-	r = create(&resources.m_commandPool);
-	checkVkResult(r);
+			auto buffers = m_device.allocateCommandBuffers({ resources.m_commandPool, vk::CommandBufferLevel::ePrimary, (uint32_t)countof(resources.m_commandBuffers) });
+			checkVkResult(buffers.result);
+			memcpy(resources.m_commandBuffers, &buffers.value[0], buffers.value.size() * sizeof(vk::CommandBuffer));
 
-	auto buffers = m_device.allocateCommandBuffers({ resources.m_commandPool, vk::CommandBufferLevel::ePrimary, (uint32_t)countof(resources.m_commandBuffers) });
-	checkVkResult(buffers.result);
-	memcpy(resources.m_commandBuffers, &buffers.value[0], buffers.value.size() * sizeof(vk::CommandBuffer));
+			r = create(&resources.m_descriptorPool);
+			checkVkResult(r);
 
-	r = create(&resources.m_descriptorPool);
-	checkVkResult(r);
+			r = create(&resources.m_persistentDescriptorPool);
+			checkVkResult(r);
 
-	r = create(&resources.m_persistentDescriptorPool);
-	checkVkResult(r);
-
-	m_threadResources[id] = resources;
+			frame->m_threadResources[id] = resources;
+		}
+	}
 }
 
 void Device::waitIdle()
@@ -653,8 +695,8 @@ void Device::endDebugRegion(VkCommandBuffer)
 
 Device::ThreadResources* Device::getThreadResources()
 {
-	auto it = m_threadResources.find(std::this_thread::get_id());
-	return it == m_threadResources.end() ? nullptr : &(it->second);
+	auto it = m_currentFrameResources->m_threadResources.find(std::this_thread::get_id());
+	return it == m_currentFrameResources->m_threadResources.end() ? nullptr : &(it->second);
 }
 
 std::tuple<bool, std::size_t> Device::getSharedHash()

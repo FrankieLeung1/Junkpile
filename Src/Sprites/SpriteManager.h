@@ -1,10 +1,11 @@
 #pragma once
 
 #include "../Resources/ResourceManager.h"
+#include "../ECS/ECS.h"
 
-typedef int SpriteId;
 class SpriteData;
 namespace Rendering { class TextureAtlas; }
+struct SpriteId : public Handle<SpriteId> { };
 class SpriteManager : public SingletonResource<SpriteManager>
 {
 public:

@@ -2,37 +2,38 @@
 
 #include "ComponentManager.h"
 typedef unsigned int Entity;
-typedef long long ComponentId;
-typedef int SpriteId;
+typedef std::size_t ComponentId;
 #define INVALID_ENTITY 0
+
+template<typename T, typename UnderlyingType = unsigned int>
+class Handle
+{
+public:
+	void makeValid() { if (!(*this)) m_id = 0; }
+	void advanceHandle() { CHECK_F(*this); m_id++; }
+	T getAndAdvance() { T h = *(T*)(this); advanceHandle(); return h; }
+	operator bool() const { return m_id != std::numeric_limits<UnderlyingType>::max(); }
+	bool operator==(const Handle<T>& h) const { return m_id == h.m_id; }
+	bool operator<(const Handle<T>& h) const { return m_id < h.m_id; }
+	bool operator>(const Handle<T>& h) const { return m_id > h.m_id; }
+
+private:
+	UnderlyingType m_id{ std::numeric_limits<UnderlyingType>::max() };
+};
 
 template<typename Super>
 struct Component
 {
 	Entity m_entity;
-	static ComponentId componentId() { return reinterpret_cast<ComponentId>(&Super::m_cid); }
+	static ComponentId componentId() { return typeid(Super).hash_code(); }
 };
 
 struct EmptyComponent : public Component<EmptyComponent>
 {
-	static constexpr const char* m_cid = "Empty";
-};
-
-struct PositionComponent : public Component<PositionComponent>
-{
-	static constexpr const char* m_cid = "Position";
-	glm::vec3 m_position;
+	//static constexpr const char* m_cid = "Empty";
 };
 
 struct NameComponent : public Component<NameComponent>
 {
-	static constexpr const char* m_cid = "Name";
 	char m_name[32];
-};
-
-struct SpriteComponent : public Component<SpriteComponent>
-{
-	static constexpr const char* m_cid = "Sprite";
-	SpriteId m_sprite;
-	float m_time;
 };

@@ -10,9 +10,9 @@
 SpriteManager::SpriteManager():
 m_idSprites(),
 m_nameSprites(),
-m_nextSpriteId(1)
+m_nextSpriteId()
 {
-
+	m_nextSpriteId.makeValid();
 }
 
 SpriteManager::~SpriteManager()
@@ -24,7 +24,7 @@ SpriteManager::~SpriteManager()
 
 SpriteId SpriteManager::getSprite(const char* path)
 {
-	SpriteId sprite = 0;
+	SpriteId sprite;
 	std::string normalizedPath = normalizePath(path);
 	auto namedIt = m_nameSprites.find(normalizedPath);
 	if (namedIt == m_nameSprites.end())
@@ -32,17 +32,17 @@ SpriteId SpriteManager::getSprite(const char* path)
 		// load it
 		ResourcePtr<SpriteData> data{ NewPtr, normalizedPath.c_str() };
 		m_nameSprites.insert(decltype(m_nameSprites)::value_type(normalizedPath, data));
-		sprite = ++m_nextSpriteId;
+		m_nextSpriteId.advanceHandle();
+		sprite = m_nextSpriteId;
 		m_idSprites.insert(decltype(m_idSprites)::value_type(sprite, data));
 
 		ResourcePtr<EventManager> events;
-		events->addListener<ResourceStateChanged>([=](const ResourceStateChanged* c) {
+		events->addListener<ResourceStateChanged>([=](ResourceStateChanged* c) {
 			if (data == c->m_resourceData)
 			{
 				this->onSpriteLoaded(data);
-				return EventManager::ListenerResult::Discard;
+				c->discardListener();
 			}
-			return EventManager::ListenerResult::Persist;
 		});
 	}
 
@@ -56,7 +56,7 @@ SpriteId SpriteManager::getSprite(const char* path)
 			return it.first;
 	}
 
-	return 0; // fail
+	return { }; // fail
 }
 
 std::tuple<SpriteData*, Rendering::TextureAtlas*> SpriteManager::getSpriteData(SpriteId id)

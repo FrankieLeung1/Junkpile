@@ -90,8 +90,8 @@ m_windowTitle("App Window"),
 m_inited(false)
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; }, 10);
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->render(); return EventManager::ListenerResult::Persist; }, -11);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 10);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->render(); }, -11);
 }
 
 VulkanFramework::~VulkanFramework()
@@ -225,8 +225,8 @@ void VulkanFramework::SetupVulkan(const char** extensions, uint32_t extensions_c
 	m_device->setDevice(g_Device);
 	m_device->setQueue(g_Queue);
 	m_device->setPipelineCache(g_PipelineCache);
-	m_device->allocateThreadResources(std::this_thread::get_id());
-	g_DescriptorPool = m_device->getPersistentDescriptorPool();
+	//m_device->allocateThreadResources(std::this_thread::get_id());
+	//g_DescriptorPool = m_device->getPersistentDescriptorPool();
 }
 
 static LONG_PTR oldProc;
@@ -255,10 +255,15 @@ int VulkanFramework::initImGui(AppType type)
 	if (!glfwInit())
 		return 1;
 
+	int width = 1280, height = 720;
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	if(type == AppType::ImGuiOnly)
+	if (type == AppType::ImGuiOnly)
+	{
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-	m_window = glfwCreateWindow(1280, 720, m_windowTitle.c_str(), NULL, NULL);
+		width = 1;
+		height = 1;
+	}
+	m_window = glfwCreateWindow(width, height, m_windowTitle.c_str(), NULL, NULL);
 
 	// Setup Vulkan
 	if (!glfwVulkanSupported())
@@ -344,6 +349,12 @@ int VulkanFramework::initImGui(AppType type)
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplGlfw_InitForVulkan(m_window, true);
+
+	m_device->setCurrentWindow(wd);
+	m_device->setCurrentFrame(0);
+	m_device->allocateThreadResources(std::this_thread::get_id());
+	g_DescriptorPool = m_device->getPersistentDescriptorPool();
+
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = g_Instance;
 	init_info.PhysicalDevice = g_PhysicalDevice;
@@ -359,7 +370,7 @@ int VulkanFramework::initImGui(AppType type)
 	ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 
 	m_device->createRenderPass((vk::Format)wd->SurfaceFormat.format);
-	m_device->setFrameBuffer(nullptr, { wd->Width, wd->Height });
+	m_device->setFrameBufferDimensions(wd, { wd->Width, wd->Height });
 
 	// Load Fonts
 	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -462,6 +473,7 @@ void VulkanFramework::update()
 		ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 		ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
 		m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format);
+		m_device->setFrameBufferDimensions(&g_MainWindowData, { g_SwapChainResizeWidth, g_SwapChainResizeHeight });
 		g_MainWindowData.FrameIndex = 0;
 	}
 
@@ -500,7 +512,8 @@ void VulkanFramework::update()
 	check_vk_result(err);
 
 	ImGui_ImplVulkanH_Frame* f = &wd->Frames[wd->FrameIndex];
-	m_device->setFrameBuffer(f->Framebuffer, { wd->Width, wd->Height });
+	m_device->setCurrentWindow(wd);
+	m_device->setCurrentFrame(wd->FrameIndex);
 
 	if (m_appType == AppType::ImGuiOnly)
 	{
@@ -508,7 +521,7 @@ void VulkanFramework::update()
 		if (time->getTime() > 10) // it takes a while for imgui to create viewports, give it a bit
 		{
 			ImGuiPlatformIO* io = &ImGui::GetPlatformIO();
-			if (io->Viewports.size() <= 2)
+			if (io->Viewports.size() < 2)
 				setShouldQuit(true);
 		}
 	}

@@ -148,6 +148,15 @@
     <Filter Include="Source Files\Generators">
       <UniqueIdentifier>{a15c902b-9b68-4d2c-ac5a-909c8f113a4b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\lodepng">
+      <UniqueIdentifier>{5a2b65a9-d30a-45fe-94a9-d439f14994f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Models">
+      <UniqueIdentifier>{ba8272ee-28fc-4686-b8f5-66f5ea5549aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Models">
+      <UniqueIdentifier>{33cce72c-0a86-4f81-bc20-bd343e11a9fe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Exec\stdafx.cpp">
@@ -512,6 +521,21 @@
     </ClCompile>
     <ClCompile Include="..\Src\Generators\Generator.cpp">
       <Filter>Source Files\Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Misc\GrindstoneEditor.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\lodepng\lodepng.cpp">
+      <Filter>External\lodepng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Models\ModelManager.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Models\ModelSystem.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Rendering\Depot.cpp">
+      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1282,6 +1306,24 @@
     </ClInclude>
     <ClInclude Include="..\Src\Generators\Generator.h">
       <Filter>Header Files\Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\GrindstoneEditor.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\CImg.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\lodepng\lodepng.h">
+      <Filter>External\lodepng</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Models\ModelManager.h">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Models\ModelSystem.h">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Rendering\Depot.h">
+      <Filter>Header Files\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

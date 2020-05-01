@@ -15,7 +15,7 @@ m_state(luaL_newstate())
 	ResourcePtr<EventManager> e;
 	ResourcePtr<TimeManager> t;
 
-	e->addListener<FileChangeEvent>([this](const FileChangeEvent* c) { this->onFileChange(*c); return EventManager::ListenerResult::Persist; });
+	e->addListener<FileChangeEvent>([this](FileChangeEvent* c) { this->onFileChange(*c); });
 }
 
 ScriptManager::~ScriptManager()

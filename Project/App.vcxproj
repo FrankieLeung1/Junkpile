@@ -212,6 +212,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\External\lodepng\lodepng.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\External\lua\src\lapi.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -429,11 +433,15 @@
     <ClCompile Include="..\Src\Meta\LuaRegisterer.cpp" />
     <ClCompile Include="..\Src\Meta\Meta.cpp" />
     <ClCompile Include="..\Src\Meta\Serializer.cpp" />
+    <ClCompile Include="..\Src\Misc\GrindstoneEditor.cpp" />
     <ClCompile Include="..\Src\Misc\Misc.cpp" />
     <ClCompile Include="..\Src\Misc\ResizableMemoryPool.cpp" />
     <ClCompile Include="..\Src\Misc\WindowRecorder.cpp" />
+    <ClCompile Include="..\Src\Models\ModelManager.cpp" />
+    <ClCompile Include="..\Src\Models\ModelSystem.cpp" />
     <ClCompile Include="..\Src\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="..\Src\Rendering\Buffer.cpp" />
+    <ClCompile Include="..\Src\Rendering\Depot.cpp" />
     <ClCompile Include="..\Src\Rendering\Pipeline.cpp" />
     <ClCompile Include="..\Src\Rendering\RenderingDevice.cpp" />
     <ClCompile Include="..\Src\Rendering\Sampler.cpp" />
@@ -457,6 +465,7 @@
     <ClCompile Include="..\Src\Threading\ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\External\CImg.h" />
     <ClInclude Include="..\External\Fossilize\fossilize.hpp" />
     <ClInclude Include="..\External\Fossilize\fossilize_application_filter.hpp" />
     <ClInclude Include="..\External\Fossilize\fossilize_db.hpp" />
@@ -487,6 +496,7 @@
     <ClInclude Include="..\External\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\External\imgui\imstb_textedit.h" />
     <ClInclude Include="..\External\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\External\lodepng\lodepng.h" />
     <ClInclude Include="..\External\lua\src\lapi.h" />
     <ClInclude Include="..\External\lua\src\lauxlib.h" />
     <ClInclude Include="..\External\lua\src\lcode.h" />
@@ -683,14 +693,18 @@
     <ClInclude Include="..\Src\Misc\Any.h" />
     <ClInclude Include="..\Src\Misc\Callbacks.h" />
     <ClInclude Include="..\Src\Misc\ClassMask.h" />
+    <ClInclude Include="..\Src\Misc\GrindstoneEditor.h" />
     <ClInclude Include="..\Src\Misc\Misc.h" />
     <ClInclude Include="..\Src\Misc\SparseStructures.h" />
     <ClInclude Include="..\Src\Misc\ResizableMemoryPool.h" />
     <ClInclude Include="..\Src\Misc\Tests.h" />
     <ClInclude Include="..\Src\Misc\WindowRecorder.h" />
+    <ClInclude Include="..\Src\Models\ModelManager.h" />
+    <ClInclude Include="..\Src\Models\ModelSystem.h" />
     <ClInclude Include="..\Src\Physics\PhysicsSystem.h" />
     <ClInclude Include="..\Src\Rendering\Buffer.h" />
     <ClInclude Include="..\Src\Rendering\DataSource.h" />
+    <ClInclude Include="..\Src\Rendering\Depot.h" />
     <ClInclude Include="..\Src\Rendering\Pipeline.h" />
     <ClInclude Include="..\Src\Rendering\RenderingDevice.h" />
     <ClInclude Include="..\Src\Rendering\RenderTarget.cpp" />

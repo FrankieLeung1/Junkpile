@@ -89,6 +89,7 @@ void Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResourc
 	}
 
 	if (submitDrawCall(device, openBuffer)) return;
+	if (submitClearCall(device, openBuffer)) return;
 
 	LOG_F(FATAL, "Unknown Unit type\n");
 }
@@ -170,7 +171,7 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 		}
 	}
 
-	if(!vertices || !bindTextures[0])
+	if(!vertices)
 		return false;
 
 	vk::Buffer vBuffer = vertices->getVkBuffer();
@@ -213,9 +214,51 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 			const Draw& d = any.get<Draw>();
 			buffer.draw(d.m_vertexCount, d.m_instanceCount, d.m_firstVertex, d.m_firstInstance);
 		}
+		else if (any.isType<DrawIndexed>())
+		{
+			const DrawIndexed& d = any.get<DrawIndexed>();
+			buffer.drawIndexed(d.m_indexCount, d.m_instanceCount, d.m_firstIndex, d.m_vertexOffset, d.m_firstInstance);
+		}
 	}
 	buffer.endRenderPass();
 	
+	return true;
+}
+
+bool Unit::submitClearCall(Rendering::Device* device, vk::CommandBuffer buffer)
+{
+	/*Data& d = getData();
+	Texture* bindTextures[4] = {};
+	Buffer* vertices = nullptr, * indices = nullptr;
+	auto pipelineLayout = getVulkanObject<vk::PipelineLayout>();
+	auto pipeline = getVulkanObject<vk::Pipeline>();
+	auto descriptorSet = getVulkanObject<vk::DescriptorSet>();*/
+
+	vk::ClearColorValue* clearValue = nullptr;
+	for (Any& any : m_data->m_settings)
+	{
+		if (any.isType<vk::ClearColorValue>())
+		{
+			clearValue = any.getPtr<vk::ClearColorValue>();
+			break;
+		}
+	}
+	
+	if (!clearValue)
+		return false;
+
+	auto scissor = getVulkanObject<vk::Rect2D>();
+	vk::ClearValue clearValues;
+	clearValues.color = *clearValue;
+	
+	vk::RenderPassBeginInfo renderPassInfo;
+	renderPassInfo.renderPass = device->getRenderPass();
+	renderPassInfo.framebuffer = std::get<0>(device->getFrameBuffer());
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearValues;
+	renderPassInfo.renderArea = scissor;
+	buffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+	buffer.endRenderPass();
 	return true;
 }
 
@@ -250,6 +293,7 @@ Unit& Unit::in(VkImageLayout v) { return _in(v); }
 Unit& Unit::in(vk::SamplerMipmapMode v) { return _in(v); }
 Unit& Unit::in(vk::CompareOp v) { return _in(v); }
 Unit& Unit::in(vk::ClearColorValue v) { return _in(v); }
+Unit& Unit::in(vk::PrimitiveTopology v) { return _in(v); }
 Unit& Unit::in(Named<bool> v) { return _in(v); }
 Unit& Unit::in(Named<float> v) { return _in(v); }
 Unit& Unit::in(Named<vk::Filter> v) { return _in(v); }
@@ -257,6 +301,7 @@ Unit& Unit::in(Named<vk::SamplerAddressMode> v) { return _in(v); }
 Unit& Unit::in(Binding<ResourcePtr<Texture>> v) { return _in(v); }
 Unit& Unit::in(PushConstant v) { return _in(v); }
 Unit& Unit::in(Draw v) { return _in(v); }
+Unit& Unit::in(DrawIndexed v) { return _in(v); }
 Unit& Unit::out(Texture& v) { return _out(v); }
 
 // RootUnit

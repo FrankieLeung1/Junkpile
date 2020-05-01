@@ -149,13 +149,12 @@ void TextureGenerator::test()
 	//sm->setEditorContent("", "../Res/Scripts/Generators/TestGen.py");
 
 	/*ResourcePtr<EventManager> events;
-	events->addListener<ScriptReloadedEvent>([=](const ScriptReloadedEvent* e) {
+	events->addListener<ScriptReloadedEvent>([=](ScriptReloadedEvent* e) {
 		for (auto& change : e->m_paths)
 		{
 			if(change == "Scripts/Generators/TestGen.py")
 				generate();
 		}
-		return EventManager::ListenerResult::Persist;
 	});*/
 
 	/*ResourcePtr<ImGuiManager> imgui;

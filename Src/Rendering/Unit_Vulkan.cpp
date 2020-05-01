@@ -148,7 +148,8 @@ vk::DescriptorSet Unit::createVulkanObject<vk::DescriptorSet>()
             }
         }
 
-        device->updateObject(writes);
+        if(!writes.empty())
+            device->updateObject(writes);
     }
     return data.m_descriptorSet;
 }
@@ -165,7 +166,7 @@ vk::DescriptorSetLayout Unit::createVulkanObject<vk::DescriptorSetLayout>()
         ResourcePtr<Device> device;
         vk::DescriptorSetLayoutCreateInfo info;
         info.bindingCount = (uint32_t)bindings.size();
-        info.pBindings = &bindings[0];
+        info.pBindings = info.bindingCount ? &bindings[0] : nullptr;
         data.m_descriptorSetLayout = device->createObject(info);
     }
 	return data.m_descriptorSetLayout;
@@ -361,8 +362,5 @@ vk::ClearDepthStencilValue Unit::createVulkanObject<vk::ClearDepthStencilValue>(
     opt<vk::ClearDepthStencilValue>(stencil, nullptr, {1.0f, 0});
     return stencil;
 }
-
-
-
 
 }

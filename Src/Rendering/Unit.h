@@ -49,6 +49,14 @@ namespace Rendering
 			Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance): m_vertexCount(vertexCount), m_instanceCount(instanceCount), m_firstVertex(firstVertex), m_firstInstance(firstInstance) {}
 			uint32_t m_vertexCount, m_instanceCount, m_firstVertex, m_firstInstance;
 		};
+
+		struct DrawIndexed
+		{
+			DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) : m_indexCount(indexCount), m_instanceCount(instanceCount), m_firstIndex(firstIndex), m_vertexOffset(vertexOffset), m_firstInstance(firstInstance){}
+			uint32_t m_indexCount, m_instanceCount, m_firstIndex, m_vertexOffset, m_firstInstance;
+		};
+
+		
 		
 	public:
 		Unit();
@@ -67,6 +75,7 @@ namespace Rendering
 		Unit& in(ResourcePtr<Texture>);
 		Unit& in(ResourcePtr<TextureAtlas>);
 		Unit& in(Buffer*);
+		Unit& in(vk::PrimitiveTopology);
 		Unit& in(VkImageLayout);
 		Unit& in(vk::SamplerMipmapMode);
 		Unit& in(vk::CompareOp);
@@ -78,6 +87,7 @@ namespace Rendering
 		Unit& in(Binding<ResourcePtr<Texture>>);
 		Unit& in(PushConstant);
 		Unit& in(Draw);
+		Unit& in(DrawIndexed);
 		Unit& out(Texture&);
 
 		static void test();
@@ -103,6 +113,7 @@ namespace Rendering
 		bool submitTextureUpload(Rendering::Device*, vk::CommandBuffer, Texture*);
 		bool submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffer, Texture* texture);
 		bool submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer);
+		bool submitClearCall(Rendering::Device* device, vk::CommandBuffer buffer);
 
 	protected:
 		struct Data
@@ -151,7 +162,7 @@ namespace Rendering
 		}
 		catch (std::exception e)
 		{
-			LOG_F(ERROR, "Unable to get vulkan object %s\n", e.what());
+			//LOG_F(ERROR, "Unable to get vulkan object %s\n", e.what());
 		}
 
 		return {};

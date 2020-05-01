@@ -437,6 +437,9 @@ typename ResourcePtr<Resource>::State ResourcePtr<Resource>::getState() const
 template<typename Resource>
 bool ResourcePtr<Resource>::operator!() const
 {
+	if (!m_data)
+		return true;
+
 	std::lock_guard<std::mutex> l(m_data->m_mutex);
 	return m_data->m_resource == nullptr;
 }

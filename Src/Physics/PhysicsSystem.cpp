@@ -2,6 +2,7 @@
 #include "PhysicsSystem.h"
 #include "../imgui/ImGuiManager.h"
 #include "../Misc/Misc.h"
+#include "../Scene/TransformSystem.h"
 
 btVector3 toBt(const glm::vec3& v) { return btVector3(v[0], v[1], v[2]); }
 btVector4 toBt(const glm::vec4& v) { return btVector4(v[0], v[1], v[2], v[3]); }
@@ -45,7 +46,7 @@ m_world(nullptr)
 	m_world->setInternalTickCallback([](btDynamicsWorld* world, btScalar timeStep) { ((PhysicsSystem*)world->getWorldUserInfo())->tickCallback(world, timeStep); }, this);
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->processWorld(0.16f); this->process(0.16f); return EventManager::ListenerResult::Persist; }, 10);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->processWorld(0.16f); this->process(0.16f); }, 10);
 }
 
 PhysicsSystem::~PhysicsSystem()
@@ -80,9 +81,9 @@ PhysicsComponent* PhysicsSystem::createBox(Entity entity, const glm::vec3& size,
 	btTransform startTransform;
 	startTransform.setIdentity();
 
-	auto it = m_components->findEntity<PositionComponent>(entity);
+	auto it = m_components->findEntity<TransformComponent>(entity);
 	if (it.valid())
-		startTransform.setOrigin(toBt(it.get<PositionComponent>()->m_position));
+		startTransform.setOrigin(toBt(it.get<TransformComponent>()->m_position));
 
 	bool isDynamic = (mass != 0.f);
 
@@ -111,14 +112,14 @@ void PhysicsSystem::processWorld(float delta)
 
 void PhysicsSystem::process(float delta)
 {
-	EntityIterator<PositionComponent, PhysicsComponent> it(m_components, false);
+	EntityIterator<TransformComponent, PhysicsComponent> it(m_components, false);
 	while (it.next())
 	{
 		PhysicsComponent* physics = it.get<PhysicsComponent>();
 		if (!physics)
 			continue;
 
-		PositionComponent* position = it.get<PositionComponent>();
+		TransformComponent* position = it.get<TransformComponent>();
 		if (position)
 		{
 			btMotionState* motionState = physics->m_body->getMotionState();

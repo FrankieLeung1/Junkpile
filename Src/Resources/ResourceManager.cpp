@@ -47,7 +47,7 @@ ResourceManager::~ResourceManager()
 void ResourceManager::init()
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](const UpdateEvent*) { this->update(); return EventManager::ListenerResult::Persist; });
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); });
 }
 
 void ResourceManager::startLoading()
