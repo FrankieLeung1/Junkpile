@@ -221,8 +221,8 @@ vk::Pipeline Unit::createVulkanObject<vk::Pipeline>()
 
         Buffer* vertexBuffer = nullptr, *indexBuffer = nullptr;
         req(vertexBuffer, "Vertex");
-        req(indexBuffer, "Index");
-        if (vertexBuffer->getFormat().empty() || indexBuffer->getFormat().empty())
+        opt(indexBuffer, "Index");
+        if (vertexBuffer->getFormat().empty() || (indexBuffer && indexBuffer->getFormat().empty()))
             throw std::runtime_error{ stringf("%s buffer did not have format set", vertexBuffer->getFormat().empty() ? "Vertex" : "Index")};
 
         vk::PipelineShaderStageCreateInfo stages[2];

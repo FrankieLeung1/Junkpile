@@ -60,16 +60,19 @@ void ModelManager::onModelDataLoaded(ModelData* e)
 void ModelManager::loadFBX(ModelData* data) const
 {
 	ResourcePtr<File>& file = data->m_file;
-	ofbx::IScene* scene = ofbx::load((ofbx::u8*)file->getContents(), (int)file->getSize(), 0);
+	ofbx::IScene* scene = ofbx::load((ofbx::u8*)file->getContents(), (int)file->getSize(), (ofbx::u64)ofbx::LoadFlags::TRIANGULATE);
 	const ofbx::Mesh* mesh = scene->getMesh(0);
 	const ofbx::Geometry* geo = mesh->getGeometry();
+	const ofbx::Vec3* positions = geo->getVertices();
+	const ofbx::Vec2* uvs = geo->getUVs();
+	const int* face = geo->getFaceIndices();
 
 	// setup and copy into vertex buffer
 	struct Vert {
 		glm::vec3 m_position;
 		glm::vec2 m_uv;
 	};
-	data->m_vertexCount = geo->getVertexCount();
+	data->m_vertexCount = geo->getIndexCount();
 	data->m_vBuffer = new Rendering::Buffer(Rendering::Buffer::Vertex, Rendering::Buffer::Usage::Mapped, data->m_vertexCount * sizeof(Vert));
 	data->m_vBuffer->setFormat({
 		{vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)},
@@ -79,43 +82,11 @@ void ModelManager::loadFBX(ModelData* data) const
 	Vert* vertexDest = (Vert*)data->m_vBuffer->map();
 	for (int i = 0; i < data->m_vertexCount; i++)
 	{
-		const ofbx::Vec3* position = &(geo->getVertices()[i]);
-		vertexDest[i].m_position = glm::vec3(position->x, position->y, position->z);
-
-		const ofbx::Vec2* uv = &(geo->getUVs()[i]);
-		vertexDest[i].m_uv = glm::vec2(uv->x, uv->y);
+		int posIndex = (face[i] < 0 ? (-face[i]) - 1 : face[i]);
+		vertexDest[i].m_position = glm::vec3(positions[posIndex].x, positions[posIndex].y, positions[posIndex].z);
+		vertexDest[i].m_uv = glm::vec2(uvs[i].x, 1.0f - uvs[i].y);
 	}
 	data->m_vBuffer->unmap();
-
-	// setup and copy into index buffer
-	data->m_indexCount = geo->getIndexCount();
-	const int* indexSrc = geo->getFaceIndices();
-	
-	std::size_t currentFaceSize = 0;
-	std::vector<unsigned int> indices; indices.reserve(data->m_indexCount * 2);
-	for (int i = 0; i < data->m_indexCount; i++)
-	{
-		indices.push_back(indexSrc[i] < 0 ? (-indexSrc[i]) - 1 : indexSrc[i]);
-		currentFaceSize++;
-
-		if (indexSrc[i] < 0)
-		{
-			if (currentFaceSize == 4)
-			{
-				indices.push_back(indices[indices.size() - 4]);
-				indices.push_back(indices[indices.size() - 3]);
-			}
-			currentFaceSize = 0;
-		}
-	}
-	data->m_indexCount = indices.size();
-
-	data->m_iBuffer = new Rendering::Buffer(Rendering::Buffer::Index, Rendering::Buffer::Usage::Mapped, data->m_indexCount * sizeof(int));
-	data->m_iBuffer->setFormat({ {vk::Format::eR32Uint, sizeof(int)} }, sizeof(int));
-	
-	int* indexDest = (int*)data->m_iBuffer->map();
-	memcpy(indexDest, &indices.front(), indices.size() * sizeof(unsigned int));
-	data->m_iBuffer->unmap();
 
 	scene->destroy();
 }

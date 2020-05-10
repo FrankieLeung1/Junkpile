@@ -36,7 +36,7 @@ void ModelSystem::update(float delta)
 	{
 		ModelComponent* model = it.get<ModelComponent>();
 		const ModelManager::ModelData* data = models->getModelData(model->m_model);
-		if (!data->m_vBuffer || !data->m_iBuffer)
+		if (!data->m_vBuffer)
 			continue;
 
 		ResourcePtr<Rendering::Device> device;
@@ -49,13 +49,18 @@ void ModelSystem::update(float delta)
 		unit.in(vshader);
 		unit.in(fshader);
 		unit.in(data->m_vBuffer);
-		unit.in(data->m_iBuffer);
+		if(data->m_iBuffer) unit.in(data->m_iBuffer);
+		unit.in((vk::CullModeFlags)vk::CullModeFlagBits::eFront);
 		unit.in(Rendering::Unit::Binding<ResourcePtr<Rendering::Texture>>(vk::ShaderStageFlagBits::eFragment, 0, model->m_texture1));
 		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
 		unit.in(vk::PrimitiveTopology::eTriangleList);
 
 		//  m_indexCount, m_instanceCount, m_firstIndex, m_vertexOffset, m_firstInstance
-		unit.in({ (uint32_t)data->m_indexCount, 1, 0, 0, 0 });
+		if (data->m_indexCount)
+			unit.in({ (uint32_t)data->m_indexCount, 1, 0, 0, 0 });
+		else
+			unit.in({ (uint32_t)data->m_vertexCount, 1, 0, 0 });
+
 		unit.submit();
 	}
 }
@@ -69,7 +74,8 @@ void ModelSystem::test()
 	ModelComponent* model = entityIt.get<ModelComponent>();
 	model->m_model = models->getModel("Models/Model/characterMedium.fbx");
 
-	ResourcePtr<File> file(NewPtr, "Models/Skins/uv.png");
+	ResourcePtr<File> file(NewPtr, "Models/Skins/criminalMaleA.png");
+	//ResourcePtr<File> file(NewPtr, "Models/Skins/uv.png");
 	unsigned char* pixels;
 	unsigned int width, height;
 	int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents(), file->getSize());

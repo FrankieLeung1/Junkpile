@@ -149,7 +149,8 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 	auto descriptorSet = getVulkanObject<vk::DescriptorSet>();
 	std::array<vk::Viewport, 1> viewports = { getVulkanObject<vk::Viewport>() };
 	auto scissor = getVulkanObject<vk::Rect2D>();
-	if (!pipeline) return false;
+	if (!pipeline)
+		return false;
 
 	for (Any& any : d.m_settings)
 	{
@@ -294,6 +295,7 @@ Unit& Unit::in(vk::SamplerMipmapMode v) { return _in(v); }
 Unit& Unit::in(vk::CompareOp v) { return _in(v); }
 Unit& Unit::in(vk::ClearColorValue v) { return _in(v); }
 Unit& Unit::in(vk::PrimitiveTopology v) { return _in(v); }
+Unit& Unit::in(vk::CullModeFlags v) { return _in(v); }
 Unit& Unit::in(Named<bool> v) { return _in(v); }
 Unit& Unit::in(Named<float> v) { return _in(v); }
 Unit& Unit::in(Named<vk::Filter> v) { return _in(v); }

@@ -76,6 +76,7 @@ namespace Rendering
 		Unit& in(ResourcePtr<TextureAtlas>);
 		Unit& in(Buffer*);
 		Unit& in(vk::PrimitiveTopology);
+		Unit& in(vk::CullModeFlags v);
 		Unit& in(VkImageLayout);
 		Unit& in(vk::SamplerMipmapMode);
 		Unit& in(vk::CompareOp);
