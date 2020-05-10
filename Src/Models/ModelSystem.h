@@ -4,9 +4,11 @@
 #include "../ECS/ComponentManager.h"
 #include "ModelManager.h"
 
-struct ModelComponent : public Component<ModelComponent>
+class ModelSystem;
+struct ModelComponent : public Component<ModelComponent, ModelSystem>
 {
 	Model m_model;
+	ResourcePtr<Rendering::Texture> m_texture1{ EmptyPtr };
 };
 
 struct UpdateEvent;
@@ -22,6 +24,7 @@ protected:
 	void update(float);
 
 protected:
+	Entity m_cameraEntity;
 
 
 };

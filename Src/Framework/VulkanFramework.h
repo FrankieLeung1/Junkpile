@@ -13,7 +13,7 @@ namespace Rendering
 class VulkanFramework : public SingletonResource<VulkanFramework>
 {
 public:
-	enum AppType
+	enum class AppType
 	{
 		MainWindow,
 		ImGuiOnly,
@@ -53,6 +53,8 @@ protected:
 	void CleanupVulkanWindow();
 	void CleanupVulkan();
 
+	static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+
 protected:
 	ResourcePtr<Rendering::Device> m_device;
 	GLFWwindow* m_window;
@@ -62,4 +64,6 @@ protected:
 	ImVec4 m_clearColour;
 	bool m_inited;
 	AppType m_appType;
+
+	GLFWscrollfun m_prevScrollCallback;
 };

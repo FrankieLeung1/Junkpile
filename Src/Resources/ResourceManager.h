@@ -243,7 +243,10 @@ ResourceData* ResourceManager::addRefSpecialized(std::false_type, std::size_t sh
 		data->m_sharedHash = sharedHash;
 	}
 
-	m_loadingTasks.push(Task{ loader, data });
+	{
+		std::lock_guard<std::mutex> l(m_loadingTaskMutex);
+		m_loadingTasks.push(Task{ loader, data });
+	}
 
 	if (m_autoStartTasks && m_loadingTasks.size() == 1 && m_tasksInProgress <= 0)
 	{
@@ -437,11 +440,7 @@ typename ResourcePtr<Resource>::State ResourcePtr<Resource>::getState() const
 template<typename Resource>
 bool ResourcePtr<Resource>::operator!() const
 {
-	if (!m_data)
-		return true;
-
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
-	return m_data->m_resource == nullptr;
+	return !m_data;
 }
 
 template<typename Resource>

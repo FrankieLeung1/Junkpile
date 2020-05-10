@@ -1010,12 +1010,6 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
             check_vk_result(err);
         }
     }
-
-    std::vector<vk::Framebuffer> frameBuffers;
-    for (uint32_t i = 0; i < wd->ImageCount; i++)
-        frameBuffers.push_back(wd->Frames[i].Framebuffer);
-
-    device->setFrameBuffers(wd, frameBuffers);
 }
 
 ImTextureID ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)
@@ -1058,6 +1052,12 @@ void ImGui_ImplVulkanH_CreateWindow(VkInstance instance, VkPhysicalDevice physic
     (void)instance;
     ImGui_ImplVulkanH_CreateWindowSwapChain(physical_device, device, wd, allocator, width, height, min_image_count);
     ImGui_ImplVulkanH_CreateWindowCommandBuffers(physical_device, device, wd, queue_family, allocator);
+
+    std::vector<std::tuple<vk::Framebuffer, vk::Fence>> frameBuffers;
+    for (uint32_t i = 0; i < wd->ImageCount; i++)
+        frameBuffers.push_back(std::make_tuple((vk::Framebuffer)wd->Frames[i].Framebuffer, (vk::Fence)wd->Frames[i].Fence));
+
+    ResourcePtr<Rendering::Device>()->setFrameBuffers(wd, frameBuffers);
 }
 
 void ImGui_ImplVulkanH_DestroyWindow(VkInstance instance, VkDevice device, ImGui_ImplVulkanH_Window* wd, const VkAllocationCallbacks* allocator)

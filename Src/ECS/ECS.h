@@ -22,10 +22,17 @@ private:
 };
 
 template<typename Super>
-struct Component
+struct ComponentBase
 {
 	Entity m_entity;
 	static ComponentId componentId() { return typeid(Super).hash_code(); }
+};
+
+template<typename Super, typename System = void>
+struct Component : public ComponentBase<Super>
+{
+	template<class T = System> static typename std::enable_if<std::is_same<T, void>::value, void>::type initSystem(){ }
+	template<class T = System> static typename std::enable_if<!std::is_same<T, void>::value, void>::type initSystem() { SingletonResource<T>::getSingleton(); }
 };
 
 struct EmptyComponent : public Component<EmptyComponent>

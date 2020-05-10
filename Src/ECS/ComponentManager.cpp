@@ -18,10 +18,10 @@ void ComponentManager::removeEntity(Entity)
 	LOG_F(FATAL, "TODO");
 }
 
-bool ComponentManager::validPointer(const ResizeableMemoryPool& pool, void* p) const
+bool ComponentManager::validPointer(const ComponentPool& pool, void* p) const
 {
-	const char* begin = &pool[0];
-	return begin <= p && begin + pool.size() > p;
+	const char* begin = (const char*)pool.m_accessor->front(pool.m_buffer);
+	return begin <= p && begin + (pool.m_accessor->size(pool.m_buffer) * pool.m_accessor->elementSize()) > p;
 }
 
 void ComponentManager::imgui()

@@ -3,7 +3,8 @@
 #include "../Resources/ResourceManager.h"
 #include "../ECS/ComponentManager.h"
 
-struct TransformComponent : public Component<TransformComponent>
+class TransformSystem;
+struct TransformComponent : public Component<TransformComponent, TransformSystem>
 {
 	static constexpr const char* m_cid = "Transform";
 

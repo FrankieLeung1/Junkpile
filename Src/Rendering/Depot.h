@@ -14,9 +14,12 @@ namespace Rendering {
 		ResourcePtr<Rendering::Shader> getPassthroughVertexShader();
 		ResourcePtr<Rendering::Shader> getPassthroughFragmentShader();
 
+		ResourcePtr<Rendering::Shader> getTexturedVertexShader();
+		ResourcePtr<Rendering::Shader> getTexturedFragmentShader();
+
 	protected:
-		ResourcePtr<Rendering::Shader> m_passVShader;
-		ResourcePtr<Rendering::Shader> m_passFShader;
+		ResourcePtr<Rendering::Shader> m_passVShader, m_passFShader;
+		ResourcePtr<Rendering::Shader> m_texVShader, m_texFShader;
 	};
 
 }

@@ -23,7 +23,9 @@ public:
 
 	template<typename T, bool = std::is_copy_assignable<T>::value, bool = IsAssignablePointer<T>::value> bool isType() const;
 	template<typename T> T& get();
+	template<typename T> const T& get() const;
 	template<typename T> T* getPtr();
+	template<typename T> const T* getPtr() const;
 	void* toVoidPtr();
 	void copyTo(void*);
 	void copyDerefTo(void*);
@@ -185,7 +187,21 @@ template<typename T> T& AnyWithSize<BufferSize>::get()
 }
 
 template<std::size_t BufferSize>
+template<typename T> const T& AnyWithSize<BufferSize>::get() const
+{
+	CHECK_F(isType<T>());
+	if (usingInternalBuffer()) return *reinterpret_cast<const T*>(m_buffer);
+	else return *static_cast<const T*>(m_ptr);
+}
+
+template<std::size_t BufferSize>
 template<typename T> T* AnyWithSize<BufferSize>::getPtr()
+{
+	return isType<T>() ? &get<T>() : nullptr;
+}
+
+template<std::size_t BufferSize>
+template<typename T> const T* AnyWithSize<BufferSize>::getPtr() const
 {
 	return isType<T>() ? &get<T>() : nullptr;
 }

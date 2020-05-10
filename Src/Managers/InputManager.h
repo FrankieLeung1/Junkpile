@@ -20,7 +20,11 @@ public:
 	void setWantsTrayContext(bool);
 
 	void setCursorPos(float x, float y);
-	std::tuple<float, float> getCursorPos() const;
+	glm::vec2 getCursorPos() const;
+	glm::vec2 getCursorPosDelta() const;
+
+	void setMouseWheel(float);
+	float getMouseWheel() const;
 
 protected:
 	bool m_wantsTrayContext;
@@ -28,4 +32,5 @@ protected:
 	bool m_hasFocus;
 	float m_x, m_y;
 	float m_prevX, m_prevY;
+	float m_mouseWheel;
 };

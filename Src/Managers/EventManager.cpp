@@ -44,6 +44,7 @@ void EventManager::process(float delta)
 			std::map<int, FunctionPool>& listeners = m_listeners[event->m_id];
 			for (auto it = listeners.rbegin(); it != listeners.rend(); ++it)
 			{
+				int priority = it->first;
 				FunctionPool& listenersOfSamePriority = it->second;
 				for (auto it = listenersOfSamePriority.begin(); it != listenersOfSamePriority.end();)
 				{

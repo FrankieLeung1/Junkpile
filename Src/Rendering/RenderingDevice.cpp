@@ -171,7 +171,7 @@ void Device::setFrameBufferDimensions(void* window, const glm::vec2& dimensions)
 	m_windowResources[window].m_frameDimensions = dimensions;
 }
 
-void Device::setFrameBuffers(void* window, const std::vector<vk::Framebuffer>& frames)
+void Device::setFrameBuffers(void* window, const std::vector< std::tuple<vk::Framebuffer, vk::Fence> >& frames)
 {
 	WindowResources& windowResources = m_windowResources[window];
 	if (windowResources.m_frameResources.empty())
@@ -181,7 +181,8 @@ void Device::setFrameBuffers(void* window, const std::vector<vk::Framebuffer>& f
 		{
 			FrameResources*& frame = windowResources.m_frameResources[i];
 			frame = new FrameResources();
-			frame->m_frameBuffer = frames[i];
+			frame->m_frameBuffer = std::get<vk::Framebuffer>(frames[i]);
+			frame->m_fence = std::get<vk::Fence>(frames[i]);
 		}
 	}
 }
@@ -195,6 +196,7 @@ void Device::setCurrentWindow(void* window)
 void Device::setCurrentFrame(std::size_t index)
 {
 	m_currentFrameResources =  m_currentWindowResources->m_frameResources[index];
+	m_currentFrame = (int)index;
 }
 
 void Device::createRenderPass(vk::Format format)
@@ -293,10 +295,14 @@ void Device::submitAll()
 
 void Device::update()
 {
-	waitIdle(); // todo: use a different set of resources per image in swap chain
-
 	ThreadResources* threadRes = getThreadResources();
+
+	vk::Result err = m_device.waitForFences(1, &m_currentFrameResources->m_fence, VK_TRUE, UINT64_MAX); checkVkResult(err);
+	err = m_device.resetFences(1, &m_currentFrameResources->m_fence); checkVkResult(err);
+
 	m_device.resetDescriptorPool(threadRes->m_descriptorPool);
+	m_device.resetCommandPool(threadRes->m_commandPool, {});
+	threadRes->m_commandBuffersUsed = 0;
 }
 
 VkBuffer Device::createTransferBuffer(std::size_t size, void* data)

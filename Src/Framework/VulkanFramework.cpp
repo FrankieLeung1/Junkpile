@@ -90,7 +90,7 @@ m_windowTitle("App Window"),
 m_inited(false)
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 10);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 12);
 	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->render(); }, -11);
 }
 
@@ -251,7 +251,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 int VulkanFramework::initImGui(AppType type)
 {
 	// Setup GLFW window
-	glfwSetErrorCallback(glfw_error_callback);
+	glfwSetErrorCallback(glfw_error_callback);	
 	if (!glfwInit())
 		return 1;
 
@@ -264,6 +264,7 @@ int VulkanFramework::initImGui(AppType type)
 		height = 1;
 	}
 	m_window = glfwCreateWindow(width, height, m_windowTitle.c_str(), NULL, NULL);
+	m_prevScrollCallback = glfwSetScrollCallback(m_window, scrollCallback);
 
 	// Setup Vulkan
 	if (!glfwVulkanSupported())
@@ -427,7 +428,7 @@ void VulkanFramework::newFrameImGui()
 	// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
 	// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
 	// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-	glfwPollEvents();
+	//glfwPollEvents();
 
 	ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
 	ImGui_ImplVulkan_NewFrame();
@@ -478,6 +479,10 @@ void VulkanFramework::update()
 	}
 
 	InputManager* inputs = ResourcePtr<InputManager>().get();
+	inputs->setMouseWheel(0.0f);
+
+	glfwPollEvents();
+	
 	BYTE keyboardState[256];
 	GetKeyboardState(keyboardState);
 	for(int i = 0; i < countof(keyboardState); ++i)
@@ -489,6 +494,10 @@ void VulkanFramework::update()
 	POINT point;
 	::GetCursorPos(&point);
 	inputs->setCursorPos((float)point.x, (float)point.y);
+
+	ImGuiIO& io = ImGui::GetIO();
+	//io.MouseWheelH;
+	inputs->setMouseWheel(io.MouseWheel);
 
 	if (inputs->isDown(VK_CONTROL) && inputs->justReleased('F'))
 	{
@@ -581,6 +590,15 @@ std::size_t VulkanFramework::getWindowHandle() const
 	return (std::size_t)glfwGetWin32Window(m_window);
 }
 
+
+void VulkanFramework::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	ResourcePtr<InputManager>()->setMouseWheel((float)yoffset);
+	ResourcePtr<VulkanFramework> vf;
+	if(vf->m_prevScrollCallback)
+		vf->m_prevScrollCallback(window, xoffset, yoffset);
+}
+
 // All the ImGui_ImplVulkanH_XXX structures/functions are optional helpers used by the demo. 
 // Your real engine/app may not use them.
 void VulkanFramework::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int width, int height)
@@ -649,13 +667,13 @@ void VulkanFramework::FrameRender(ImGui_ImplVulkanH_Window* wd)
 	VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
 
 	ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
-	{
+	/*{
 		err = vkWaitForFences(g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
 		check_vk_result(err);
 
 		err = vkResetFences(g_Device, 1, &fd->Fence);
 		check_vk_result(err);
-	}
+	}*/
 	{
 		err = vkResetCommandPool(g_Device, fd->CommandPool, 0);
 		check_vk_result(err);

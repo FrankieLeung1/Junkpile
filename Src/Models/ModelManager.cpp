@@ -65,14 +65,25 @@ void ModelManager::loadFBX(ModelData* data) const
 	const ofbx::Geometry* geo = mesh->getGeometry();
 
 	// setup and copy into vertex buffer
+	struct Vert {
+		glm::vec3 m_position;
+		glm::vec2 m_uv;
+	};
 	data->m_vertexCount = geo->getVertexCount();
-	data->m_vBuffer = new Rendering::Buffer(Rendering::Buffer::Vertex, Rendering::Buffer::Usage::Mapped, data->m_vertexCount * sizeof(glm::vec3));
-	data->m_vBuffer->setFormat({ {vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)}, }, sizeof(glm::vec3));
-	glm::vec3* vertexDest = (glm::vec3*)data->m_vBuffer->map();
+	data->m_vBuffer = new Rendering::Buffer(Rendering::Buffer::Vertex, Rendering::Buffer::Usage::Mapped, data->m_vertexCount * sizeof(Vert));
+	data->m_vBuffer->setFormat({
+		{vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)},
+		{vk::Format::eR32G32Sfloat, sizeof(glm::vec2)}
+	}, sizeof(Vert));
+
+	Vert* vertexDest = (Vert*)data->m_vBuffer->map();
 	for (int i = 0; i < data->m_vertexCount; i++)
 	{
-		const ofbx::Vec3* vertex = &(geo->getVertices()[i]);
-		vertexDest[i] = glm::vec3(vertex->x, vertex->y, vertex->z);
+		const ofbx::Vec3* position = &(geo->getVertices()[i]);
+		vertexDest[i].m_position = glm::vec3(position->x, position->y, position->z);
+
+		const ofbx::Vec2* uv = &(geo->getUVs()[i]);
+		vertexDest[i].m_uv = glm::vec2(uv->x, uv->y);
 	}
 	data->m_vBuffer->unmap();
 
@@ -89,11 +100,7 @@ void ModelManager::loadFBX(ModelData* data) const
 
 		if (indexSrc[i] < 0)
 		{
-			if (currentFaceSize == 3)
-			{
-				//indices.push_back(indices.back());
-			}
-			else
+			if (currentFaceSize == 4)
 			{
 				indices.push_back(indices[indices.size() - 4]);
 				indices.push_back(indices[indices.size() - 3]);

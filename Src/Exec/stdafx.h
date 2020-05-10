@@ -55,6 +55,8 @@
 #define LODEPNG_NO_COMPILE_DISK
 #include "lodepng/lodepng.h"
 
+//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_LEFT_HANDED
 #include "glm/glm/glm.hpp"
 #include "glm/glm/ext.hpp"
 #include <vulkan/vulkan.h>

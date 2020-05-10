@@ -5,7 +5,9 @@
 using namespace Rendering;
 Depot::Depot():
 m_passVShader(EmptyPtr),
-m_passFShader(EmptyPtr)
+m_passFShader(EmptyPtr),
+m_texVShader(EmptyPtr),
+m_texFShader(EmptyPtr)
 {
 
 }
@@ -20,15 +22,12 @@ ResourcePtr<Rendering::Shader> Depot::getPassthroughVertexShader()
 	{
 		char vertexCode[] =
 			"#version 450 core\n"
-			"layout(location = 0) in vec2 aPos;\n"
-			//"layout(location = 1) in vec2 aUV;\n"
-			//"layout(push_constant) uniform PushConsts{ mat4 vp; } pushConsts;\n"
+			"layout(location = 0) in vec3 aPos;\n"
+			"layout(push_constant) uniform PushConsts{ mat4 vp; } pushConsts;\n"
 			"out gl_PerVertex{ vec4 gl_Position; };\n"
-			//"layout(location = 0) out vec2 UV;\n"
 			"void main()\n"
 			"{\n"
-			"	gl_Position = vec4(aPos.xy, 0.0, 1.0);\n"
-			//"	UV = aUV;\n"
+			"	gl_Position = pushConsts.vp * vec4(aPos.xyz, 1.0);\n"
 			"}";
 
 		m_passVShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Vertex, vertexCode);
@@ -43,7 +42,6 @@ ResourcePtr<Rendering::Shader> Depot::getPassthroughFragmentShader()
 	{
 		char pixelCode[] =
 			"#version 450 core\n"
-			//"layout(location = 0) in vec2 UV;\n"
 			"layout(location = 0) out vec4 fColor; \n"
 			"void main()\n"
 			"{\n"
@@ -54,4 +52,47 @@ ResourcePtr<Rendering::Shader> Depot::getPassthroughFragmentShader()
 	}
 
 	return m_passFShader;
+}
+
+ResourcePtr<Rendering::Shader> Depot::getTexturedVertexShader()
+{
+	if (!m_texVShader)
+	{
+		char vertexCode[] =
+			"#version 450 core\n"
+			"layout(location = 0) in vec3 aPos;\n"
+			"layout(location = 1) in vec2 aUV;\n"
+			"layout(push_constant) uniform PushConsts{ mat4 vp; } pushConsts;\n"
+			"out gl_PerVertex{ vec4 gl_Position; };\n"
+			"layout(location = 0) out vec2 UV;\n"
+			"void main()\n"
+			"{\n"
+			"	gl_Position = pushConsts.vp * vec4(aPos.xyz, 1.0);\n"
+			"	UV = aUV;\n"
+			"}";
+
+		m_texVShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Vertex, vertexCode);
+	}
+
+	return m_texVShader;
+}
+
+ResourcePtr<Rendering::Shader> Depot::getTexturedFragmentShader()
+{
+	if (!m_texFShader)
+	{
+		char pixelCode[] =
+			"#version 450 core\n"
+			"layout(location = 0) in vec2 UV;\n"
+			"layout(location = 0) out vec4 fColor; \n"
+			"layout(binding = 0) uniform sampler2D sTexture;\n"
+			"void main()\n"
+			"{\n"
+			"	fColor = texture(sTexture, UV.st);\n"
+			"}";
+
+		m_texFShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
+	}
+
+	return m_texFShader;
 }

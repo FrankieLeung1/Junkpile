@@ -36,10 +36,35 @@ void SpriteSystem::render()
 
 void SpriteSystem::imgui()
 {
-	return;
-
+	ResourcePtr<ComponentManager> components;
+	EntityIterator<TransformComponent, CameraComponent> it(components, true);
+	ResourcePtr<CameraSystem> cameras;
 	ImGui::Begin("SpriteSystem");
-		ImGui::ColorEdit4("MyColor##1", (float*)&m_clearColour);
+	while (it.next())
+	{
+		auto transform = it.get<TransformComponent>();
+		auto camera = it.get<CameraComponent>();
+
+		//ImGui::DragFloat4("rot", &it.get<TransformComponent>()->m_rotation.x);
+
+		/*glm::mat4x4 m = cameras->getMatrix(it.getEntity());
+		ImGui::DragFloat3("m1", &m[0].x);
+		ImGui::DragFloat3("m2", &m[1].x);
+		ImGui::DragFloat3("m3", &m[2].x);
+		ImGui::DragFloat3("m4", &m[3].x);*/
+
+		float distance = (float)glm::length(transform->m_position);
+		ImGui::DragFloat3("angles", &camera->m_angles.x);
+		ImGui::DragFloat3("position", &transform->m_position.x);
+		ImGui::DragFloat("distance", &distance);
+
+		/*glm::vec3 dir = glm::normalize(it.get<TransformComponent>()->m_position - it.get<CameraComponent>()->m_lookAt);
+		ImGui::DragFloat3("cam", &it.get<TransformComponent>()->m_position.x);
+		ImGui::DragFloat3("look", &it.get<CameraComponent>()->m_lookAt.x);
+		ImGui::DragFloat3("up", &it.get<CameraComponent>()->m_up.x);
+		ImGui::DragFloat3("dir", &dir.x);
+		ImGui::DragFloat("r", &it.get<CameraComponent>()->m_r);*/
+	}
 	ImGui::End();
 }
 
@@ -105,7 +130,12 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		transform->m_position.x = (i * 100.0f);
 	}
 
-	auto camera = components->addEntity<TransformComponent, CameraComponent>().getEntity();
+	auto camera = components->addEntity<TransformComponent, CameraComponent>();
+	Entity cameraEntity = camera.getEntity();
+	camera.get<TransformComponent>()->m_position.z = -250.0f;
+	//camera.get<CameraComponent>()->m_controlType = CameraComponent::Orbit;
+	camera.get<CameraComponent>()->m_controlType = CameraComponent::WASD;
+
 	update = [vbuffer, spriteManager](float delta)
 	{
 		ResourcePtr<ComponentManager> components;
@@ -129,10 +159,10 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 			float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale;
 			float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale;
 
-			map[0] = Vert{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv2.y } } ;
-			map[1] = Vert{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv2.y } };
-			map[2] = Vert{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv1.y } };
-			map[3] = Vert{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
+			map[0] = Vert{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
+			map[1] = Vert{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv1.y } };
+			map[2] = Vert{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv2.y } };
+			map[3] = Vert{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv2.y } } ;
 			map += 4;
 		}
 		
@@ -140,7 +170,7 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	};
 
 	auto& clearColour = m_clearColour;
-	render = [vertShader, fragShader, ibuffer, vbuffer, spriteManager, &clearColour, camera]()
+	render = [vertShader, fragShader, ibuffer, vbuffer, spriteManager, &clearColour, cameraEntity]()
 	{
 		ResourcePtr<ComponentManager> components;
 		EntityIterator<SpriteComponent> it(components, true);
@@ -148,7 +178,7 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 
 		ResourcePtr<Rendering::Device> device;
 		ResourcePtr<CameraSystem> cameras;
-		glm::mat4x4 cameraMatrix = cameras->getMatrix(camera);
+		glm::mat4x4 cameraMatrix = cameras->getMatrix(cameraEntity);
 		std::vector<char> pushData(sizeof(glm::mat4));
 		memcpy(&pushData[0], &cameraMatrix, sizeof(glm::mat4));
 

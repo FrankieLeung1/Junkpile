@@ -2,6 +2,7 @@
 
 #include "../Resources/ResourceManager.h"
 #include "../ECS/ECS.h"
+#include "../Misc/Any.h"
 #include "EntityIterator.h"
 
 class ComponentManager;
@@ -49,10 +50,30 @@ protected:
 class ComponentManager : public SingletonResource<ComponentManager>
 {
 private:
-	typedef std::vector<char> ResizeableMemoryPool;
+	typedef AnyWithSize<sizeof(std::vector<void*>)> ResizeableMemoryPool;
 	struct ComponentPool
 	{
-		int m_version{ 0 };
+		class BufferAccessor
+		{
+		public:
+			virtual const void* front(const ResizeableMemoryPool&) = 0;
+			virtual std::size_t size(const ResizeableMemoryPool&) = 0;
+			virtual std::size_t elementSize() =0;
+			virtual bool empty(const ResizeableMemoryPool&) = 0;
+		};
+
+		template<typename T>
+		class BufferAccessorInstance : public BufferAccessor
+		{
+		public:
+			static BufferAccessorInstance<T> s_instance;
+			const void* front(const ResizeableMemoryPool& pool) { return &pool.get<std::vector<T>>().front(); }
+			std::size_t size(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().size(); }
+			std::size_t elementSize() { return sizeof(T); };
+			bool empty(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().empty(); }
+		};
+
+		BufferAccessor* m_accessor;
 		ResizeableMemoryPool m_buffer;
 		std::set<Entity> m_pendingDead;
 
@@ -87,7 +108,7 @@ public:
 protected:
 	template<int = 0> void addComponents(Entity);
 	template<int = 0> void removeComponents(Entity);
-	bool validPointer(const ResizeableMemoryPool&, void*) const;
+	bool validPointer(const ComponentPool&, void*) const;
 
 	template<int = 0, typename... Ts> void setupIterator(std::true_type, EntityIterator<Ts...>&);
 	template<int = 0, typename... Ts> void setupIterator(std::false_type, EntityIterator<Ts...>&);
@@ -125,8 +146,10 @@ template<typename T>
 void ComponentManager::addComponentType(std::size_t reserve)
 {
 	CHECK_F(m_pools.find(T::componentId()) == m_pools.end());
-	m_pools[T::componentId()] = ComponentPool();
-	m_pools[T::componentId()].m_buffer.reserve(reserve * sizeof(T));
+	ComponentPool& pool = m_pools.insert(std::make_pair(T::componentId(), ComponentPool())).first->second;
+	pool.m_accessor = &ComponentPool::BufferAccessorInstance<T>::s_instance;
+	pool.m_buffer = std::vector<T>();
+	pool.m_buffer.get<std::vector<T>>().reserve(reserve * sizeof(T));
 }
 
 template<typename T>
@@ -159,23 +182,26 @@ EntityIterator<Components...> ComponentManager::addEntity()
 template<typename Component, typename... Components>
 EntityIterator<Component, Components...> ComponentManager::addComponents(Entity eid)
 {
-	static_assert(std::is_trivially_copyable<Component>::value, "Components must be a POD type");
-	static_assert(std::is_base_of<::Component<Component>, Component>::value, "Components must inherit from Component<>");
+	//static_assert(std::is_trivially_copyable<Component>::value, "Components must be a POD type");
+	static_assert(std::is_base_of<::ComponentBase<Component>, Component>::value, "Components must inherit from Component<>");
 
 	if (eid == INVALID_ENTITY)
 		eid = m_nextFreeEntityId++;
 
+	Component::initSystem();
+
 	ComponentId cid = Component::componentId();
 	ComponentPool& pool = m_pools[cid]; // make a new pool if it doesn't exist
-	ResizeableMemoryPool& buffer = pool.m_buffer; 
-	void* front = buffer.empty() ? nullptr : &buffer.front();
+	ResizeableMemoryPool& buffer = pool.m_buffer;
+	if (!buffer)
+	{
+		pool.m_accessor = &ComponentPool::BufferAccessorInstance<Component>::s_instance;
+		buffer = std::vector<Component>();
+	}
 
-	buffer.insert(buffer.end(), sizeof(Component), 0);
-	Component* c = new(&buffer[buffer.size() - sizeof(Component)])Component();
-	c->m_entity = eid;
-
-	if(front != &buffer.front())
-		pool.m_version++;
+	auto& vector = buffer.get<std::vector<Component>>();
+	vector.emplace_back();
+	vector.back().m_entity = eid;
 
 	addComponents<Components...>(eid);
 
@@ -239,6 +265,7 @@ T* ComponentPtr<T>::operator*()
 template<typename Component, typename... Components>
 void ComponentManager::removeComponents(Entity eid)
 {
+	// does erase reallocate the buffer?
 	ComponentId cid = Component::componentId();
 	CHECK_F(m_pools.find(cid) != m_pools.end());
 
@@ -259,9 +286,6 @@ void ComponentManager::removeComponents(Entity eid)
 			bytes += sizeof(Component);
 		}
 	}
-
-	if(front != buffer.front())
-		pool.m_version++;
 
 	removeComponents<Components...>(eid);
 
@@ -288,8 +312,10 @@ void ComponentManager::setupIterator(std::true_type, EntityIterator< Ts...>& it)
 	CHECK_F(component == nullptr, "component already setup");
 	CHECK_F(m_pools.find(ComponentType::componentId()) != m_pools.end(), "couldn't find componentpool for %s", typeid(ComponentType).name());
 
-	ResizeableMemoryPool& buffer = m_pools[ComponentType::componentId()].m_buffer;
-	component = buffer.empty() ? nullptr : (ComponentType*)&buffer[0];
+	ComponentPool& pool = m_pools[ComponentType::componentId()];
+	ComponentPool::BufferAccessor* accessor = pool.m_accessor;
+	ResizeableMemoryPool& buffer = pool.m_buffer;
+	component = accessor->empty(buffer) ? nullptr : (ComponentType*)accessor->front(buffer);
 
 	setupIterator<i + 1>(std::integral_constant<bool, (i < sizeof...(Ts)-1)>{}, it);
 }
@@ -328,7 +354,7 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 		}
 
 		Entity e = *(Entity*)args.m_vp;
-		ResizeableMemoryPool& buffer = this->m_pools[args.m_id].m_buffer;
+		ComponentPool& pool = this->m_pools[args.m_id];
 		while(e < it->m_currentEntity)
 		{
 			// while current pointer is lower than target entity id
@@ -337,7 +363,7 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 			args.m_vp = reinterpret_cast<char*>(args.m_vp) + args.m_size;
 
 			// did we go beyond the buffer?
-			bool valid = this->validPointer(buffer, args.m_vp);
+			bool valid = this->validPointer(pool, args.m_vp);
 			hasValidComponent = hasValidComponent || valid;
 			if (!valid)
 			{
@@ -404,18 +430,13 @@ void ComponentManager::cleanupComponents(Deleter deleter)
 	if (pool.m_pendingDead.empty())
 		return;
 
-	Component* start = (Component*)&pool.m_buffer.front();
-	Component* end = (Component*)(&pool.m_buffer.back() + 1);
-
+	std::vector<Component>& vector = pool.m_buffer.get<std::vector<Component>>();
 	auto pred = [&](Component& comp) {
 		bool remove = pool.m_pendingDead.find(comp.m_entity) != pool.m_pendingDead.end();
 		if(remove) deleter(comp);
 		return remove;
 	};
-
-	end = std::remove_if(start, end, pred);
-	auto it = pool.m_buffer.begin() + ((end - start) * sizeof(Component));
-	pool.m_buffer.erase(it, pool.m_buffer.end());
+	vector.erase(std::remove_if(vector.begin(), vector.end(), pred), vector.end());
 }
 
 // EntityIterator
@@ -522,3 +543,6 @@ void EntityIterator<Ts...>::accept(std::false_type, VFN)
 {
 	// empty
 }
+
+template<typename T>
+ComponentManager::ComponentPool::BufferAccessorInstance<T> ComponentManager::ComponentPool::BufferAccessorInstance<T>::s_instance;

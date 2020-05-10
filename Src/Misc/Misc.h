@@ -108,6 +108,7 @@ class TypeHelper
 {
 public:
 	virtual void destruct(void*) =0;
+	virtual void moveConstruct(void* dest, void* src) = 0;
 	virtual std::size_t getSize() const =0;
 };
 
@@ -117,6 +118,7 @@ class TypeHelperInstance : public TypeHelper
 public:
 	static TypeHelperInstance<T> s_instance;
 	void destruct(void* v) { static_cast<T*>(v)->~T(); }
+	void moveConstruct(void* dest, void* src) { new(dest)T(std::move(*static_cast<T*>(src))); }
 	std::size_t getSize() const { return sizeof(T); };
 };
 
