@@ -73,5 +73,6 @@
 #include "btBulletDynamicsCommon.h"
 
 #include "../Framework/VulkanFramework.h"
+#include "../Managers/DebugManager.h"
 
 typedef VulkanFramework FrameworkClass;

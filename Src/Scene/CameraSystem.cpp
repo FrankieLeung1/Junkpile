@@ -37,6 +37,13 @@ void CameraSystem::update(const UpdateEvent* e)
 	{
 		TransformComponent* transform = it.get<TransformComponent>();
 		CameraComponent* camera = it.get<CameraComponent>();
+
+		/*float distance = (float)glm::length(transform->m_position);
+		DEBUG_VAR("angles", camera->m_angles);
+		DEBUG_VAR("position", transform->m_position);
+		DEBUG_VAR("offset", camera->m_offset);
+		DEBUG_VAR("distance", distance);*/
+
 		switch (camera->m_controlType)
 		{
 		case CameraComponent::WASD:

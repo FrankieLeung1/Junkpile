@@ -36,37 +36,7 @@ void SpriteSystem::render()
 
 void SpriteSystem::imgui()
 {
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<TransformComponent, CameraComponent> it(components, true);
-	ResourcePtr<CameraSystem> cameras;
-	ImGui::Begin("SpriteSystem");
-	while (it.next())
-	{
-		auto transform = it.get<TransformComponent>();
-		auto camera = it.get<CameraComponent>();
 
-		//ImGui::DragFloat4("rot", &it.get<TransformComponent>()->m_rotation.x);
-
-		/*glm::mat4x4 m = cameras->getMatrix(it.getEntity());
-		ImGui::DragFloat3("m1", &m[0].x);
-		ImGui::DragFloat3("m2", &m[1].x);
-		ImGui::DragFloat3("m3", &m[2].x);
-		ImGui::DragFloat3("m4", &m[3].x);*/
-
-		float distance = (float)glm::length(transform->m_position);
-		ImGui::DragFloat3("angles", &camera->m_angles.x);
-		ImGui::DragFloat3("position", &transform->m_position.x);
-		ImGui::DragFloat2("offset", &camera->m_offset.x);
-		ImGui::DragFloat("distance", &distance);
-
-		/*glm::vec3 dir = glm::normalize(it.get<TransformComponent>()->m_position - it.get<CameraComponent>()->m_lookAt);
-		ImGui::DragFloat3("cam", &it.get<TransformComponent>()->m_position.x);
-		ImGui::DragFloat3("look", &it.get<CameraComponent>()->m_lookAt.x);
-		ImGui::DragFloat3("up", &it.get<CameraComponent>()->m_up.x);
-		ImGui::DragFloat3("dir", &dir.x);
-		ImGui::DragFloat("r", &it.get<CameraComponent>()->m_r);*/
-	}
-	ImGui::End();
 }
 
 void SpriteSystem::test(std::function<void(float)>& update, std::function<void()>& render)
