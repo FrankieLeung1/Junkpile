@@ -257,13 +257,6 @@ Unit Device::createUnit()
 
 void Device::submitAll()
 {
-	if (m_rootUnit->m_submitted.empty())
-	{
-		Unit unit;
-		unit.in(vk::ClearColorValue(std::array<float, 4>{ 0.45f, 0.55f, 0.6f, 1.0f }));
-		unit.submit();
-	}
-
 	auto it = m_currentFrameResources->m_threadResources.find(std::this_thread::get_id());
 	if (it == m_currentFrameResources->m_threadResources.end())
 		return;
@@ -277,8 +270,18 @@ void Device::submitAll()
 	vk::Result r = commandBuffer.begin(beginInfo);
 	checkVkResult(r);
 
+	bool didDrawOrClear = false;
 	for (auto& unit : m_rootUnit->m_submitted)
 	{
+		Unit::CommandType type = unit.submitCommandBuffers(this, &resources, commandBuffer);
+		if (type == Unit::CommandType::Draw || type == Unit::CommandType::Clear)
+			didDrawOrClear = true;
+	}
+
+	if (!didDrawOrClear)
+	{
+		Unit unit;
+		unit.in(vk::ClearColorValue(std::array<float, 4>{ 0.45f, 0.55f, 0.6f, 1.0f }));
 		unit.submitCommandBuffers(this, &resources, commandBuffer);
 	}
 

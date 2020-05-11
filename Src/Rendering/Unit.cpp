@@ -75,7 +75,7 @@ static bool getResource(Ptr*& ptr, ResPtr* res)
 	return (ptr != nullptr);
 };
 
-void Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResources* resources, vk::CommandBuffer openBuffer)
+Unit::CommandType Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResources* resources, vk::CommandBuffer openBuffer)
 {
 	Data& d = getData();
 	for (Any& any : d.m_settings)
@@ -83,15 +83,16 @@ void Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResourc
 		Texture* texture = nullptr;
 		if (getResource(texture, any.getPtr<ResourcePtr<Texture>>()) || getResource(texture, any.getPtr<ResourcePtr<TextureAtlas>>()))
 		{
-			if (submitTextureUpload(device, openBuffer, texture)) return; // upload?
-			if (submitLayoutChange(device, openBuffer, texture)) return; // layout change?
+			if (submitTextureUpload(device, openBuffer, texture)) return Unit::CommandType::Upload; // upload?
+			if (submitLayoutChange(device, openBuffer, texture)) return Unit::CommandType::LayoutChange; // layout change?
 		}
 	}
 
-	if (submitDrawCall(device, openBuffer)) return;
-	if (submitClearCall(device, openBuffer)) return;
+	if (submitDrawCall(device, openBuffer)) return Unit::CommandType::Draw;
+	if (submitClearCall(device, openBuffer)) return Unit::CommandType::Clear;
 
 	LOG_F(FATAL, "Unknown Unit type\n");
+	return Unit::CommandType::Unknown;
 }
 
 bool Unit::submitTextureUpload(Rendering::Device* device, vk::CommandBuffer buffer, Texture* texture)

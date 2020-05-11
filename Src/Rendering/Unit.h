@@ -110,7 +110,8 @@ namespace Rendering
 
 		Data& getData();
 
-		void submitCommandBuffers(Rendering::Device*, Device::ThreadResources*, vk::CommandBuffer openBuffer);
+		enum class CommandType { Unknown, LayoutChange, Upload, Draw, Clear};
+		CommandType submitCommandBuffers(Rendering::Device*, Device::ThreadResources*, vk::CommandBuffer openBuffer);
 		bool submitTextureUpload(Rendering::Device*, vk::CommandBuffer, Texture*);
 		bool submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffer, Texture* texture);
 		bool submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer);
