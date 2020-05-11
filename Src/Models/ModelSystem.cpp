@@ -32,6 +32,8 @@ void ModelSystem::update(float delta)
 	if (!vshader || !fshader)
 		return;
 
+	return;
+
 	while (it.next())
 	{
 		ModelComponent* model = it.get<ModelComponent>();

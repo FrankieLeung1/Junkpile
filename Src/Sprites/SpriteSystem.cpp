@@ -56,6 +56,7 @@ void SpriteSystem::imgui()
 		float distance = (float)glm::length(transform->m_position);
 		ImGui::DragFloat3("angles", &camera->m_angles.x);
 		ImGui::DragFloat3("position", &transform->m_position.x);
+		ImGui::DragFloat2("offset", &camera->m_offset.x);
 		ImGui::DragFloat("distance", &distance);
 
 		/*glm::vec3 dir = glm::normalize(it.get<TransformComponent>()->m_position - it.get<CameraComponent>()->m_lookAt);

@@ -46,17 +46,30 @@ void CameraSystem::update(const UpdateEvent* e)
 
 		case CameraComponent::Orbit:
 			{
+				glm::vec3 offsetFromOrigin = camera->m_offset - transform->m_position;
+				if (inputs->isDown(VK_MBUTTON))
+				{
+					float m = inputs->getCursorPosDelta().y * 0.05f;
+					if (m)
+					{
+						float x = glm::abs(offsetFromOrigin.x), y = glm::abs(offsetFromOrigin.y), z = glm::abs(offsetFromOrigin.z);
+						if (z > x && z > y) camera->m_offset.y += offsetFromOrigin.z > 0 ? -m : m;
+						else camera->m_offset.z += m;
+					}
+				}
+
 				if (mouseWheel)
 				{
-					glm::vec3 diff = glm::normalize(transform->m_position) * -mouseWheel;
-					if(transform->m_position + diff != glm::vec3(0.0f))
-						transform->m_position += diff;
+					glm::vec3 diff = glm::normalize(offsetFromOrigin) * -mouseWheel;
+					if(offsetFromOrigin + diff != glm::vec3(0.0f))
+						offsetFromOrigin += diff;
 				}
 
 				if (inputs->justDown('r'))
 				{
 					transform->m_position = glm::vec3(0.0f, 0.0f, -5.0f);
 					camera->m_angles = glm::vec3(0.0f, 0.0f, 0.0f);
+					camera->m_offset = glm::vec3(0.0f);
 				}
 
 				glm::vec2 drag(0.0f);
@@ -68,8 +81,8 @@ void CameraSystem::update(const UpdateEvent* e)
 
 				float x = camera->m_angles.x; // pitch
 				float y = camera->m_angles.y; // yaw
-				float distance = (float)glm::length(transform->m_position);
-				transform->m_position = glm::vec3(0.0f, 0.0f, -1.0f) * glm::quat(glm::vec3(x, y, 0.0f)) * distance;
+				float distance = (float)glm::length(offsetFromOrigin);
+				transform->m_position = (glm::vec3(0.0f, 0.0f, -1.0f) * glm::quat(glm::vec3(x, y, 0.0f)) * distance) + camera->m_offset;
 				transform->m_rotation = glm::quat(glm::vec3(-x, -y, 0.0f));
 				break;
 			}

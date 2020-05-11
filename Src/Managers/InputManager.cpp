@@ -28,7 +28,6 @@ void InputManager::update()
 
 void InputManager::setIsDown(int k, bool b)
 {
-	//if (k >= 'a' && k <= 'z') k = toupper(k);
 	if (b && m_keys[k] < 0)
 		m_keys[k] = 0;
 	else if (!b && m_keys[k] >= 0)
