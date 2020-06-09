@@ -37,3 +37,8 @@ void ComponentManager::imgui()
 	}
 	ImGui::End();
 }
+
+template<> Meta::Object Meta::instanceMeta<ComponentManager>()
+{
+	return Object("ComponentManager");
+}

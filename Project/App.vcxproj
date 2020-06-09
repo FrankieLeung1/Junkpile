@@ -64,10 +64,12 @@
       <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
@@ -415,11 +417,12 @@
     <ClCompile Include="..\Src\Files\FileManager.cpp" />
     <ClCompile Include="..\Src\Framework\Framework.cpp" />
     <ClCompile Include="..\Src\Framework\VulkanFramework.cpp" />
+    <ClCompile Include="..\Src\Game\Game.cpp" />
     <ClCompile Include="..\Src\Generators\Generator.cpp" />
     <ClCompile Include="..\Src\Generators\TextureGenerator.cpp" />
     <ClCompile Include="..\Src\imgui\ImGuiManager.cpp" />
     <ClCompile Include="..\Src\imgui\imgui_impl_glfw.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\Src\imgui\imgui_impl_vulkan.cpp">
@@ -679,6 +682,7 @@
     <ClInclude Include="..\Src\Framework\Framework.h" />
     <ClInclude Include="..\Src\Framework\NullFramework.h" />
     <ClInclude Include="..\Src\Framework\VulkanFramework.h" />
+    <ClInclude Include="..\Src\Game\Game.h" />
     <ClInclude Include="..\Src\Generators\Generator.h" />
     <ClInclude Include="..\Src\Generators\TextureGenerator.h" />
     <ClInclude Include="..\Src\imgui\ImGuiManager.h" />

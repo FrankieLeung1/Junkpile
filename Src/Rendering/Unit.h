@@ -142,6 +142,7 @@ namespace Rendering
 	{
 	public:
 		std::vector<Unit>& getSubmitted();
+		void clearSubmitted();
 
 	protected:
 		RootUnit();

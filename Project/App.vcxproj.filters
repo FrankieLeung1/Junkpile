@@ -157,6 +157,12 @@
     <Filter Include="Header Files\Models">
       <UniqueIdentifier>{33cce72c-0a86-4f81-bc20-bd343e11a9fe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Game">
+      <UniqueIdentifier>{941241b3-06b0-46ea-a638-01c7e4811721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Game">
+      <UniqueIdentifier>{414d8407-1256-46fc-a4e5-0598fe382dae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Exec\stdafx.cpp">
@@ -539,6 +545,9 @@
     </ClCompile>
     <ClCompile Include="..\Src\Managers\DebugManager.cpp">
       <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Game\Game.cpp">
+      <Filter>Source Files\Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1330,6 +1339,9 @@
     </ClInclude>
     <ClInclude Include="..\Src\Managers\DebugManager.h">
       <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Game\Game.h">
+      <Filter>Header Files\Game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

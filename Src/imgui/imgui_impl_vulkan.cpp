@@ -1053,11 +1053,17 @@ void ImGui_ImplVulkanH_CreateWindow(VkInstance instance, VkPhysicalDevice physic
     ImGui_ImplVulkanH_CreateWindowSwapChain(physical_device, device, wd, allocator, width, height, min_image_count);
     ImGui_ImplVulkanH_CreateWindowCommandBuffers(physical_device, device, wd, queue_family, allocator);
 
-    std::vector<std::tuple<vk::Framebuffer, vk::Fence>> frameBuffers;
+    std::vector<vk::Framebuffer> frameBuffers;
+    std::vector<vk::Fence> fences;
     for (uint32_t i = 0; i < wd->ImageCount; i++)
-        frameBuffers.push_back(std::make_tuple((vk::Framebuffer)wd->Frames[i].Framebuffer, (vk::Fence)wd->Frames[i].Fence));
+    {
+        frameBuffers.push_back((vk::Framebuffer)wd->Frames[i].Framebuffer);
+        fences.push_back((vk::Fence)wd->Frames[i].Fence);
+    }
 
-    ResourcePtr<Rendering::Device>()->setFrameBuffers(wd, frameBuffers);
+    ResourcePtr<Rendering::Device> renderingDevice;
+    renderingDevice->setFrameBuffers(wd, frameBuffers);
+    renderingDevice->setFrameFences(wd, fences);
 }
 
 void ImGui_ImplVulkanH_DestroyWindow(VkInstance instance, VkDevice device, ImGui_ImplVulkanH_Window* wd, const VkAllocationCallbacks* allocator)

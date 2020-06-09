@@ -53,6 +53,7 @@ void ModelSystem::update(float delta)
 		unit.in((vk::CullModeFlags)vk::CullModeFlagBits::eFront);
 		unit.in(Rendering::Unit::Binding<ResourcePtr<Rendering::Texture>>(vk::ShaderStageFlagBits::eFragment, 0, model->m_texture1));
 		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
+		unit.in(std::array<float, 4>{ 0.45f, 0.55f, 0.6f, 1.0f });
 		unit.in(vk::PrimitiveTopology::eTriangleList);
 
 		//  m_indexCount, m_instanceCount, m_firstIndex, m_vertexOffset, m_firstInstance
@@ -73,6 +74,8 @@ void ModelSystem::test()
 	auto entityIt = components->addEntity<TransformComponent, ModelComponent>();
 	ModelComponent* model = entityIt.get<ModelComponent>();
 	model->m_model = models->getModel("Models/Model/characterMedium.fbx");
+	//model->m_model = models->getModel("Models/Animations/idle.fbx");
+	
 
 	ResourcePtr<File> file(NewPtr, "Models/Skins/criminalMaleA.png");
 	//ResourcePtr<File> file(NewPtr, "Models/Skins/uv.png");

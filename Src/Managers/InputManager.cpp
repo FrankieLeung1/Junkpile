@@ -6,7 +6,7 @@ InputManager::InputManager():
 m_wantsTrayContext(false),
 m_mouseWheel(0.0f)
 {
-	memset(m_keys, sizeof(m_keys), 0x00);
+	std::fill(m_keys, m_keys + countof(m_keys), -std::numeric_limits<int>::max() / 2);
 
 	ResourcePtr<EventManager> events;
 	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 13);
@@ -41,25 +41,25 @@ void InputManager::setHasFocus(bool b)
 
 bool InputManager::isDown(int k, bool needsFocus) const
 {
-	if (k >= 'a' && k <= 'z') k = toupper(k);
+	//if (k >= 'a' && k <= 'z') k = toupper(k);
 	return (!needsFocus || m_hasFocus) && m_keys[k] >= 0;
 }
 
 bool InputManager::justDown(int k, bool needsFocus) const
 {
-	if (k >= 'a' && k <= 'z') k = toupper(k);
+	//if (k >= 'a' && k <= 'z') k = toupper(k);
 	return (!needsFocus || m_hasFocus) && m_keys[k] == 0;
 }
 
 bool InputManager::isReleased(int k, bool needsFocus) const
 {
-	if (k >= 'a' && k <= 'z') k = toupper(k);
+	//if (k >= 'a' && k <= 'z') k = toupper(k);
 	return (!needsFocus || m_hasFocus) && m_keys[k] < 0;
 }
 
 bool InputManager::justReleased(int k, bool needsFocus) const
 {
-	if (k >= 'a' && k <= 'z') k = toupper(k);
+	//if (k >= 'a' && k <= 'z') k = toupper(k);
 	return (!needsFocus || m_hasFocus) && m_keys[k] == -1;
 }
 

@@ -26,7 +26,8 @@ namespace Rendering
 		void setPipelineCache(vk::PipelineCache);
 		void setRenderPass(vk::RenderPass);
 		void setFrameBufferDimensions(void* window, const glm::vec2& dimensions);
-		void setFrameBuffers(void* window, const std::vector<std::tuple<vk::Framebuffer, vk::Fence>>&);
+		void setFrameBuffers(void* window, const std::vector<vk::Framebuffer>&);
+		void setFrameFences(void* window, const std::vector<vk::Fence>& fences);
 		void setCurrentWindow(void* window);
 		void setCurrentFrame(std::size_t index);
 

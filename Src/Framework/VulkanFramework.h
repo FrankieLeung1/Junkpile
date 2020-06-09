@@ -36,12 +36,21 @@ public:
 	void setShouldQuit(bool);
 	bool shouldQuit() const;
 
+	bool isMinimized() const;
+
+	/*void setPipWhenMinimized(bool);
+	bool getPipWhenMinimized() const;*/
+
+	void setPip(int quad);
+
 	AppType getAppType() const;
 
 	ImGui_ImplVulkanH_Window* getMainWindowData() const;
 	GLFWwindow* getMainWindow() const;
 	const char* getWindowTitle() const;
 	std::size_t getWindowHandle() const;
+
+	void onIconify(GLFWwindow* window, bool);
 
 protected:
 	int initImGui(AppType);
@@ -64,6 +73,13 @@ protected:
 	ImVec4 m_clearColour;
 	bool m_inited;
 	AppType m_appType;
+
+	int m_pip;
+	struct PrePIPData
+	{
+		int m_x, m_y, m_width, m_height;
+	};
+	PrePIPData m_prePIP;
 
 	GLFWscrollfun m_prevScrollCallback;
 };

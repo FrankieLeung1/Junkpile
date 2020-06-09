@@ -1,5 +1,6 @@
 #include <stdafx.h>
 #include "VulkanFramework.h"
+#include "../Rendering/Unit.h"
 
 // dear imgui: standalone example application for Glfw + Vulkan
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
@@ -87,7 +88,8 @@ static void glfw_resize_callback(GLFWwindow*, int w, int h)
 VulkanFramework::VulkanFramework():
 m_clearColour(0.45f, 0.55f, 0.6f, 1.0f),
 m_windowTitle("App Window"),
-m_inited(false)
+m_inited(false),
+m_pip(4)
 {
 	ResourcePtr<EventManager> events;
 	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 12);
@@ -373,6 +375,9 @@ int VulkanFramework::initImGui(AppType type)
 	m_device->createRenderPass((vk::Format)wd->SurfaceFormat.format);
 	m_device->setFrameBufferDimensions(wd, { wd->Width, wd->Height });
 
+	g_SwapChainResizeWidth = wd->Width;
+	g_SwapChainResizeHeight = wd->Height;
+
 	// Load Fonts
 	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
 	// - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
@@ -468,7 +473,7 @@ void VulkanFramework::uploadTexture(Rendering::Texture* texture)
 
 void VulkanFramework::update()
 {
-	if (g_SwapChainRebuild)
+	if (g_SwapChainRebuild && !isMinimized())
 	{
 		g_SwapChainRebuild = false;
 		ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
@@ -476,6 +481,10 @@ void VulkanFramework::update()
 		m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format);
 		m_device->setFrameBufferDimensions(&g_MainWindowData, { g_SwapChainResizeWidth, g_SwapChainResizeHeight });
 		g_MainWindowData.FrameIndex = 0;
+
+		std::vector<vk::Framebuffer> framebuffer;
+		for (uint32_t i = 0; i < g_MainWindowData.ImageCount; i++) framebuffer.push_back(g_MainWindowData.Frames[i].Framebuffer);
+		m_device->setFrameBuffers(&g_MainWindowData, framebuffer);
 	}
 
 	InputManager* inputs = ResourcePtr<InputManager>().get();
@@ -484,9 +493,11 @@ void VulkanFramework::update()
 	glfwPollEvents();
 	
 	BYTE keyboardState[256];
-	GetKeyboardState(keyboardState);
-	for(int i = 0; i < countof(keyboardState); ++i)
+	GetKeyboardState(keyboardState);	
+	for (int i = 0; i < countof(keyboardState); ++i)
+	{
 		inputs->setIsDown(i, (keyboardState[i] & 0xF0) != 0);
+	}
 
 	int focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED) && !ImGui::GetIO().WantCaptureKeyboard;
 	inputs->setHasFocus(focused != 0);
@@ -515,14 +526,22 @@ void VulkanFramework::update()
 		}
 	}
 
-	ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
-	VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
-	VkResult err = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
-	check_vk_result(err);
+	if (inputs->justReleased(VK_F1))
+	{
+		setPip(m_pip == 4 ? 1 : 4);
+	}
 
-	ImGui_ImplVulkanH_Frame* f = &wd->Frames[wd->FrameIndex];
-	m_device->setCurrentWindow(wd);
-	m_device->setCurrentFrame(wd->FrameIndex);
+	if (!isMinimized())
+	{
+		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
+		VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
+		VkResult err = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+		check_vk_result(err);
+
+		ImGui_ImplVulkanH_Frame* f = &wd->Frames[wd->FrameIndex];
+		m_device->setCurrentWindow(wd);
+		m_device->setCurrentFrame(wd->FrameIndex);
+	}
 
 	if (m_appType == AppType::ImGuiOnly)
 	{
@@ -543,7 +562,9 @@ void VulkanFramework::render()
 
 	// Rendering
 	ImGui::Render();
-	FrameRender(wd);
+
+	if (!isMinimized())
+		FrameRender(wd);
 
 	// Update and Render additional Platform Windows
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -552,7 +573,8 @@ void VulkanFramework::render()
 		ImGui::RenderPlatformWindowsDefault();
 	}
 
-	FramePresent(wd);
+	if (!isMinimized())
+		FramePresent(wd);
 }
 
 void VulkanFramework::setShouldQuit(bool b)
@@ -564,6 +586,66 @@ bool VulkanFramework::shouldQuit() const
 {
 	return glfwWindowShouldClose(m_window) != 0;
 }
+
+bool VulkanFramework::isMinimized() const
+{
+	return !g_SwapChainResizeWidth || !g_SwapChainResizeHeight;
+}
+
+void VulkanFramework::setPip(int quad)
+{
+	quad = std::min(quad, 4);
+	if (m_pip == quad)
+		return;
+
+	// unpip
+	if (quad > 3)
+	{
+		glfwSetWindowSize(m_window, m_prePIP.m_width, m_prePIP.m_height);
+		glfwSetWindowPos(m_window, m_prePIP.m_x, m_prePIP.m_y);
+		glfwSetWindowAttrib(m_window, GLFW_DECORATED, GLFW_TRUE);
+		glfwSetWindowAttrib(m_window, GLFW_FLOATING, GLFW_FALSE);
+	}
+	else
+	{
+		if (m_pip == 4)
+		{
+			glfwGetWindowPos(m_window, &m_prePIP.m_x, &m_prePIP.m_y);
+			glfwGetWindowSize(m_window, &m_prePIP.m_width, &m_prePIP.m_height);
+		}
+
+		const int distanceFromEdge = 20;
+		const int width = 320, height = 180;
+
+		//GLFWmonitor* monitor = glfwGetWindowMonitor(m_window);
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor(); // TODO: find the monitor the window is on
+		int x, y, monitorWidth, monitorHeight;
+		glfwGetMonitorWorkarea(monitor, &x, &y, &monitorWidth, &monitorHeight);
+		switch (quad)
+		{
+		case 0: x += distanceFromEdge; y += distanceFromEdge; break;
+		case 1: x = monitorWidth - width - distanceFromEdge; y += distanceFromEdge; break;
+		case 2: x += distanceFromEdge; y = monitorHeight - height - distanceFromEdge; break;
+		case 3: x = monitorWidth - width - distanceFromEdge; y = monitorHeight - height - distanceFromEdge; break;
+		}
+
+		glfwSetWindowPos(m_window, x, y);
+		glfwSetWindowSize(m_window, width, height);
+		glfwSetWindowAttrib(m_window, GLFW_DECORATED, GLFW_FALSE);
+		glfwSetWindowAttrib(m_window, GLFW_FLOATING, GLFW_TRUE);
+	}
+	m_pip = quad;
+}
+
+/*void VulkanFramework::setPipWhenMinimized(bool b)
+{
+	m_pip = b;
+}
+
+bool VulkanFramework::getPipWhenMinimized() const
+{
+	return m_pip;
+}*/
 
 VulkanFramework::AppType VulkanFramework::getAppType() const
 {
@@ -590,6 +672,16 @@ std::size_t VulkanFramework::getWindowHandle() const
 	return (std::size_t)glfwGetWin32Window(m_window);
 }
 
+void VulkanFramework::onIconify(GLFWwindow* window, bool b)
+{
+	/*
+	glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+    glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_TRUE);
+	glfwRestoreWindow(window);
+	glfwSetWindowPos(window, 100, 100);
+	glfwSetWindowSize(window, 320, 180);
+	*/
+}
 
 void VulkanFramework::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {

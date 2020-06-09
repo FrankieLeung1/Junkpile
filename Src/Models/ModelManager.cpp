@@ -67,6 +67,8 @@ void ModelManager::loadFBX(ModelData* data) const
 	const ofbx::Vec2* uvs = geo->getUVs();
 	const int* face = geo->getFaceIndices();
 
+	//scene->getGlobalSettings();
+
 	// setup and copy into vertex buffer
 	struct Vert {
 		glm::vec3 m_position;

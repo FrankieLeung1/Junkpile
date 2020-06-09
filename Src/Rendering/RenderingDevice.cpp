@@ -171,19 +171,27 @@ void Device::setFrameBufferDimensions(void* window, const glm::vec2& dimensions)
 	m_windowResources[window].m_frameDimensions = dimensions;
 }
 
-void Device::setFrameBuffers(void* window, const std::vector< std::tuple<vk::Framebuffer, vk::Fence> >& frames)
+void Device::setFrameBuffers(void* window, const std::vector<vk::Framebuffer>& frames)
 {
 	WindowResources& windowResources = m_windowResources[window];
-	if (windowResources.m_frameResources.empty())
+	windowResources.m_frameResources.resize(frames.size());
+	for (int i = 0; i < windowResources.m_frameResources.size(); ++i)
 	{
-		windowResources.m_frameResources.resize(frames.size());
-		for (int i = 0; i < windowResources.m_frameResources.size(); ++i)
-		{
-			FrameResources*& frame = windowResources.m_frameResources[i];
+		FrameResources*& frame = windowResources.m_frameResources[i];
+		if(!frame)
 			frame = new FrameResources();
-			frame->m_frameBuffer = std::get<vk::Framebuffer>(frames[i]);
-			frame->m_fence = std::get<vk::Fence>(frames[i]);
-		}
+
+		frame->m_frameBuffer = frames[i];
+	}
+}
+
+void Device::setFrameFences(void* window, const std::vector<vk::Fence>& fences)
+{
+	WindowResources& windowResources = m_windowResources[window];
+	CHECK_F(windowResources.m_frameResources.size() == fences.size());
+	for (int i = 0; i < windowResources.m_frameResources.size(); ++i)
+	{
+		windowResources.m_frameResources[i]->m_fence = fences[i];
 	}
 }
 
@@ -298,10 +306,17 @@ void Device::submitAll()
 
 void Device::update()
 {
+	ResourcePtr<VulkanFramework> f;
+
 	ThreadResources* threadRes = getThreadResources();
 
-	vk::Result err = m_device.waitForFences(1, &m_currentFrameResources->m_fence, VK_TRUE, UINT64_MAX); checkVkResult(err);
-	err = m_device.resetFences(1, &m_currentFrameResources->m_fence); checkVkResult(err);
+	if (f->isMinimized())
+		m_device.waitIdle();
+	else
+	{
+		vk::Result err = m_device.waitForFences(1, &m_currentFrameResources->m_fence, VK_TRUE, UINT64_MAX); checkVkResult(err);
+		err = m_device.resetFences(1, &m_currentFrameResources->m_fence); checkVkResult(err);
+	}
 
 	m_device.resetDescriptorPool(threadRes->m_descriptorPool);
 	m_device.resetCommandPool(threadRes->m_commandPool, {});

@@ -34,6 +34,7 @@
 //  2017-08-25: Inputs: MousePos set to -FLT_MAX,-FLT_MAX when mouse is unavailable/missing (instead of -1,-1).
 //  2016-10-15: Misc: Added a void* user_data parameter to Clipboard function handlers.
 
+#include "stdafx.h"
 #include "imgui/imgui.h"
 #include "imgui_impl_glfw.h"
 
@@ -79,6 +80,7 @@ static GLFWscrollfun        g_PrevUserCallbackScroll = NULL;
 static GLFWkeyfun           g_PrevUserCallbackKey = NULL;
 static GLFWcharfun          g_PrevUserCallbackChar = NULL;
 static GLFWwindowfocusfun   g_PrevUserCallbackFocus = NULL;
+static GLFWwindowiconifyfun g_PrevUserCallbackIconify = NULL;
 
 // Forward Declarations
 static void ImGui_ImplGlfw_InitPlatformInterface();
@@ -148,20 +150,30 @@ void ImGui_ImplGlfw_FocusCallback(GLFWwindow* window, int f)
 		g_PrevUserCallbackFocus(window, f);
 
 #ifdef _WIN32
-	if (f == GLFW_FALSE)
-		return;
-
-	ImGuiPlatformIO& io = ImGui::GetPlatformIO();
-	for (int n = 0; n < io.Viewports.Size; n++)
-	{
-		ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)io.Viewports[n]->PlatformUserData;
-		if (data && data->Window != g_Window)
-		{
-			HWND hwnd = glfwGetWin32Window(data->Window);
-			::SetWindowPos(hwnd, glfwGetWin32Window(g_Window), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-		}
-	}
+    // bring all viewports to the front
+    if (f == GLFW_TRUE)
+    {
+        ImGuiPlatformIO& io = ImGui::GetPlatformIO();
+        for (int n = 0; n < io.Viewports.Size; n++)
+        {
+            ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)io.Viewports[n]->PlatformUserData;
+            if (data && data->Window != g_Window)
+            {
+                HWND hwnd = glfwGetWin32Window(data->Window);
+                ::SetWindowPos(hwnd, glfwGetWin32Window(g_Window), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+        }
+    }
 #endif
+}
+
+void ImGui_ImplGlfw_IconifyCallback(GLFWwindow* window, int f)
+{
+    if (g_PrevUserCallbackIconify != NULL && window == g_Window)
+        g_PrevUserCallbackIconify(window, f);
+
+    ResourcePtr<VulkanFramework> framework;
+    framework->onIconify(window, f != 0);
 }
 
 static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, GlfwClientApi client_api)
@@ -227,6 +239,7 @@ static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, Glfw
         g_PrevUserCallbackKey = glfwSetKeyCallback(window, ImGui_ImplGlfw_KeyCallback);
         g_PrevUserCallbackChar = glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
 		g_PrevUserCallbackFocus = glfwSetWindowFocusCallback(window, ImGui_ImplGlfw_FocusCallback);
+        g_PrevUserCallbackIconify = glfwSetWindowIconifyCallback(window, ImGui_ImplGlfw_IconifyCallback);
     }
 
     // Our mouse update function expect PlatformHandle to be filled for the main viewport

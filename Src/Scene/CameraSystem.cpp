@@ -13,7 +13,6 @@ CameraSystem::CameraSystem()
 
 CameraSystem::~CameraSystem()
 {
-
 }
 
 void CameraSystem::update(const UpdateEvent* e)
@@ -72,7 +71,7 @@ void CameraSystem::update(const UpdateEvent* e)
 						offsetFromOrigin += diff;
 				}
 
-				if (inputs->justDown('r'))
+				if (inputs->justDown('R'))
 				{
 					transform->m_position = glm::vec3(0.0f, 0.0f, -5.0f);
 					camera->m_angles = glm::vec3(0.0f, 0.0f, 0.0f);

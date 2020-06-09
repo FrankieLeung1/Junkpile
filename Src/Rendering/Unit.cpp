@@ -319,6 +319,11 @@ RootUnit::~RootUnit()
 
 }
 
+void RootUnit::clearSubmitted()
+{
+	m_submitted.clear();
+}
+
 std::vector<Unit>& RootUnit::getSubmitted()
 {
 	return m_submitted;

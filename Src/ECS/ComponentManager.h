@@ -3,6 +3,7 @@
 #include "../Resources/ResourceManager.h"
 #include "../ECS/ECS.h"
 #include "../Misc/Any.h"
+#include "../Meta/Meta.h"
 #include "EntityIterator.h"
 
 class ComponentManager;
@@ -121,6 +122,10 @@ protected:
 	template<typename... Ts> friend class EntityIterator;
 	template<typename T> friend class ComponentPtr;
 };
+
+namespace Meta {
+	template<> Object instanceMeta<ComponentManager>();
+}
 
 template<typename T>
 class ComponentPtr
