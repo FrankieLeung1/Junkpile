@@ -28,6 +28,7 @@
 #include "../Rendering/Texture.h"
 #include "../Misc/Misc.h"
 #include "../Managers/EventManager.h"
+#include "../Rendering/RenderTarget.h"
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #ifdef _DEBUG
@@ -330,7 +331,7 @@ int VulkanFramework::initImGui(AppType type)
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 																//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
@@ -372,8 +373,7 @@ int VulkanFramework::initImGui(AppType type)
 	init_info.CheckVkResultFn = check_vk_result;
 	ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 
-	m_device->createRenderPass((vk::Format)wd->SurfaceFormat.format);
-	m_device->setFrameBufferDimensions(wd, { wd->Width, wd->Height });
+	m_device->createRenderPass((vk::Format)wd->SurfaceFormat.format, wd->Frames[wd->FrameIndex].DepthStencil->getFormat());
 
 	g_SwapChainResizeWidth = wd->Width;
 	g_SwapChainResizeHeight = wd->Height;
@@ -478,13 +478,17 @@ void VulkanFramework::update()
 		g_SwapChainRebuild = false;
 		ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 		ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
-		m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format);
+		m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format, g_MainWindowData.Frames[0].DepthStencil->getFormat());
 		m_device->setFrameBufferDimensions(&g_MainWindowData, { g_SwapChainResizeWidth, g_SwapChainResizeHeight });
 		g_MainWindowData.FrameIndex = 0;
 
-		std::vector<vk::Framebuffer> framebuffer;
-		for (uint32_t i = 0; i < g_MainWindowData.ImageCount; i++) framebuffer.push_back(g_MainWindowData.Frames[i].Framebuffer);
-		m_device->setFrameBuffers(&g_MainWindowData, framebuffer);
+		std::vector<std::tuple<vk::Image, vk::ImageView, vk::Framebuffer, std::shared_ptr<Rendering::RenderTarget>>> framebuffers;
+		for (uint32_t i = 0; i < g_MainWindowData.ImageCount; i++)
+		{
+			ImGui_ImplVulkanH_Frame* frame = &g_MainWindowData.Frames[i];
+			framebuffers.push_back(std::tie(frame->Backbuffer, frame->BackbufferView, frame->Framebuffer, frame->DepthStencil));
+		}
+		m_device->setFrameBuffers(&g_MainWindowData, framebuffers);
 	}
 
 	InputManager* inputs = ResourcePtr<InputManager>().get();
@@ -636,16 +640,6 @@ void VulkanFramework::setPip(int quad)
 	}
 	m_pip = quad;
 }
-
-/*void VulkanFramework::setPipWhenMinimized(bool b)
-{
-	m_pip = b;
-}
-
-bool VulkanFramework::getPipWhenMinimized() const
-{
-	return m_pip;
-}*/
 
 VulkanFramework::AppType VulkanFramework::getAppType() const
 {

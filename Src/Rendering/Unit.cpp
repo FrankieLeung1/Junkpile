@@ -75,7 +75,7 @@ static bool getResource(Ptr*& ptr, ResPtr* res)
 	return (ptr != nullptr);
 };
 
-Unit::CommandType Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResources* resources, vk::CommandBuffer openBuffer)
+Unit::CommandType Unit::submitCommandBuffers(Rendering::Device* device, Device::ThreadResources* resources, vk::CommandBuffer openBuffer, bool clear)
 {
 	Data& d = getData();
 	for (Any& any : d.m_settings)
@@ -86,9 +86,13 @@ Unit::CommandType Unit::submitCommandBuffers(Rendering::Device* device, Device::
 			if (submitTextureUpload(device, openBuffer, texture)) return Unit::CommandType::Upload; // upload?
 			if (submitLayoutChange(device, openBuffer, texture)) return Unit::CommandType::LayoutChange; // layout change?
 		}
+		else if (vk::Image* image = any.getPtr<vk::Image>())
+		{
+			if (submitLayoutChange(device, openBuffer, *image)) return Unit::CommandType::LayoutChange;
+		}
 	}
 
-	if (submitDrawCall(device, openBuffer)) return Unit::CommandType::Draw;
+	if (submitDrawCall(device, openBuffer, clear)) return Unit::CommandType::Draw;
 	if (submitClearCall(device, openBuffer)) return Unit::CommandType::Clear;
 
 	LOG_F(FATAL, "Unknown Unit type\n");
@@ -97,12 +101,12 @@ Unit::CommandType Unit::submitCommandBuffers(Rendering::Device* device, Device::
 
 bool Unit::submitTextureUpload(Rendering::Device* device, vk::CommandBuffer buffer, Texture* texture)
 {
-	RenderTarget* target = nullptr;
+	Surface* target = nullptr;
 	Data& d = getData();
 	if (d.m_targets.empty())
 		return false;
 
-	for (RenderTarget* target : d.m_targets)
+	for (Surface* target : d.m_targets)
 	{
 		texture->uploadTexture(device, buffer, target);
 	}
@@ -115,24 +119,30 @@ bool Unit::submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffe
 	if (texture->getMode() != Texture::Mode::HOST_VISIBLE)
 		return false;
 
+	return submitLayoutChange(device, buffer, texture->getVkImage());
+}
+
+bool Unit::submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffer, vk::Image image)
+{
 	Data& d = getData();
 	for (Any& any : d.m_settings)
 	{
-		if (any.isType<VkImageLayout>())
+		if (any.isType<vk::ImageLayout>())
 		{
 			VkImageMemoryBarrier useBuffer[1] = {};
 			useBuffer[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			useBuffer[0].srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
 			useBuffer[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 			useBuffer[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			useBuffer[0].newLayout = any.get<VkImageLayout>();
+			useBuffer[0].newLayout = (VkImageLayout)any.get<vk::ImageLayout>();
 			useBuffer[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			useBuffer[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			useBuffer[0].image = texture->getVkImage();
-			useBuffer[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			useBuffer[0].image = image;
+			opt<vk::ImageAspectFlags>((vk::ImageAspectFlags&)useBuffer[0].subresourceRange.aspectMask, nullptr, vk::ImageAspectFlagBits::eColor);
 			useBuffer[0].subresourceRange.levelCount = 1;
 			useBuffer[0].subresourceRange.layerCount = 1;
 			vkCmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, useBuffer);
+			//vkCmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, useBuffer);
 			return true;
 		}
 	}
@@ -140,7 +150,7 @@ bool Unit::submitLayoutChange(Rendering::Device* device, vk::CommandBuffer buffe
 	return false;
 }
 
-bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
+bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer, bool clear)
 {
 	Data& d = getData();
 	Texture* bindTextures[4] = {};
@@ -198,15 +208,20 @@ bool Unit::submitDrawCall(Rendering::Device* device, vk::CommandBuffer buffer)
 		}
 	}
 
-	vk::ClearValue clearValues;
-	clearValues.color = getVulkanObject<vk::ClearColorValue>();
-	//clearValues.depthStencil = createVulkanObject<vk::ClearDepthStencilValue>();
-
 	vk::RenderPassBeginInfo renderPassInfo;
-	renderPassInfo.renderPass = device->getRenderPass();
+	renderPassInfo.renderPass = clear ? device->getClearingRenderPass() : device->getRenderPass();
 	renderPassInfo.framebuffer = std::get<0>(device->getFrameBuffer());
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearValues;
+
+	vk::ClearDepthStencilValue depthStencilValue = { 1.0f, 0 };
+	opt<vk::ClearDepthStencilValue>(depthStencilValue);
+	vk::ClearValue clearValues[2];
+	clearValues[0].color = getVulkanObject<vk::ClearColorValue>();
+	clearValues[1].depthStencil = depthStencilValue;
+	renderPassInfo.clearValueCount = clear ? 2 : 0;
+	renderPassInfo.pClearValues = clearValues;
+
+	//renderPassInfo.clearValueCount = 0;
+	//renderPassInfo.pClearValues = nullptr;
 	renderPassInfo.renderArea = scissor;
 	buffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 	for (Any& any : m_data->m_settings)
@@ -237,27 +252,38 @@ bool Unit::submitClearCall(Rendering::Device* device, vk::CommandBuffer buffer)
 	auto descriptorSet = getVulkanObject<vk::DescriptorSet>();*/
 
 	vk::ClearColorValue* clearValue = nullptr;
+	vk::ClearDepthStencilValue depthStencilValue = {1.0f, 0};
+	bool foundDepthStencil = false;
 	for (Any& any : m_data->m_settings)
 	{
 		if (any.isType<vk::ClearColorValue>())
 		{
 			clearValue = any.getPtr<vk::ClearColorValue>();
-			break;
 		}
+		else if (any.isType<vk::ClearDepthStencilValue>())
+		{
+			depthStencilValue = any.get<vk::ClearDepthStencilValue>();
+			foundDepthStencil = true;
+		}
+
+		if (clearValue && foundDepthStencil)
+			break;
 	}
 	
 	if (!clearValue)
 		return false;
 
 	auto scissor = getVulkanObject<vk::Rect2D>();
-	vk::ClearValue clearValues;
-	clearValues.color = *clearValue;
+	vk::ClearValue clearValues[2];
+	clearValues[0].color = *clearValue;
+	clearValues[1].depthStencil = depthStencilValue;
+	//clearValues[1].color = *clearValue;
 	
 	vk::RenderPassBeginInfo renderPassInfo;
-	renderPassInfo.renderPass = device->getRenderPass();
+	renderPassInfo.renderPass = device->getClearingRenderPass();
 	renderPassInfo.framebuffer = std::get<0>(device->getFrameBuffer());
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearValues;
+	renderPassInfo.clearValueCount = 2;
+	renderPassInfo.pClearValues = clearValues;
 	renderPassInfo.renderArea = scissor;
 	buffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 	buffer.endRenderPass();
@@ -291,10 +317,13 @@ Unit& Unit::in(Buffer* v) {
 	else if (v->getType() == Buffer::Type::Index)  return _in(Named<Buffer*>("Index", v));
 	else return _in(v);
 }
-Unit& Unit::in(VkImageLayout v) { return _in(v); }
+Unit& Unit::in(vk::ImageLayout v) { return _in(v); }
+Unit& Unit::in(vk::ImageAspectFlags v) { return _in(v); }
 Unit& Unit::in(vk::SamplerMipmapMode v) { return _in(v); }
 Unit& Unit::in(vk::CompareOp v) { return _in(v); }
 Unit& Unit::in(vk::ClearColorValue v) { return _in(v); }
+Unit& Unit::in(vk::Image v) { return _in(v); }
+Unit& Unit::in(const DepthTest& v) { return _in(v); }
 Unit& Unit::in(vk::PrimitiveTopology v) { return _in(v); }
 Unit& Unit::in(vk::CullModeFlags v) { return _in(v); }
 Unit& Unit::in(Named<bool> v) { return _in(v); }
@@ -302,6 +331,7 @@ Unit& Unit::in(Named<float> v) { return _in(v); }
 Unit& Unit::in(Named<vk::Filter> v) { return _in(v); }
 Unit& Unit::in(Named<vk::SamplerAddressMode> v) { return _in(v); }
 Unit& Unit::in(Binding<ResourcePtr<Texture>> v) { return _in(v); }
+Unit& Unit::in(Binding<Buffer*> v) { return _in(v); }
 Unit& Unit::in(PushConstant v) { return _in(v); }
 Unit& Unit::in(Draw v) { return _in(v); }
 Unit& Unit::in(DrawIndexed v) { return _in(v); }

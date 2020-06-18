@@ -61,6 +61,7 @@ private:
 			virtual std::size_t size(const ResizeableMemoryPool&) = 0;
 			virtual std::size_t elementSize() =0;
 			virtual bool empty(const ResizeableMemoryPool&) = 0;
+			virtual void clear(ResizeableMemoryPool&) = 0;
 		};
 
 		template<typename T>
@@ -72,6 +73,7 @@ private:
 			std::size_t size(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().size(); }
 			std::size_t elementSize() { return sizeof(T); };
 			bool empty(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().empty(); }
+			void clear(ResizeableMemoryPool& pool) { pool.get<std::vector<T>>().clear(); }
 		};
 
 		BufferAccessor* m_accessor;
@@ -103,6 +105,8 @@ public:
 	template<typename Component> ComponentPool* getPool();
 
 	template<typename Component, typename Deleter> void cleanupComponents(Deleter);
+
+	void clearAllComponents();
 
 	void imgui();
 
@@ -283,6 +287,7 @@ void ComponentManager::removeComponents(Entity eid)
 		Entity entity = *(Entity*)&(*bytes);
 		if (entity == eid)
 		{
+			static_cast<Component*>(bytes)->~Component();
 			buffer.erase(bytes, bytes + sizeof(Component));
 			break;
 		}

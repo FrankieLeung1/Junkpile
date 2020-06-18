@@ -50,7 +50,7 @@ SpriteId SpriteManager::getSprite(const char* path)
 		return sprite;
 	
 	// find it
-	for (auto it : m_idSprites)
+	for (auto& it : m_idSprites)
 	{
 		if (it.second == namedIt->second)
 			return it.first;

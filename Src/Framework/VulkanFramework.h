@@ -38,9 +38,6 @@ public:
 
 	bool isMinimized() const;
 
-	/*void setPipWhenMinimized(bool);
-	bool getPipWhenMinimized() const;*/
-
 	void setPip(int quad);
 
 	AppType getAppType() const;

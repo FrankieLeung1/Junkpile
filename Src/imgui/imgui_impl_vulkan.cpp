@@ -47,6 +47,7 @@
 #include "../Resources/ResourceManager.h"
 #include "../Rendering/RenderingDevice.h"
 #include "../Rendering/Texture.h"
+#include "../Rendering/RenderTarget.h"
 #include <stdio.h>
 
 // Reusable buffers used for rendering 1 current in-flight frame, for ImGui_ImplVulkan_RenderDrawData()
@@ -926,50 +927,6 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
     if (old_swapchain)
         vkDestroySwapchainKHR(vkdevice, old_swapchain, allocator);
 
-    // Create the Render Pass
-    {
-        VkAttachmentDescription attachment = {};
-        attachment.format = wd->SurfaceFormat.format;
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        VkAttachmentReference color_attachment = {};
-        color_attachment.attachment = 0;
-        color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &color_attachment;
-        VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        VkRenderPassCreateInfo info = {};
-        info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        info.attachmentCount = 1;
-        info.pAttachments = &attachment;
-        info.subpassCount = 1;
-        info.pSubpasses = &subpass;
-        info.dependencyCount = 1;
-        info.pDependencies = &dependency;
-
-        if (wd->MainWindow)
-        {
-            // this is the main window
-            attachment.loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
-            attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-        }
-
-        wd->RenderPass = device->createObject(info);
-    }
-
     // Create The Image Views
     {
         VkImageViewCreateInfo info = {};
@@ -988,16 +945,77 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
             info.image = fd->Backbuffer;
             err = vkCreateImageView(vkdevice, &info, allocator, &fd->BackbufferView);
             check_vk_result(err);
+
+            fd->DepthStencil = std::make_shared<Rendering::RenderTarget>(Rendering::RenderTarget::Type::DepthStencil, wd->Width, wd->Height);
         }
+    }
+
+    // Create the Render Pass
+    {
+        VkAttachmentDescription attachments[2] = {};
+        attachments[0].format = wd->SurfaceFormat.format;
+        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        attachments[1].format = (VkFormat)wd->Frames[0].DepthStencil->getFormat();
+        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        VkAttachmentReference color_attachments[1] = {};
+        color_attachments[0].attachment = 0;
+        color_attachments[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = color_attachments;
+        VkAttachmentReference depthStencil_attachments[1] = {};
+        depthStencil_attachments[0].attachment = 1;
+        depthStencil_attachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        subpass.pDepthStencilAttachment = depthStencil_attachments;
+
+        VkSubpassDependency dependency = {};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        VkRenderPassCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        info.attachmentCount = 2;
+        info.pAttachments = attachments;
+        info.subpassCount = 1;
+        info.pSubpasses = &subpass;
+        info.dependencyCount = 1;
+        info.pDependencies = &dependency;
+
+        if (wd->MainWindow)
+        {
+            // this is the main window
+            attachments[0].loadOp = wd->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+            attachments[0].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+        }
+
+        wd->RenderPass = device->createObject(info);
     }
 
     // Create Framebuffer
     {
-        VkImageView attachment[1];
+        VkImageView attachment[2];
         VkFramebufferCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         info.renderPass = wd->RenderPass;
-        info.attachmentCount = 1;
+        info.attachmentCount = 2;
         info.pAttachments = attachment;
         info.width = wd->Width;
         info.height = wd->Height;
@@ -1006,6 +1024,7 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         {
             ImGui_ImplVulkanH_Frame* fd = &wd->Frames[i];
             attachment[0] = fd->BackbufferView;
+            attachment[1] = wd->Frames[0].DepthStencil->getView();
             err = vkCreateFramebuffer(vkdevice, &info, allocator, &fd->Framebuffer);
             check_vk_result(err);
         }
@@ -1053,15 +1072,17 @@ void ImGui_ImplVulkanH_CreateWindow(VkInstance instance, VkPhysicalDevice physic
     ImGui_ImplVulkanH_CreateWindowSwapChain(physical_device, device, wd, allocator, width, height, min_image_count);
     ImGui_ImplVulkanH_CreateWindowCommandBuffers(physical_device, device, wd, queue_family, allocator);
 
-    std::vector<vk::Framebuffer> frameBuffers;
+    std::vector<std::tuple<vk::Image, vk::ImageView, vk::Framebuffer, std::shared_ptr<Rendering::RenderTarget>>> frameBuffers;
     std::vector<vk::Fence> fences;
     for (uint32_t i = 0; i < wd->ImageCount; i++)
     {
-        frameBuffers.push_back((vk::Framebuffer)wd->Frames[i].Framebuffer);
-        fences.push_back((vk::Fence)wd->Frames[i].Fence);
+        ImGui_ImplVulkanH_Frame* frame = &wd->Frames[i];
+        frameBuffers.push_back(std::tie((vk::Image) frame->Backbuffer, (vk::ImageView)frame->BackbufferView, (vk::Framebuffer)frame->Framebuffer, frame->DepthStencil));
+        fences.push_back((vk::Fence)frame->Fence);
     }
 
     ResourcePtr<Rendering::Device> renderingDevice;
+    renderingDevice->setFrameBufferDimensions(wd, { width, height });
     renderingDevice->setFrameBuffers(wd, frameBuffers);
     renderingDevice->setFrameFences(wd, fences);
 }
@@ -1098,6 +1119,7 @@ void ImGui_ImplVulkanH_DestroyFrame(VkDevice device, ImGui_ImplVulkanH_Frame* fd
 
     vkDestroyImageView(device, fd->BackbufferView, allocator);
     vkDestroyFramebuffer(device, fd->Framebuffer, allocator);
+    fd->DepthStencil.reset();
 }
 
 void ImGui_ImplVulkanH_DestroyFrameSemaphores(VkDevice device, ImGui_ImplVulkanH_FrameSemaphores* fsd, const VkAllocationCallbacks* allocator)

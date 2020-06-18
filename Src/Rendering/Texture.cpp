@@ -43,7 +43,7 @@ Texture::~Texture()
 {
 	VmaAllocator vma = m_device->getVMA();
 	VkAllocationCallbacks* allocator = m_device->getAllocator();
-	setVkImageRT(vk::Image(), VK_NULL_HANDLE);
+	setSurfaceImage(vk::Image(), VK_NULL_HANDLE);
 	if (m_p->m_view != VK_NULL_HANDLE) vkDestroyImageView(m_device->getDevice(), m_p->m_view, allocator);
 	if (m_p->m_descriptorSetLayout != VK_NULL_HANDLE) vkDestroyDescriptorSetLayout(m_device->getDevice(), m_p->m_descriptorSetLayout, allocator);
 	if (m_p->m_sampler != VK_NULL_HANDLE) vkDestroySampler(m_device->getDevice(), m_p->m_sampler, allocator);
@@ -226,11 +226,11 @@ void Texture::setHostVisible(int width, int height, int pixelSize)
 
 	Rendering::Unit unit = device->createUnit();
 	unit.in(ResourcePtr<Rendering::Texture>(NoOwnershipPtr, this));
-	unit.in(VK_IMAGE_LAYOUT_GENERAL);
+	unit.in(vk::ImageLayout::eGeneral);
 	unit.submit();
 }
 
-void Texture::uploadTexture(Device* device, VkCommandBuffer _commandBuffer, RenderTarget* target)
+void Texture::uploadTexture(Device* device, VkCommandBuffer _commandBuffer, Surface* target)
 {
 	vk::CommandBuffer commandBuffer = static_cast<VkCommandBuffer>(_commandBuffer);
 
@@ -306,7 +306,7 @@ void Texture::uploadTexture(Device* device, VkCommandBuffer _commandBuffer, Rend
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, useBuffer);
 	}
 
-	target->setVkImageRT(image, imageMemory);
+	target->setSurfaceImage(image, imageMemory);
 }
 
 void Texture::uploadTexture(Device* device, VkCommandBuffer vcommandBuffer)
@@ -451,7 +451,7 @@ vk::Image Texture::getVkImage() const
 	return m_p->m_image;
 }
 
-void Texture::setVkImageRT(vk::Image image, VmaAllocation memory)
+void Texture::setSurfaceImage(vk::Image image, VmaAllocation memory)
 {
 	if (m_p->m_image != VK_NULL_HANDLE &&  m_p->m_memory != VK_NULL_HANDLE)
 		vmaDestroyImage(m_device->getVMA(), m_p->m_image, m_p->m_memory);
@@ -461,7 +461,7 @@ void Texture::setVkImageRT(vk::Image image, VmaAllocation memory)
 	m_mode = Mode::DEVICE_LOCAL;
 }
 
-vk::Image Texture::getVkImageRT()
+vk::Image Texture::getSurfaceImage()
 {
 	return m_p->m_image;
 }

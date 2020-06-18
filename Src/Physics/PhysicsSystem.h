@@ -10,7 +10,12 @@ struct PhysicsComponent : public Component<PhysicsComponent>
 	btCollisionShape* m_shape;
 	btRigidBody* m_body;
 
-	PhysicsComponent() : m_shape{ nullptr }, m_body{ nullptr } {}
+	PhysicsComponent() : m_shape(nullptr), m_body(nullptr) {}
+	PhysicsComponent(const PhysicsComponent&) { CHECK_F(false); }
+	PhysicsComponent(PhysicsComponent&& p) : m_shape(p.m_shape), m_body(p.m_body) { m_shape = nullptr; m_body = nullptr; }
+	PhysicsComponent& operator=(const PhysicsComponent&) { CHECK_F(false); return *this; }
+	PhysicsComponent& operator=(PhysicsComponent&& p) { m_shape = p.m_shape; m_body = p.m_body;  p.m_shape = nullptr; p.m_body = nullptr; return *this; }
+	~PhysicsComponent();
 };
 
 struct CollisionEvent : public PersistentEvent<CollisionEvent>
@@ -53,4 +58,6 @@ protected:
 	std::unique_ptr<btDispatcher> m_dispatcher{ nullptr };
 	std::unique_ptr<btDynamicsWorld> m_world{ nullptr };
 	std::unique_ptr<PhysicsDebugDraw> m_debugDrawer{ nullptr };
+
+	friend struct PhysicsComponent;
 };

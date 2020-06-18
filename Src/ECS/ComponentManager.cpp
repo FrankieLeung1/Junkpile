@@ -38,6 +38,14 @@ void ComponentManager::imgui()
 	ImGui::End();
 }
 
+void ComponentManager::clearAllComponents()
+{
+	for (auto& it : m_pools)
+	{
+		it.second.m_accessor->clear(it.second.m_buffer);
+	}
+}
+
 template<> Meta::Object Meta::instanceMeta<ComponentManager>()
 {
 	return Object("ComponentManager");

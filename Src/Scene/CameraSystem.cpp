@@ -96,23 +96,28 @@ void CameraSystem::update(const UpdateEvent* e)
 	}
 }
 
-glm::mat4x4 CameraSystem::getMatrix(Entity e) const
+void CameraSystem::getMatrices(Entity e, glm::mat4* view, glm::mat4* projection) const
 {
 	ResourcePtr<TransformSystem> transforms;
 	EntityIterator<TransformComponent, CameraComponent> it = m_components->findEntity<TransformComponent, CameraComponent>(e);
 	TransformComponent* t = it.get<TransformComponent>();
 	CameraComponent* c = it.get<CameraComponent>();
+	if (!view) view = (glm::mat4*)alloca(sizeof(glm::mat4));
+	if(!projection) projection = (glm::mat4*)alloca(sizeof(glm::mat4));
 
-	glm::mat4 view = glm::mat4(1.0f);
+	*view = glm::mat4(1.0f);
 	if (t)
 	{
-		view[2][2] = -1.0f; // flip the z axis
-		view = glm::mat4_cast(t->m_rotation) * glm::translate(view, t->m_position);
+		(*view)[2][2] = -1.0f; // flip the z axis
+		(*view) = glm::mat4_cast(t->m_rotation) * glm::translate(*view, t->m_position);
 	}
 
 	if (c->m_flags & CameraComponent::Perspective)
 	{
-		return glm::perspective(c->m_fov, c->m_aspect, c->m_near, c->m_far) * view;
+		int width = 1280, height = 720;
+		*projection = glm::perspective(c->m_fov, c->m_aspect, c->m_near, c->m_far);
+		//*projection = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 256.0f);
+		
 	}
 	else if (c->m_flags & CameraComponent::Orthographic)
 	{
@@ -121,13 +126,15 @@ glm::mat4x4 CameraSystem::getMatrix(Entity e) const
 			ResourcePtr<Rendering::Device> device;
 			auto resolution = std::get<1>(device->getFrameBuffer());
 			float halfWidth = resolution.x / 2.0f, halfHeight = resolution.y / 2.0f;
-			return view * glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight);
+			*projection = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight);
 		}
 		else
 		{
-			return view * glm::ortho(c->m_left, c->m_right, c->m_bottom, c->m_top);
+			*projection = glm::ortho(c->m_left, c->m_right, c->m_bottom, c->m_top);
 		}
 	}
-	
-	return glm::mat4x4();
+	else
+	{
+		LOG_F(ERROR, "Invalid camera\n");
+	}
 }

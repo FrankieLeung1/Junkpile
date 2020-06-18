@@ -17,7 +17,7 @@ m_metaObject(metaObject)
 
 Meta::PythonRegisterer::~PythonRegisterer()
 {
-	for (auto it : m_callables)
+	for (auto& it : m_callables)
 	{
 		//Py_XDECREF(it.m_callablePyObject);
 	}

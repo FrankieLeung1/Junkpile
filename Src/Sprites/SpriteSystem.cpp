@@ -149,9 +149,13 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 
 		ResourcePtr<Rendering::Device> device;
 		ResourcePtr<CameraSystem> cameras;
-		glm::mat4x4 cameraMatrix = cameras->getMatrix(cameraEntity);
+		glm::mat4 view, proj;
+		cameras->getMatrices(cameraEntity, &view, &proj);
+
+		glm::mat4x4 cameraMatrix = proj * view;
 		std::vector<char> pushData(sizeof(glm::mat4));
 		memcpy(&pushData[0], &cameraMatrix, sizeof(glm::mat4));
+
 
 		Rendering::Unit unit(device->getRootUnit());
 		unit.in(vbuffer);

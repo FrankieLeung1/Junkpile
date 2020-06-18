@@ -25,7 +25,7 @@ struct CameraComponent : public Component<CameraComponent, CameraSystem>
 	glm::vec3 m_angles;
 	glm::vec3 m_offset;
 
-	CameraComponent() : m_flags(Perspective), m_fov(90.0f), m_aspect(16.0f / 9.0f), m_near(0.0f), m_far(100.0f), m_angles(0.0f), m_offset(0.0f) {}
+	CameraComponent() : m_flags(Perspective), m_fov(90.0f), m_aspect(16.0f / 9.0f), m_near(0.1f), m_far(10000.0f), m_angles(0.0f), m_offset(0.0f) {}
 	//CameraComponent() : m_flags(Orthographic), m_controlType(None), m_left(0.0f), m_right(0.0f), m_bottom(0.0f), m_top(0.0f), m_lookAt(0.0f) {}
 };
 
@@ -37,7 +37,7 @@ public:
 
 	void update(const UpdateEvent*);
 
-	glm::mat4x4 getMatrix(Entity) const;
+	void getMatrices(Entity, glm::mat4* view, glm::mat4* projection) const;
 
 protected:
 	ResourcePtr<ComponentManager> m_components;

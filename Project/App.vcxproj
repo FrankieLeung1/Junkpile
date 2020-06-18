@@ -423,7 +423,7 @@
     <ClCompile Include="..\Src\imgui\ImGuiManager.cpp" />
     <ClCompile Include="..\Src\imgui\imgui_impl_glfw.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\Src\imgui\imgui_impl_vulkan.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -433,6 +433,7 @@
     <ClCompile Include="..\Src\Managers\DebugManager.cpp" />
     <ClCompile Include="..\Src\Managers\EventManager.cpp" />
     <ClCompile Include="..\Src\Managers\InputManager.cpp" />
+    <ClCompile Include="..\Src\Managers\TestManager.cpp" />
     <ClCompile Include="..\Src\Managers\TimeManager.cpp" />
     <ClCompile Include="..\Src\Meta\LuaRegisterer.cpp" />
     <ClCompile Include="..\Src\Meta\Meta.cpp" />
@@ -448,6 +449,7 @@
     <ClCompile Include="..\Src\Rendering\Depot.cpp" />
     <ClCompile Include="..\Src\Rendering\Pipeline.cpp" />
     <ClCompile Include="..\Src\Rendering\RenderingDevice.cpp" />
+    <ClCompile Include="..\Src\Rendering\RenderTarget.cpp" />
     <ClCompile Include="..\Src\Rendering\Sampler.cpp" />
     <ClCompile Include="..\Src\Rendering\Shader.cpp" />
     <ClCompile Include="..\Src\Rendering\Texture.cpp" />
@@ -692,6 +694,7 @@
     <ClInclude Include="..\Src\Managers\DebugManager.h" />
     <ClInclude Include="..\Src\Managers\EventManager.h" />
     <ClInclude Include="..\Src\Managers\InputManager.h" />
+    <ClInclude Include="..\Src\Managers\TestManager.h" />
     <ClInclude Include="..\Src\Managers\TimeManager.h" />
     <ClInclude Include="..\Src\Meta\LuaRegisterer.h" />
     <ClInclude Include="..\Src\Meta\Meta.h" />
@@ -713,8 +716,9 @@
     <ClInclude Include="..\Src\Rendering\Depot.h" />
     <ClInclude Include="..\Src\Rendering\Pipeline.h" />
     <ClInclude Include="..\Src\Rendering\RenderingDevice.h" />
-    <ClInclude Include="..\Src\Rendering\RenderTarget.cpp" />
     <ClInclude Include="..\Src\Rendering\RenderTarget.h" />
+    <ClInclude Include="..\Src\Rendering\Surface.cpp" />
+    <ClInclude Include="..\Src\Rendering\Surface.h" />
     <ClInclude Include="..\Src\Rendering\Sampler.h" />
     <ClInclude Include="..\Src\Rendering\Shader.h" />
     <ClInclude Include="..\Src\Rendering\Texture.h" />

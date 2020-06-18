@@ -8,6 +8,7 @@ namespace Rendering
 	class Unit;
 	class RootUnit;
 	class Shader;
+	class RenderTarget;
 	class Device : public SingletonResource<Device>
 	{
 	public:
@@ -25,16 +26,17 @@ namespace Rendering
 		void setQueue(vk::Queue);
 		void setPipelineCache(vk::PipelineCache);
 		void setRenderPass(vk::RenderPass);
-		void setFrameBufferDimensions(void* window, const glm::vec2& dimensions);
-		void setFrameBuffers(void* window, const std::vector<vk::Framebuffer>&);
+		void setFrameBufferDimensions(void* window, const glm::u32vec2& dimensions);
+		void setFrameBuffers(void* window, const std::vector<std::tuple<vk::Image, vk::ImageView, vk::Framebuffer, std::shared_ptr<RenderTarget>>>&);
 		void setFrameFences(void* window, const std::vector<vk::Fence>& fences);
 		void setCurrentWindow(void* window);
 		void setCurrentFrame(std::size_t index);
 
-		void createRenderPass(vk::Format);
+		void createRenderPass(vk::Format, vk::Format depthFormat);
 
 		vk::RenderPass getRenderPass() const;
-		std::tuple<vk::Framebuffer, glm::vec2> getFrameBuffer() const;
+		vk::RenderPass getClearingRenderPass() const;
+		std::tuple<vk::Framebuffer, glm::u32vec2> getFrameBuffer() const;
 		vk::DescriptorPool getDescriptorPool(const std::thread::id & = std::this_thread::get_id());
 		vk::DescriptorPool getPersistentDescriptorPool(const std::thread::id & = std::this_thread::get_id());
 
@@ -60,9 +62,11 @@ namespace Rendering
 		vk::PipelineLayout createObject(const vk::PipelineLayoutCreateInfo&);
 		vk::RenderPass createObject(const vk::RenderPassCreateInfo&);
 		vk::ShaderModule createObject(const vk::ShaderModuleCreateInfo&);
+		vk::ImageView createObject(const vk::ImageViewCreateInfo&);
 		template<typename T> T& getObject(std::size_t id) const;
 
 		void destroyObject(vk::RenderPass);
+		void destroyObject(vk::ImageView);
 
 		vk::DescriptorSet allocateObject(const vk::DescriptorSetAllocateInfo&);
 
@@ -96,6 +100,7 @@ namespace Rendering
 		vk::AllocationCallbacks* m_allocator{ nullptr };
 		vk::PipelineCache m_pipelineCache;
 		vk::RenderPass m_renderPass;
+		vk::RenderPass m_clearingRenderPass;
 		VmaAllocator m_vma;
 		Fossilize::StateRecorder m_recorder;
 
@@ -112,14 +117,18 @@ namespace Rendering
 
 		struct FrameResources
 		{
+			vk::Image m_frameImage;
+			vk::ImageView m_frameView;
 			vk::Framebuffer m_frameBuffer;
+			std::weak_ptr<RenderTarget> m_depthStencil;
 			vk::Fence m_fence;
 			std::map<std::thread::id, ThreadResources> m_threadResources;
+			bool m_layoutDefined;
 		};
 
 		struct WindowResources
 		{
-			glm::vec2 m_frameDimensions;
+			glm::u32vec2 m_frameDimensions;
 			std::vector<FrameResources*> m_frameResources;
 		};
 		std::map<void*, WindowResources> m_windowResources;

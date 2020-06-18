@@ -9,67 +9,6 @@
 
 namespace Rendering {
 
-template<typename T> struct AnyType { typedef T Type; };
-template<> struct AnyType<vk::Bool32> { typedef bool Type; };
-
-template<typename T> void Unit::reqOrOpt(T& v, Any index, bool required)
-{
-    Data& data = getData();
-    int bindingStage = index.isType<int>() ? index.get<int>() : -1;
-    const char* name = index.isType<const char*>() ? index.get<const char*>() : nullptr;
-    for (auto& any : data.m_settings)
-    {
-        if (bindingStage >= 0)
-        {
-            if (any.isType< AnyType<T>::Type >())
-            {
-                auto& binding = any.get< Binding<AnyType<T>::Type> >();
-                if (bindingStage == binding.m_binding)
-                {
-                    v = (T)binding.m_value;
-                    return;
-                }
-            }
-        }
-        else if (name)
-        {
-            if (any.isType< Named<AnyType<T>::Type > >())
-            {
-                auto& named = any.get< Named<AnyType<T>::Type> >();
-                if (strcmp(name, named.m_name) == 0)
-                {
-                    v = (T)named.m_value;
-                    return;
-                }
-            }
-        }
-        else
-        {
-            if (any.isType< AnyType<T>::Type >())
-            {
-                v = (T)any.get< AnyType<T>::Type >();
-                return;
-            }
-        }
-    }
-
-    for (auto& super : data.m_supers)
-    {
-        try { super.req(v, name); }
-        catch (...) {}
-    }
-
-    if(required)
-        throw std::runtime_error{ stringf("Failed to find Vulkan variable %s", name ? name : typeid(T).name()) };
-}
-
-template<typename T> void Unit::req(T& v, const char* name){ reqOrOpt(v, name, true); }
-template<typename T> void Unit::opt(T& v, const char* name){ reqOrOpt(v, name, false); }
-template<typename T> void Unit::req(T& v, int binding){ reqOrOpt(v, binding, true); }
-template<typename T> void Unit::opt(T& v, int binding){ reqOrOpt(v, binding, false); }
-template<typename T> void Unit::opt(T& v, const char* name, const T& defaultValue) { v = defaultValue; reqOrOpt(v, name, false); }
-template<typename T> void Unit::opt(T& v, int binding, const T& defaultValue) { v = defaultValue; reqOrOpt(v, binding, false); }
-
 template<>
 vk::Sampler Unit::createVulkanObject<vk::Sampler>()
 {
@@ -139,12 +78,32 @@ vk::DescriptorSet Unit::createVulkanObject<vk::DescriptorSet>()
         std::list<vk::DescriptorImageInfo> imageInfos;
         for (auto& any : data.m_settings)
         {
-            auto* bind = any.getPtr<Binding<ResourcePtr<Texture>>>();
-            if (bind)
+            if (auto* bind = any.getPtr<Binding<ResourcePtr<Texture>>>())
             {
                 Texture* texture = bind->m_value;
                 imageInfos.emplace_front(texture->getSampler(0).getVulkanObject<vk::Sampler>(), texture->getImageView() , texture->getImageLayout());
                 writes.emplace_back(data.m_descriptorSet, bind->m_binding, 0, (uint32_t)imageInfos.size(), vk::DescriptorType::eCombinedImageSampler, &imageInfos.front());
+            }
+            else if (auto* bind = any.getPtr<Binding<Buffer*>>())
+            {
+                /*
+                    VULKAN_HPP_CONSTEXPR WriteDescriptorSet( VULKAN_HPP_NAMESPACE::DescriptorSet dstSet_ = {},
+                    uint32_t dstBinding_ = {},
+                    uint32_t dstArrayElement_ = {},
+                    uint32_t descriptorCount_ = {},
+                    VULKAN_HPP_NAMESPACE::DescriptorType descriptorType_ = VULKAN_HPP_NAMESPACE::DescriptorType::eSampler,
+                    const VULKAN_HPP_NAMESPACE::DescriptorImageInfo* pImageInfo_ = {},
+                    const VULKAN_HPP_NAMESPACE::DescriptorBufferInfo* pBufferInfo_ = {},
+                    const VULKAN_HPP_NAMESPACE::BufferView* pTexelBufferView_ = {} ) VULKAN_HPP_NOEXCEPT
+
+                    ( VULKAN_HPP_NAMESPACE::Buffer buffer_ = {},
+                                               VULKAN_HPP_NAMESPACE::DeviceSize offset_ = {},
+                                               VULKAN_HPP_NAMESPACE::DeviceSize range_ = {} )
+
+                    */
+                LOG_IF_F(ERROR, bind->m_value->getType() != Buffer::Type::Uniform, "Not a uniform buffer");
+                vk::DescriptorBufferInfo bufferInfo(bind->m_value->getVkBuffer(), 0, VK_WHOLE_SIZE);
+                writes.emplace_back(data.m_descriptorSet, bind->m_binding, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo);
             }
         }
 
@@ -162,6 +121,7 @@ vk::DescriptorSetLayout Unit::createVulkanObject<vk::DescriptorSetLayout>()
     {
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
         getBindings<ResourcePtr<Texture>>(&data, &bindings, vk::DescriptorType::eCombinedImageSampler);
+        getBindings<Buffer*>(&data, &bindings, vk::DescriptorType::eUniformBuffer);
 
         ResourcePtr<Device> device;
         vk::DescriptorSetLayoutCreateInfo info;
@@ -303,7 +263,20 @@ vk::Pipeline Unit::createVulkanObject<vk::Pipeline>()
         colorBlend[0].colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
         vk::PipelineDepthStencilStateCreateInfo depthInfo;
-        depthInfo.depthTestEnable = VK_FALSE;
+        DepthTest depthTest(vk::CompareOp::eLess, false, false);
+        opt<DepthTest>(depthTest);
+        if (depthTest.m_depthTestEnable || depthTest.m_depthWriteEnable)
+        {
+            depthInfo.depthTestEnable = depthTest.m_depthTestEnable ? VK_TRUE : VK_FALSE;
+            depthInfo.depthWriteEnable = depthTest.m_depthWriteEnable ? VK_TRUE : VK_FALSE;
+            depthInfo.depthCompareOp = depthTest.m_depthCompareOp;
+        }
+        else
+        {
+            depthInfo.depthTestEnable = VK_FALSE;
+        }
+        depthInfo.depthBoundsTestEnable = VK_FALSE;
+        depthInfo.maxDepthBounds = 1000.0f;
         depthInfo.stencilTestEnable = VK_FALSE;
 
         vk::PipelineColorBlendStateCreateInfo blendInfo;

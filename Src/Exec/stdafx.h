@@ -2,7 +2,6 @@
 //#include <stdlib.h>
 //#include <crtdbg.h>
 #define _SCL_SECURE_NO_WARNINGS
-
 #define PY_SSIZE_T_CLEAN
 #ifdef _DEBUG
 	#undef _DEBUG
@@ -55,7 +54,7 @@
 #define LODEPNG_NO_COMPILE_DISK
 #include "lodepng/lodepng.h"
 
-//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_LEFT_HANDED
 #include "glm/glm/glm.hpp"
 #include "glm/glm/ext.hpp"

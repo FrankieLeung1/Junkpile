@@ -10,15 +10,18 @@
 #include "../Files/File.h"
 #include "../Scene/CameraSystem.h"
 
-ModelSystem::ModelSystem()
+ModelSystem::ModelSystem():
+m_cameraBuffer(nullptr)
 {
 	ResourcePtr<EventManager> events;
 	events->addListener<UpdateEvent>([=](UpdateEvent* e) { this->update(e->m_delta); });
+
+	m_cameraBuffer = new Rendering::Buffer(Rendering::Buffer::Uniform, Rendering::Buffer::Mapped, sizeof(CameraUBO));
 }
 
 ModelSystem::~ModelSystem()
 {
-
+	delete m_cameraBuffer;
 }
 
 void ModelSystem::update(float delta)
@@ -41,18 +44,28 @@ void ModelSystem::update(float delta)
 
 		ResourcePtr<Rendering::Device> device;
 		ResourcePtr<CameraSystem> cameras;
-		glm::mat4x4 cameraMatrix = cameras->getMatrix(m_cameraEntity);
+		glm::mat4 view, proj;
+		cameras->getMatrices(m_cameraEntity, &view, &proj);
+
+		/*glm::mat4x4 cameraMatrix = view * proj;
 		std::vector<char> pushData(sizeof(glm::mat4));
-		memcpy(&pushData[0], &cameraMatrix, sizeof(glm::mat4));
+		memcpy(&pushData[0], &cameraMatrix, sizeof(glm::mat4));*/
+
+		CameraUBO* m = (CameraUBO*)m_cameraBuffer->map();
+		m->m_projection = proj;
+		m->m_model = view;
+		m_cameraBuffer->unmap();
 
 		Rendering::Unit unit;
 		unit.in(vshader);
 		unit.in(fshader);
 		unit.in(data->m_vBuffer);
 		if(data->m_iBuffer) unit.in(data->m_iBuffer);
+		unit.in(Rendering::Unit::DepthTest{ vk::CompareOp::eLessOrEqual, true, true });
 		unit.in((vk::CullModeFlags)vk::CullModeFlagBits::eFront);
-		unit.in(Rendering::Unit::Binding<ResourcePtr<Rendering::Texture>>(vk::ShaderStageFlagBits::eFragment, 0, model->m_texture1));
-		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
+		unit.in(Rendering::Unit::Binding<ResourcePtr<Rendering::Texture>>(vk::ShaderStageFlagBits::eFragment, 1, model->m_texture1));
+		//unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
+		unit.in(Rendering::Unit::Binding<Rendering::Buffer*>{ vk::ShaderStageFlagBits::eVertex, 0, m_cameraBuffer });
 		unit.in(std::array<float, 4>{ 0.45f, 0.55f, 0.6f, 1.0f });
 		unit.in(vk::PrimitiveTopology::eTriangleList);
 

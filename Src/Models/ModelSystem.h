@@ -25,6 +25,12 @@ protected:
 
 protected:
 	Entity m_cameraEntity;
+	Rendering::Buffer* m_cameraBuffer;
 
+	struct CameraUBO
+	{
+		glm::mat4 m_projection;
+		glm::mat4 m_model;
+	};
 
 };

@@ -133,10 +133,7 @@ void PhysicsSystem::process(float delta)
 	}
 
 	m_components->cleanupComponents<PhysicsComponent>([&](PhysicsComponent& comp) {
-		m_world->removeCollisionObject(comp.m_body);
-		delete comp.m_body->getMotionState();
-		delete comp.m_shape;
-		delete comp.m_body;
+		
 	});
 }
 
@@ -246,6 +243,15 @@ void PhysicsSystem::imgui()
 		m_world->debugDrawWorld();
 	}
 	ImGui::End();
+}
+
+PhysicsComponent::~PhysicsComponent()
+{
+	ResourcePtr<PhysicsSystem> p;
+	p->m_world->removeCollisionObject(m_body);
+	delete m_body->getMotionState();
+	delete m_shape;
+	delete m_body;
 }
 
 void PhysicsDebugDraw::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)

@@ -2,6 +2,7 @@
 
 #include "imgui/imgui.h"
 #include "RenderingDevice.h"
+#include "RenderTarget.h"
 #include "VulkanHelpers.h"
 #include "../imgui/ImGuiManager.h"
 #include "../Managers/InputManager.h"
@@ -18,6 +19,7 @@ m_device(),
 m_queue(),
 m_pipelineCache(),
 m_renderPass(),
+m_clearingRenderPass(),
 m_vma(nullptr),
 m_rootUnit(new RootUnit()),
 m_selectedUnit(-1),
@@ -166,12 +168,12 @@ void Device::setRenderPass(vk::RenderPass renderPass)
 	m_renderPass = renderPass;
 }
 
-void Device::setFrameBufferDimensions(void* window, const glm::vec2& dimensions)
+void Device::setFrameBufferDimensions(void* window, const glm::u32vec2& dimensions)
 {
 	m_windowResources[window].m_frameDimensions = dimensions;
 }
 
-void Device::setFrameBuffers(void* window, const std::vector<vk::Framebuffer>& frames)
+void Device::setFrameBuffers(void* window, const std::vector<std::tuple<vk::Image, vk::ImageView, vk::Framebuffer, std::shared_ptr<RenderTarget>>>& frames)
 {
 	WindowResources& windowResources = m_windowResources[window];
 	windowResources.m_frameResources.resize(frames.size());
@@ -181,7 +183,11 @@ void Device::setFrameBuffers(void* window, const std::vector<vk::Framebuffer>& f
 		if(!frame)
 			frame = new FrameResources();
 
-		frame->m_frameBuffer = frames[i];
+		frame->m_frameImage = std::get<0>(frames[i]);
+		frame->m_frameView = std::get<1>(frames[i]);
+		frame->m_frameBuffer = std::get<2>(frames[i]);
+		frame->m_depthStencil = std::get<3>(frames[i]);
+		frame->m_layoutDefined = false;
 	}
 }
 
@@ -207,17 +213,25 @@ void Device::setCurrentFrame(std::size_t index)
 	m_currentFrame = (int)index;
 }
 
-void Device::createRenderPass(vk::Format format)
+void Device::createRenderPass(vk::Format format, vk::Format depthFormat)
 {
-	VkAttachmentDescription attachment = {};
-	attachment.format = (VkFormat)format;
-	attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+	VkAttachmentDescription attachments[2] = {};
+	attachments[0].format = (VkFormat)format;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+	attachments[1].format = (VkFormat)depthFormat;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	VkAttachmentReference color_attachment = {};
 	color_attachment.attachment = 0;
 	color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -225,22 +239,65 @@ void Device::createRenderPass(vk::Format format)
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &color_attachment;
-	VkSubpassDependency dependency = {};
+	VkAttachmentReference depthStencil_attachments[1] = {};
+	depthStencil_attachments[0].attachment = 1;
+	depthStencil_attachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	subpass.pDepthStencilAttachment = depthStencil_attachments;
+	/*VkSubpassDependency dependency = {};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass = 0;
 	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dependency.srcAccessMask = 0;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;*/
+	// Subpass dependencies for layout transitions
+	std::array<VkSubpassDependency, 2> dependencies;
+	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[0].dstSubpass = 0;
+	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+	dependencies[1].srcSubpass = 0;
+	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+
 	VkRenderPassCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	info.attachmentCount = 1;
-	info.pAttachments = &attachment;
+	info.attachmentCount = 2;
+	info.pAttachments = attachments;
 	info.subpassCount = 1;
 	info.pSubpasses = &subpass;
-	info.dependencyCount = 1;
-	info.pDependencies = &dependency;
+	info.dependencyCount = static_cast<uint32_t>(dependencies.size());
+	info.pDependencies = dependencies.data();
+	//info.dependencyCount = 1;
+	//info.pDependencies = &dependency;
 	setRenderPass(createObject(info));
+
+	// render pass used for clearing
+	attachments[0].format = (VkFormat)format;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+	attachments[1].format = (VkFormat)depthFormat;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	m_clearingRenderPass = createObject(info);
 }
 
 vk::RenderPass Device::getRenderPass() const
@@ -248,7 +305,12 @@ vk::RenderPass Device::getRenderPass() const
 	return m_renderPass;
 }
 
-std::tuple<vk::Framebuffer, glm::vec2> Device::getFrameBuffer() const
+vk::RenderPass Device::getClearingRenderPass() const
+{
+	return m_clearingRenderPass;
+}
+
+std::tuple<vk::Framebuffer, glm::u32vec2> Device::getFrameBuffer() const
 {
 	return std::tie(m_currentFrameResources->m_frameBuffer, m_currentWindowResources->m_frameDimensions);
 }
@@ -278,19 +340,38 @@ void Device::submitAll()
 	vk::Result r = commandBuffer.begin(beginInfo);
 	checkVkResult(r);
 
-	bool didDrawOrClear = false;
-	for (auto& unit : m_rootUnit->m_submitted)
+	if (!m_currentFrameResources->m_layoutDefined)
 	{
-		Unit::CommandType type = unit.submitCommandBuffers(this, &resources, commandBuffer);
-		if (type == Unit::CommandType::Draw || type == Unit::CommandType::Clear)
-			didDrawOrClear = true;
+		m_currentFrameResources->m_layoutDefined = true;
+
+		{
+			Unit unit;
+			unit.in(m_currentFrameResources->m_frameImage);
+			unit.in(vk::ImageLayout::eGeneral);
+			unit.submitCommandBuffers(this, &resources, commandBuffer, false);
+		}
+
+		{
+			Unit unit;
+			unit.in(m_currentFrameResources->m_depthStencil.lock()->getImage());
+			unit.in(vk::ImageLayout::eDepthAttachmentOptimal);
+			unit.in(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil);
+			unit.submitCommandBuffers(this, &resources, commandBuffer, false);
+		}
 	}
 
-	if (!didDrawOrClear)
+	bool needsClear = true;
+	for (auto& unit : m_rootUnit->m_submitted)
+	{
+		unit.submitCommandBuffers(this, &resources, commandBuffer, needsClear);
+		needsClear = false;
+	}
+
+	if(needsClear)
 	{
 		Unit unit;
 		unit.in(vk::ClearColorValue(std::array<float, 4>{ 0.45f, 0.55f, 0.6f, 1.0f }));
-		unit.submitCommandBuffers(this, &resources, commandBuffer);
+		unit.submitCommandBuffers(this, &resources, commandBuffer, true);
 	}
 
 	commandBuffer.end();
@@ -476,6 +557,15 @@ vk::ShaderModule Device::createObject(const vk::ShaderModuleCreateInfo& info)
 	return it->second.get<vk::ShaderModule>();
 }
 
+vk::ImageView Device::createObject(const vk::ImageViewCreateInfo& info)
+{
+	// hash to m_objects?
+	std::lock_guard<std::mutex> l(m_mutex);
+	vk::ResultValue<vk::ImageView> r = m_device.createImageView(info, m_allocator);
+	checkVkResult(r.result);
+	return r.value;
+}
+
 vk::DescriptorSet Device::allocateObject(const vk::DescriptorSetAllocateInfo& info)
 {
 	LOG_IF_F(ERROR, info.descriptorSetCount != 1, "descriptorSetCount must be 1\n");
@@ -501,6 +591,11 @@ void Device::destroyObject(vk::RenderPass pass)
 			return;
 		}
 	}
+}
+
+void Device::destroyObject(vk::ImageView view)
+{
+	m_device.destroyImageView(view, m_allocator);
 }
 
 void Device::imgui()

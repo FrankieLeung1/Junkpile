@@ -1,13 +1,13 @@
 #pragma once
 
-#include "RenderTarget.h"
+#include "Surface.h"
 #include "DataSource.h"
 typedef void* ImTextureID;
 namespace Rendering
 {
 	class Device;
 	class Unit;
-	class Texture : public Resource, public DataSource, public RenderTarget
+	class Texture : public Resource, public DataSource, public Surface
 	{
 	public:
 		enum class Mode {
@@ -30,7 +30,7 @@ namespace Rendering
 		void setHostVisible(int width, int height, int pixelSize);
 
 		void uploadTexture(Device* device, VkCommandBuffer commandBuffer);
-		void uploadTexture(Device* device, VkCommandBuffer commandBuffer, RenderTarget*);
+		void uploadTexture(Device* device, VkCommandBuffer commandBuffer, Surface*);
 		void bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
 
 		int getWidth() const;
@@ -38,8 +38,8 @@ namespace Rendering
 		int getPixelSize() const;
 		vk::Image getVkImage() const;
 
-		void setVkImageRT(vk::Image image, VmaAllocation memory);
-		vk::Image getVkImageRT();
+		void setSurfaceImage(vk::Image image, VmaAllocation memory);
+		vk::Image getSurfaceImage();
 
 		vk::ImageView getImageView();
 		vk::ImageLayout getImageLayout() const;

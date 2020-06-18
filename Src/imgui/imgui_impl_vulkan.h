@@ -23,6 +23,11 @@
 
 #include <vulkan/vulkan.h>
 
+namespace Rendering
+{
+    class RenderTarget;
+}
+
 // Initialization data, for ImGui_ImplVulkan_Init()
 // [Please zero-clear before use!]
 struct ImGui_ImplVulkan_InitInfo
@@ -81,12 +86,13 @@ IMGUI_IMPL_API int                  ImGui_ImplVulkanH_GetMinImageCountFromPresen
 // [Please zero-clear before use!]
 struct ImGui_ImplVulkanH_Frame
 {
-    VkCommandPool       CommandPool;
-    VkCommandBuffer     CommandBuffer;
-    VkFence             Fence;
-    VkImage             Backbuffer;
-    VkImageView         BackbufferView;
-    VkFramebuffer       Framebuffer;
+    VkCommandPool                               CommandPool;
+    VkCommandBuffer                             CommandBuffer;
+    VkFence                                     Fence;
+    VkImage                                     Backbuffer;
+    VkImageView                                 BackbufferView;
+    VkFramebuffer                               Framebuffer;
+    std::shared_ptr<Rendering::RenderTarget>    DepthStencil;
 };
 
 struct ImGui_ImplVulkanH_FrameSemaphores

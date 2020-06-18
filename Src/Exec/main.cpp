@@ -38,45 +38,28 @@
 #include "../Misc/GrindstoneEditor.h"
 #include "../Models/ModelSystem.h"
 #include "../Scene/TransformSystem.h"
+#include "../Managers/TestManager.h"
 
 //#define GRINDSTONE_EDITOR
 
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
 {
-	//Any::test();
-	//Meta::LuaRegisterer::test();
-	//Sprite::test();
-	//physicsTest();
+	ResourcePtr<TestManager> tests;
+	tests->addTest("Any", &Any::test);
+	tests->addTest("LuaRegisterer", &Meta::LuaRegisterer::test);
+	tests->addTest("Sprite", &Sprite::test);
+	tests->addTest("Physics", &physicsTest);
 
-	/*struct Test
-	{
-		Test()
-		{
-			memset(this + sizeof(Test), 0xFF, 4);
-		}
-	};
-	char buffer[32];
-	new(buffer) Test();*/
+	tests->addTest("Meta", &Meta::test);
+	tests->addTest("Shader", &Rendering::Shader::test);
+	tests->addTest("EventManager", &EventManager::test);
+	tests->addTest("Function", &functionTest);
 
-	//Meta::test();
-	//Rendering::Shader::test();
-	//EventManager::test();
-	//functionTest();
+	tests->addTest("TextureGenerator", &TextureGenerator::test);
 
-	//TextureGenerator::test();
-
-	//WindowRecorder::test();
-	//SpriteSystem::test(update, render);
-	ModelSystem::test();
-	/*update = [](float update)
-	{
-
-	};
-
-	render = []()
-	{
-
-	};*/
+	tests->addTest("WindowRecorder", &WindowRecorder::test);
+	tests->addTest("SpriteSystem", &SpriteSystem::test);
+	tests->addTest("ModelSystem", &ModelSystem::test);
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
