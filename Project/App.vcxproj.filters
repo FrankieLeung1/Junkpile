@@ -555,6 +555,9 @@
     <ClCompile Include="..\Src\Managers\TestManager.cpp">
       <Filter>Source Files\Managers</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\imgui\AssetBrowser.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1354,6 +1357,12 @@
     </ClInclude>
     <ClInclude Include="..\Src\Managers\TestManager.h">
       <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\FileTree.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\AssetBrowser.h">
+      <Filter>Source Files\imgui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

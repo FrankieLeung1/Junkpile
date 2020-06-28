@@ -71,11 +71,12 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <AddModuleNamesToAssembly>
       </AddModuleNamesToAssembly>
+      <Profile>false</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -96,7 +97,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -420,6 +421,7 @@
     <ClCompile Include="..\Src\Game\Game.cpp" />
     <ClCompile Include="..\Src\Generators\Generator.cpp" />
     <ClCompile Include="..\Src\Generators\TextureGenerator.cpp" />
+    <ClCompile Include="..\Src\imgui\AssetBrowser.cpp" />
     <ClCompile Include="..\Src\imgui\ImGuiManager.cpp" />
     <ClCompile Include="..\Src\imgui\imgui_impl_glfw.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -687,6 +689,8 @@
     <ClInclude Include="..\Src\Game\Game.h" />
     <ClInclude Include="..\Src\Generators\Generator.h" />
     <ClInclude Include="..\Src\Generators\TextureGenerator.h" />
+    <ClInclude Include="..\Src\imgui\AssetBrowser.h" />
+    <ClInclude Include="..\Src\imgui\FileTree.h" />
     <ClInclude Include="..\Src\imgui\ImGuiManager.h" />
     <ClInclude Include="..\Src\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="..\Src\imgui\imgui_impl_vulkan.h" />
