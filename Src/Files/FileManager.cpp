@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <shlwapi.h>
 #include "FileManager.h"
 #include "../Misc/Misc.h"
 #include "../Managers/TimeManager.h"
@@ -13,7 +14,7 @@ m_lastFileChange(0)
 	m_fileWatcher.addWatch(L"../Res/", this, true);
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 10);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { update(); }, 10);
 }
 
 FileManager::~FileManager()
@@ -59,23 +60,28 @@ bool FileManager::exists(const char* path) const
 
 FileManager::Type FileManager::type(const char* path) const
 {
-	DWORD t = GetFileAttributesA(path);
-	if (t == INVALID_FILE_ATTRIBUTES)
+	return type(GetFileAttributesA(path));
+}
+
+FileManager::Type FileManager::type(DWORD attr) const
+{
+	if (attr == INVALID_FILE_ATTRIBUTES)
 		return Type::NotFound;
 
-	if (t & FILE_ATTRIBUTE_DIRECTORY)
+	if (attr & FILE_ATTRIBUTE_DIRECTORY)
 		return Type::Directory;
 
-	if (t & FILE_ATTRIBUTE_SYSTEM)
+	if (attr & FILE_ATTRIBUTE_SYSTEM)
 		return Type::Other;
 
 	return Type::File;
 }
 
-std::vector<std::string> FileManager::files(const char* dir) const
+std::vector<FileManager::FileInfo> FileManager::files(const char* dir) const
 {
 	std::string path = resolvePath(dir);
-	path.append(1, '/');
+	if(path[path.size() - 1] != '/')
+		path.append(1, '/');
 
 	WIN32_FIND_DATAA data;
 	HANDLE hFind = FindFirstFileA((path + "*").c_str(), &data);
@@ -86,17 +92,45 @@ std::vector<std::string> FileManager::files(const char* dir) const
 	}
 	else
 	{
-		std::vector<std::string> r;
+		std::vector<FileManager::FileInfo> r;
+		r.reserve(128); // I wish we could get the file count
 		do {
 			if (data.cFileName[0] != '.')
 			{
-				r.push_back(normalizePath(path + data.cFileName));
+				r.emplace_back();
+				FileManager::FileInfo& info = r.back();
+				info.m_path = path + data.cFileName;
+				normalizePath(path);
+				info.m_type = type(data.dwFileAttributes);
 			}
 		}
 		while (FindNextFileA(hFind, &data));
 		FindClose(hFind);
 
 		return std::move(r);
+	}
+}
+
+void FileManager::reducePath(std::string& path) const
+{
+	bool startsWithDoubleDots = false;
+	if (path.size() >= 2 && path[0] == '.' && path[1] == '.')
+		startsWithDoubleDots = true;
+
+	char canonical[MAX_PATH];
+	strcpy_s(canonical, path.c_str());
+	std::replace(path.begin(), path.end(), '/', '\\');
+	PathCanonicalizeA(canonical, path.c_str());
+	std::replace(canonical, canonical + sizeof(canonical), '\\', '/');
+
+	if (startsWithDoubleDots)
+	{
+		path = "..";
+		path += canonical;
+	}
+	else
+	{
+		path = canonical;
 	}
 }
 

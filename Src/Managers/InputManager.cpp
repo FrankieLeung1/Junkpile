@@ -9,7 +9,7 @@ m_mouseWheel(0.0f)
 	std::fill(m_keys, m_keys + countof(m_keys), -std::numeric_limits<int>::max() / 2);
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 13);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { update(); }, 13);
 }
 
 InputManager::~InputManager()

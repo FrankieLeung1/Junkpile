@@ -28,8 +28,8 @@ m_currentFrameResources(nullptr),
 m_currentWindowResources(nullptr)
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 11);
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->submitAll(); }, -10);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { update(); }, 11);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { submitAll(); }, -10);
 }
 
 Device::~Device()

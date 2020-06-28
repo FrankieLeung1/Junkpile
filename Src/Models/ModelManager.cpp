@@ -37,7 +37,7 @@ Model ModelManager::getModel(const char* _path)
 	events->addListener<ResourceStateChanged>([&modelData, this](ResourceStateChanged* e) {
 		if (modelData.m_file == e->m_resourceData)
 		{
-			this->onModelDataLoaded(const_cast<ModelData*>(&modelData)); // where does this const come from...?
+			onModelDataLoaded(const_cast<ModelData*>(&modelData)); // where does this const come from...?
 			e->discardListener();
 		}
 	});

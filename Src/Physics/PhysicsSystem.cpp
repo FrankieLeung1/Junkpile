@@ -46,7 +46,7 @@ m_world(nullptr)
 	m_world->setInternalTickCallback([](btDynamicsWorld* world, btScalar timeStep) { ((PhysicsSystem*)world->getWorldUserInfo())->tickCallback(world, timeStep); }, this);
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->processWorld(0.16f); this->process(0.16f); }, 10);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { processWorld(0.16f); process(0.16f); }, 10);
 }
 
 PhysicsSystem::~PhysicsSystem()

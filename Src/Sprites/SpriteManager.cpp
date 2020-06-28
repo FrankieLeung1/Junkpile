@@ -37,10 +37,10 @@ SpriteId SpriteManager::getSprite(const char* path)
 		m_idSprites.insert(decltype(m_idSprites)::value_type(sprite, data));
 
 		ResourcePtr<EventManager> events;
-		events->addListener<ResourceStateChanged>([=](ResourceStateChanged* c) {
+		events->addListener<ResourceStateChanged>([this, data](ResourceStateChanged* c) {
 			if (data == c->m_resourceData)
 			{
-				this->onSpriteLoaded(data);
+				onSpriteLoaded(data);
 				c->discardListener();
 			}
 		});

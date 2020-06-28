@@ -39,6 +39,8 @@
 #include "../Models/ModelSystem.h"
 #include "../Scene/TransformSystem.h"
 #include "../Managers/TestManager.h"
+#include "../imgui/AssetBrowser.h"
+#include "../Game/Game.h"
 
 //#define GRINDSTONE_EDITOR
 
@@ -60,11 +62,12 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("WindowRecorder", &WindowRecorder::test);
 	tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
+	tests->addTest("Game", &Game::test);
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_EVERY_1024_DF);
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_EVERY_1024_DF);
 	loguru::init(__argc, __argv);
 	initLoggingForVisualStudio("App.log");
 
@@ -86,6 +89,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<InputManager> i;
 	ResourcePtr<SpriteSystem> s;
 	ResourcePtr<TransformSystem> transformSystem;
+	ResourcePtr<AssetBrowser> ab;
+	ResourcePtr<Game> g;
 
 	sm->addEnvironment<PythonEnvironment>();
 	
@@ -100,6 +105,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->registerCallback({ [](ScriptManager* im) { im->imgui(); }, sm.get() });
 	m->registerCallback({ [](Rendering::Device* rd) { rd->imgui(); }, rd.get() });
 	m->registerCallback({ [](SpriteSystem* s) { s->imgui(); }, s.get() });
+	m->registerCallback({ [](Game* g) { g->imgui(); }, g.get() });
+	m->registerCallback({ [](AssetBrowser* ab) { ab->imgui(); }, ab.get() });
 
 #ifdef GRINDSTONE_EDITOR
 	GrindstoneEditor ge;

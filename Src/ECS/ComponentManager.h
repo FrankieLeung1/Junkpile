@@ -364,7 +364,7 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 		}
 
 		Entity e = *(Entity*)args.m_vp;
-		ComponentPool& pool = this->m_pools[args.m_id];
+		ComponentPool& pool = m_pools[args.m_id];
 		while(e < it->m_currentEntity)
 		{
 			// while current pointer is lower than target entity id
@@ -373,7 +373,7 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 			args.m_vp = reinterpret_cast<char*>(args.m_vp) + args.m_size;
 
 			// did we go beyond the buffer?
-			bool valid = this->validPointer(pool, args.m_vp);
+			bool valid = validPointer(pool, args.m_vp);
 			hasValidComponent = hasValidComponent || valid;
 			if (!valid)
 			{

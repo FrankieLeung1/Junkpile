@@ -157,7 +157,7 @@ void TextureGenerator::test()
 		}
 	});*/
 
-	/*ResourcePtr<ImGuiManager> imgui;
+	ResourcePtr<ImGuiManager> imgui;
 	imgui->registerCallback({[](ResourcePtr<Rendering::Texture>* texture)
 	{
 		if (!texture)
@@ -168,7 +168,7 @@ void TextureGenerator::test()
 		ImGui::Image((*texture), ImVec2(256, 256));
 
 		ImGui::End();
-	}, ptr });*/
+	}, ptr });
 }
 
 template<>

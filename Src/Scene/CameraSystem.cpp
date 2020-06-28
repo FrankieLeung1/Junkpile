@@ -8,7 +8,7 @@
 CameraSystem::CameraSystem()
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent* e) { this->update(e); });
+	events->addListener<UpdateEvent>([this](UpdateEvent* e) { update(e); });
 }
 
 CameraSystem::~CameraSystem()

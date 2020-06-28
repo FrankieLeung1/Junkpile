@@ -10,7 +10,7 @@ ImGuiManager::ImGuiManager() :
 	//setMicrosoftStyle();
 
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); });
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { update(); });
 }
 
 ImGuiManager::~ImGuiManager()
@@ -25,8 +25,11 @@ void ImGuiManager::update()
 	vf->newFrameImGui();
 	ImGui::NewFrame();
 
-	for(BasicFunction<void>& fn : m_renderCallbacks)
-		fn.call();
+	if (!m_pipDisable)
+	{
+		for (BasicFunction<void>& fn : m_renderCallbacks)
+			fn.call();
+	}
 
 	ImGui::EndFrame();
 }
@@ -102,6 +105,11 @@ void ImGuiManager::saveOpenedWindows()
 	const std::string& s = ss.str();
 	std::vector<char> contents(s.begin(), s.end());
 	m_fileManager->save("imgui.lua", std::move(contents));
+}
+
+void ImGuiManager::setPipDisable(bool b)
+{
+	m_pipDisable = b;
 }
 
 void ImGuiManager::registerCallback(BasicFunction<void> f)
@@ -284,3 +292,6 @@ void ImGuiManager::setMicrosoftStyle()
 	style->Colors[ImGuiCol_ScrollbarGrabHovered] = dark;
 	style->Colors[ImGuiCol_ScrollbarGrabActive] = darker;
 }
+
+// IMPROVEMENTS:
+// Script editor tags (Python: #`varname` = (`float`, `float`, `float`)) (lua: --local `varname` = (`float`, `float`, `float`))

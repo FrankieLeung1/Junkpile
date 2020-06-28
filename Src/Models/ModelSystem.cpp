@@ -14,7 +14,7 @@ ModelSystem::ModelSystem():
 m_cameraBuffer(nullptr)
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([=](UpdateEvent* e) { this->update(e->m_delta); });
+	events->addListener<UpdateEvent>([=](UpdateEvent* e) { update(e->m_delta); });
 
 	m_cameraBuffer = new Rendering::Buffer(Rendering::Buffer::Uniform, Rendering::Buffer::Mapped, sizeof(CameraUBO));
 }

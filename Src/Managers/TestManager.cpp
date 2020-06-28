@@ -7,7 +7,7 @@
 TestManager::TestManager()
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([=](UpdateEvent* e) { this->update(e->m_delta); this->render(); });
+	events->addListener<UpdateEvent>([this](UpdateEvent* e) { update(e->m_delta); render(); });
 	m_imgui->registerCallback({[](TestManager* t) { t->imgui(); }, this });
 }
 

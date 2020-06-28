@@ -15,7 +15,7 @@ m_state(luaL_newstate())
 	ResourcePtr<EventManager> e;
 	ResourcePtr<TimeManager> t;
 
-	e->addListener<FileChangeEvent>([this](FileChangeEvent* c) { this->onFileChange(*c); });
+	e->addListener<FileChangeEvent>([this](FileChangeEvent* c) { onFileChange(*c); });
 }
 
 ScriptManager::~ScriptManager()
@@ -30,13 +30,13 @@ ScriptManager::~ScriptManager()
 void ScriptManager::runScriptsInFolder(const char* path, bool recursive)
 {
 	ResourcePtr<FileManager> fileManagers;
-	std::vector<std::string> files = fileManagers->files(path);
-	for (const std::string& current : files)
+	std::vector<FileManager::FileInfo> files = fileManagers->files(path);
+	for (const FileManager::FileInfo& current : files)
 	{
-		FileManager::Type type = fileManagers->type(current.c_str());
-		if (recursive && type == FileManager::Type::Directory)
-			runScriptsInFolder(current.c_str(), true);
-		else if (type == FileManager::Type::File && !run(current.c_str()))
+		const std::string path = current.m_path;
+		if (recursive && current.m_type == FileManager::Type::Directory)
+			runScriptsInFolder(path.c_str(), true);
+		else if (current.m_type == FileManager::Type::File && !run(path.c_str()))
 			break;
 	}
 }

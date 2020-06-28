@@ -38,7 +38,7 @@ public:
 
 	bool isMinimized() const;
 
-	void setPip(int quad);
+	void setPip(int quad, bool disableGui = false);
 
 	AppType getAppType() const;
 

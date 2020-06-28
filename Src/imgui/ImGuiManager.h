@@ -27,6 +27,8 @@ public:
 
 	void saveOpenedWindows();
 
+	void setPipDisable(bool);
+
 	template<typename Pred>
 	void imguiLoop(Pred& pred);
 
@@ -44,6 +46,8 @@ protected:
 	std::map<std::string, bool> m_menuBarWindows;
 
 	std::vector< BasicFunction<void> > m_renderCallbacks;
+
+	bool m_pipDisable;
 };
 
 inline ImVec2 operator+(const ImVec2& v1, const ImVec2& v2) { return{ v1.x + v2.x, v1.y + v2.y }; }

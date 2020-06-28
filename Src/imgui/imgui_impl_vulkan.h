@@ -113,7 +113,7 @@ struct ImGui_ImplVulkanH_Window
     VkPresentModeKHR    PresentMode;
     VkRenderPass        RenderPass;
     bool                ClearEnable;
-    VkClearValue        ClearValue;
+    VkClearValue        ClearValue[2];
     uint32_t            FrameIndex;             // Current frame being rendered to (0 <= FrameIndex < FrameInFlightCount)
     uint32_t            ImageCount;             // Number of simultaneous in-flight frames (returned by vkGetSwapchainImagesKHR, usually derived from min_image_count)
     uint32_t            SemaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)

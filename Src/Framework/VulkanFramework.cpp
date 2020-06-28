@@ -29,6 +29,7 @@
 #include "../Misc/Misc.h"
 #include "../Managers/EventManager.h"
 #include "../Rendering/RenderTarget.h"
+#include "../imgui/ImGuiManager.h"
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #ifdef _DEBUG
@@ -93,8 +94,8 @@ m_inited(false),
 m_pip(4)
 {
 	ResourcePtr<EventManager> events;
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->update(); }, 12);
-	events->addListener<UpdateEvent>([this](UpdateEvent*) { this->render(); }, -11);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { update(); }, 12);
+	events->addListener<UpdateEvent>([this](UpdateEvent*) { render(); }, -11);
 }
 
 VulkanFramework::~VulkanFramework()
@@ -437,7 +438,7 @@ void VulkanFramework::newFrameImGui()
 
 	ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
 	ImGui_ImplVulkan_NewFrame();
-	memcpy(&wd->ClearValue.color.float32[0], &m_clearColour, 4 * sizeof(float));
+	memcpy(&wd->ClearValue[0].color.float32[0], &m_clearColour, 4 * sizeof(float));
 	ImGui_ImplGlfw_NewFrame();
 }
 
@@ -503,7 +504,7 @@ void VulkanFramework::update()
 		inputs->setIsDown(i, (keyboardState[i] & 0xF0) != 0);
 	}
 
-	int focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED) && !ImGui::GetIO().WantCaptureKeyboard;
+	int focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED) && !ImGui::GetIO().WantTextInput;
 	inputs->setHasFocus(focused != 0);
 
 	POINT point;
@@ -530,9 +531,9 @@ void VulkanFramework::update()
 		}
 	}
 
-	if (inputs->justReleased(VK_F1))
+	if (inputs->justReleased(VK_F1) || inputs->justReleased(VK_F2))
 	{
-		setPip(m_pip == 4 ? 1 : 4);
+		setPip(m_pip == 4 ? 1 : 4, inputs->justReleased(VK_F1));
 	}
 
 	if (!isMinimized())
@@ -596,9 +597,11 @@ bool VulkanFramework::isMinimized() const
 	return !g_SwapChainResizeWidth || !g_SwapChainResizeHeight;
 }
 
-void VulkanFramework::setPip(int quad)
+void VulkanFramework::setPip(int quad, bool disableGui)
 {
 	quad = std::min(quad, 4);
+	ResourcePtr<ImGuiManager>()->setPipDisable(disableGui && quad < 4);
+
 	if (m_pip == quad)
 		return;
 
@@ -609,6 +612,7 @@ void VulkanFramework::setPip(int quad)
 		glfwSetWindowPos(m_window, m_prePIP.m_x, m_prePIP.m_y);
 		glfwSetWindowAttrib(m_window, GLFW_DECORATED, GLFW_TRUE);
 		glfwSetWindowAttrib(m_window, GLFW_FLOATING, GLFW_FALSE);
+		glfwFocusWindow(m_window);
 	}
 	else
 	{
@@ -776,8 +780,8 @@ void VulkanFramework::FrameRender(ImGui_ImplVulkanH_Window* wd)
 		info.framebuffer = fd->Framebuffer;
 		info.renderArea.extent.width = wd->Width;
 		info.renderArea.extent.height = wd->Height;
-		info.clearValueCount = wd->ClearEnable ? 1 : 0;
-		info.pClearValues = wd->ClearEnable ? &wd->ClearValue : nullptr;
+		info.clearValueCount = wd->ClearEnable ? 2 : 0;
+		info.pClearValues = wd->ClearEnable ? wd->ClearValue : nullptr;
 		vkCmdBeginRenderPass(fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
