@@ -2,6 +2,7 @@
 
 class ThreadPool;
 class EventManager;
+#include "../Misc/StringView.h"
 
 class Resource
 {
@@ -17,8 +18,8 @@ protected:
 		virtual ~Loader() {}
 		virtual Resource* load(std::tuple<int, std::string>* error) = 0;
 		virtual Loader* createReloader() { return nullptr; }
-		virtual std::string getDebugName() const { return std::string("<") + getTypeName() + ">"; }
-		virtual const char* getTypeName() const = 0;
+		virtual std::string getDebugName() const { return std::string("<") + (const char*)getTypeName() + ">"; }
+		virtual StringView getTypeName() const = 0;
 	};
 	friend class ResourceManager;
 

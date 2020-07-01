@@ -173,7 +173,7 @@ public:
 		~LuaTableLoader();
 		LuaTableResource* load(std::tuple<int, std::string>* error);
 		std::string getDebugName() const;
-		const char* getTypeName() const;
+		StringView getTypeName() const;
 
 	protected:
 		std::string m_path;

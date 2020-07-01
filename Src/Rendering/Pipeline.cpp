@@ -39,7 +39,7 @@ std::string Pipeline::PipelineLoader::getDebugName() const
 	return "Pipeline";
 }
 
-const char* Pipeline::PipelineLoader::getTypeName() const
+StringView Pipeline::PipelineLoader::getTypeName() const
 {
 	return "Pipeline";
 }

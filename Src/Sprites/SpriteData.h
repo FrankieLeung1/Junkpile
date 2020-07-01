@@ -44,7 +44,7 @@ public:
 		ResourcePtr<File> m_file;
 		SpriteDataLoader(const char* filePath);
 		SpriteData* load(std::tuple<int, std::string>* error);
-		const char* getTypeName() const;
+		StringView getTypeName() const;
 	};
 
 	template<typename... Ts>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Misc/Callbacks.h"
+#include "../Misc/StringView.h"
 #include "../Resources/ResourceManager.h"
 
 struct FileImpl
@@ -15,11 +16,11 @@ public:
 	static const int CreateIfDoesNotExist = 1;
 
 public:
-	File(const char* path);
+	File(StringView path);
 	~File();
 
 	std::size_t getSize() const;
-	const char* getContents() const;
+	StringView getContents() const;
 
 	const std::string& getPath() const;
 
@@ -29,18 +30,18 @@ public:
 	class FileLoader : public Loader
 	{
 	public:
-		FileLoader(const char* path, int flags = 0);
+		FileLoader(StringView path, int flags = 0);
 		Resource* load(std::tuple<int, std::string>* error);
 		std::string getDebugName() const;
-		const char* getTypeName() const;
+		StringView getTypeName() const;
 
 	protected:
 		int m_flags;
 		std::string m_path;
 		ResourcePtr<FileManager> m_fileManager;
 	};
-	static FileLoader* createLoader(const char* path, int flags = 0);
-	static std::tuple<bool, std::size_t> getSharedHash(const char* path, int flags = 0);
+	static FileLoader* createLoader(StringView path, int flags = 0);
+	static std::tuple<bool, std::size_t> getSharedHash(StringView path, int flags = 0);
 
 protected:
 	std::string m_path;

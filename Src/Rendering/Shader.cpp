@@ -89,7 +89,7 @@ bool Shader::compile(std::string* outError)
 
 	vk::ShaderModuleCreateInfo info = {};
 	info.codeSize = cacheFile->getSize();
-	info.pCode = (uint32_t*)cacheFile->getContents();
+	info.pCode = (uint32_t*)cacheFile->getContents().c_str();
 	m_module = device->createObject(info);
 	return true;
 }
@@ -184,7 +184,7 @@ std::string Shader::ShaderLoader::getDebugName() const
 	return "shader";
 }
 
-const char* Shader::ShaderLoader::getTypeName() const
+StringView Shader::ShaderLoader::getTypeName() const
 {
 	return "shader";
 }

@@ -94,7 +94,7 @@ void ModelSystem::test()
 	//ResourcePtr<File> file(NewPtr, "Models/Skins/uv.png");
 	unsigned char* pixels;
 	unsigned int width, height;
-	int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents(), file->getSize());
+	int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents().c_str(), file->getSize());
 	if (error == 0)
 	{
 		model->m_texture1 = ResourcePtr<Rendering::Texture>(TakeOwnershipPtr, new Rendering::Texture());

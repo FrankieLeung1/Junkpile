@@ -18,7 +18,7 @@ namespace Rendering
 			~PipelineLoader();
 			Pipeline* load(std::tuple<int, std::string>* error);
 			std::string getDebugName() const;
-			const char* getTypeName() const;
+			StringView getTypeName() const;
 
 		protected:
 			ResourcePtr<LuaTableResource> m_table;

@@ -443,6 +443,7 @@
     <ClCompile Include="..\Src\Misc\GrindstoneEditor.cpp" />
     <ClCompile Include="..\Src\Misc\Misc.cpp" />
     <ClCompile Include="..\Src\Misc\ResizableMemoryPool.cpp" />
+    <ClCompile Include="..\Src\Misc\StringView.cpp" />
     <ClCompile Include="..\Src\Misc\WindowRecorder.cpp" />
     <ClCompile Include="..\Src\Models\ModelManager.cpp" />
     <ClCompile Include="..\Src\Models\ModelSystem.cpp" />
@@ -463,6 +464,7 @@
     <ClCompile Include="..\Src\Scene\CameraSystem.cpp" />
     <ClCompile Include="..\Src\Scene\TileLevel.cpp" />
     <ClCompile Include="..\Src\Scene\TransformSystem.cpp" />
+    <ClCompile Include="..\Src\Scripts\Markup.cpp" />
     <ClCompile Include="..\Src\Scripts\Python.cpp" />
     <ClCompile Include="..\Src\Scripts\PythonRegisterer.cpp" />
     <ClCompile Include="..\Src\Scripts\ScriptManager.cpp" />
@@ -710,6 +712,7 @@
     <ClInclude Include="..\Src\Misc\Misc.h" />
     <ClInclude Include="..\Src\Misc\SparseStructures.h" />
     <ClInclude Include="..\Src\Misc\ResizableMemoryPool.h" />
+    <ClInclude Include="..\Src\Misc\StringView.h" />
     <ClInclude Include="..\Src\Misc\Tests.h" />
     <ClInclude Include="..\Src\Misc\WindowRecorder.h" />
     <ClInclude Include="..\Src\Models\ModelManager.h" />
@@ -733,6 +736,7 @@
     <ClInclude Include="..\Src\Scene\CameraSystem.h" />
     <ClInclude Include="..\Src\Scene\TileLevel.h" />
     <ClInclude Include="..\Src\Scene\TransformSystem.h" />
+    <ClInclude Include="..\Src\Scripts\Markup.h" />
     <ClInclude Include="..\Src\Scripts\Python.h" />
     <ClInclude Include="..\Src\Scripts\PythonRegisterer.h" />
     <ClInclude Include="..\Src\Scripts\ScriptManager.h" />

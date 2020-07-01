@@ -4,8 +4,8 @@
 #include "FileManager.h"
 #include "../Misc/Misc.h"
 
-File::File(const char* path):
-m_path(path)
+File::File(StringView path):
+m_path(path.str())
 {
 	struct stat s;
 	stat(path, &s);
@@ -22,7 +22,7 @@ std::size_t File::getSize() const
 	return m_contents.size();
 }
 
-const char* File::getContents() const
+StringView File::getContents() const
 {
 	return &m_contents[0];
 }
@@ -54,7 +54,7 @@ bool File::checkChanged()
 	return false;
 }
 
-File::FileLoader::FileLoader(const char* path, int flags) : m_path(path), m_flags(flags) {}
+File::FileLoader::FileLoader(StringView path, int flags) : m_path(path.str()), m_flags(flags) {}
 Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 {
 	std::string path = m_fileManager->resolvePath(m_path.c_str());
@@ -87,10 +87,10 @@ std::string File::FileLoader::getDebugName() const
 	return m_path;
 }
 
-const char* File::FileLoader::getTypeName() const { return "File"; }
-File::FileLoader* File::createLoader(const char* path, int flags) { return new FileLoader(path, flags); }
+StringView File::FileLoader::getTypeName() const { return "File"; }
+File::FileLoader* File::createLoader(StringView path, int flags) { return new FileLoader(path, flags); }
 
-std::tuple<bool, std::size_t> File::getSharedHash(const char* path, int flags)
+std::tuple<bool, std::size_t> File::getSharedHash(StringView path, int flags)
 {
 	return{ true, std::hash<std::string>{}(path) };
 }

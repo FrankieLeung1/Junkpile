@@ -60,7 +60,7 @@ void ModelManager::onModelDataLoaded(ModelData* e)
 void ModelManager::loadFBX(ModelData* data) const
 {
 	ResourcePtr<File>& file = data->m_file;
-	ofbx::IScene* scene = ofbx::load((ofbx::u8*)file->getContents(), (int)file->getSize(), (ofbx::u64)ofbx::LoadFlags::TRIANGULATE);
+	ofbx::IScene* scene = ofbx::load((ofbx::u8*)file->getContents().c_str(), (int)file->getSize(), (ofbx::u64)ofbx::LoadFlags::TRIANGULATE);
 	const ofbx::Mesh* mesh = scene->getMesh(0);
 	const ofbx::Geometry* geo = mesh->getGeometry();
 	const ofbx::Vec3* positions = geo->getVertices();

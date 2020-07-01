@@ -142,7 +142,7 @@ SpriteData* SpriteData::SpriteDataLoader::load(std::tuple<int, std::string>* err
 	return data;
 }
 
-const char* SpriteData::SpriteDataLoader::getTypeName() const
+StringView SpriteData::SpriteDataLoader::getTypeName() const
 {
 	return "Sprite Data";
 }

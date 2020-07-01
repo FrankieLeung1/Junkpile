@@ -33,7 +33,7 @@ std::string GrindstoneEditor::loadData()
 
 	unsigned char* pixels;
 	unsigned int width, height;
-	int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)m_logoFile->getContents(), m_logoFile->getSize());
+	int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)m_logoFile->getContents().c_str(), m_logoFile->getSize());
 	if (error == 0)
 	{
 		m_logoTexture->setSoftware(width, height, 32);

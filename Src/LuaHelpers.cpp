@@ -511,7 +511,7 @@ std::string LuaTableResource::LuaTableLoader::getDebugName() const
 	return m_path;
 }
 
-const char* LuaTableResource::LuaTableLoader::getTypeName() const
+StringView LuaTableResource::LuaTableLoader::getTypeName() const
 {
 	return "LuaTable";
 }
@@ -619,7 +619,7 @@ LuaTable readLuaDataFile(lua_State* s, const File& f)
 	ERROR_CONTEXT("readLuaDataFile", path.c_str());
 	LuaStackCheck lsc(s);
 
-	std::string contents(f.getContents(), f.getSize());
+	std::string contents(f.getContents().c_str(), f.getSize());
 	int error = luaL_dostring(s, contents.c_str());
 	if (error)
 	{

@@ -132,7 +132,7 @@ void AssetBrowser::setCurrent(const char* path)
 
             unsigned char* pixels;
             unsigned int width, height;
-            int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents(), file->getSize());
+            int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents().c_str(), file->getSize());
             if (error == 0)
             {
                 std::shared_ptr<Rendering::Texture> texture(new Rendering::Texture());
