@@ -134,6 +134,16 @@ void FileManager::reducePath(std::string& path) const
 	}
 }
 
+std::string FileManager::extension(StringView path) const
+{
+	const char* begin = path.c_str(), *end = begin + path.size();
+	while (--end != begin)
+		if (*end == '.')
+			return std::string(end + 1, begin + path.size() - 1);
+
+	return std::string();
+}
+
 void FileManager::save(const char* path, std::vector<char>&& buffer)
 {
 	std::vector<char>* contents = new std::vector<char>(std::move(buffer));

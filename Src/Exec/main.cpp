@@ -58,6 +58,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("Function", &functionTest);
 
 	tests->addTest("TextureGenerator", &TextureGenerator::test);
+	TextureGenerator::test();
 
 	tests->addTest("WindowRecorder", &WindowRecorder::test);
 	tests->addTest("SpriteSystem", &SpriteSystem::test);

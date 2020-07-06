@@ -3345,3 +3345,63 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Lua()
 	}
 	return langDef;
 }
+
+const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Python()
+{
+	static LanguageDefinition langDef;
+
+	static const char* const keywords[] = {
+		"False", "None", "True", "and", "as", "assert", "break", "class",
+		"continue", "def", "del", "elif", "else", "except", "finally",
+		"for", "from", "global", "if", "import", "in", "is", "lambda",
+		"nonlocal", "not", "or", "pass", "raise", "return", "try", "while",
+		"with", "yield",
+		"__class__", "__delattr__", "__dict__", "__dir__", "__doc__", "__eq__",
+		"__format__", "__ge__", "__getattribute__", "__gt__", "__hash__",
+		"__init__", "__le__", "__lt__", "__module__", "__ne__", "__new__",
+		"__reduce__", "__reduce_ex__", "__repr__", "__setattr__", "__sizeof__",
+		"__str__", "__subclasshook__", "__weakref__"
+	};
+
+	for (auto& k : keywords) langDef.mKeywords.insert(k);
+
+	static const char* const identifiers[]{
+		"abs", "delattr", "hash", "memoryview", "set", "all", "dict", "help",
+		"min", "setattr", "any", "dir", "hex", "next", "slice", "ascii", "divmod",
+		"id", "object", "sorted", "bin", "enumerate", "input", "oct",
+		"staticmethod", "bool", "eval", "int", "open", "str", "breakpoint",
+		"exec", "isinstance", "ord", "sum", "bytearray", "filter", "issubclass",
+		"pow", "super", "bytes", "float", "iter", "print", "tuple", "callable",
+		"format", "len", "property", "type", "chr", "frozenset", "list", "range",
+		"vars", "classmethod", "getattr", "locals", "repr", "zip", "compile",
+		"globals", "map", "reversed", "__import__", "complex", "hasattr", "max",
+		"round"
+	};
+
+	for (auto& k : identifiers) {
+		Identifier id;
+		id.mDeclaration = "Built-in function";
+		langDef.mIdentifiers.insert(std::make_pair(std::string(k), id));
+	}
+
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("[ \\t]*#[ \\t]*[a-zA-Z_]+", PaletteIndex::Preprocessor));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("L?\\\"(\\\\.|[^\\\"])*\\\"", PaletteIndex::String));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("\\'\\\\?[^\\']\\'", PaletteIndex::CharLiteral));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?[fF]?", PaletteIndex::Number));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("[+-]?[0-9]+[Uu]?[lL]?[lL]?", PaletteIndex::Number));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("0[0-7]+[Uu]?[lL]?[lL]?", PaletteIndex::Number));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("0[xX][0-9a-fA-F]+[uU]?[lL]?[lL]?", PaletteIndex::Number));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("[a-zA-Z_][a-zA-Z0-9_]*", PaletteIndex::Identifier));
+	langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, PaletteIndex>("[\\[\\]\\{\\}\\!\\%\\^\\&\\*\\(\\)\\-\\+\\=\\~\\|\\<\\>\\?\\/\\;\\,\\.]", PaletteIndex::Punctuation));
+
+	langDef.mCommentStart = R"(""")";
+	langDef.mCommentEnd = R"(""")";
+	langDef.mSingleLineComment = "#";
+
+	langDef.mCaseSensitive = true;
+	langDef.mAutoIndentation = true;
+
+	langDef.mName = "Python";
+
+	return langDef;
+}

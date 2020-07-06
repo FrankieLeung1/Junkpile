@@ -4,8 +4,9 @@ class StringView
 {
 public:
 	StringView();
-	StringView(const char*);
-	StringView(const std::string&);
+	StringView(const char*, const char*);
+	StringView(const char*, std::size_t size = std::string::npos);
+	StringView(const std::string&, std::size_t size = std::string::npos);
 	~StringView();
 
 	std::string str() const;

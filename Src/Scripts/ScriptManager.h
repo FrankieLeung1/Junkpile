@@ -2,11 +2,17 @@
 
 #include "../Resources/ResourceManager.h"
 #include "../Managers/EventManager.h"
+#include "Markup.h"
 
 struct lua_State;
 class TextEditor;
 struct FileChangeEvent;
 struct ScriptReloadedEvent : public Event<ScriptReloadedEvent>
+{
+	// TODO: replace this with Script or something
+	std::vector<std::string> m_paths;
+};
+struct ScriptRemarkEvent : public Event<ScriptRemarkEvent>
 {
 	// TODO: replace this with Script or something
 	std::vector<std::string> m_paths;
@@ -45,6 +51,7 @@ public:
 
 	void runScriptsInFolder(const char* path, bool recursive = false);
 	bool run(const char* path, Environment::Script script = Environment::InvalidScript, Environment::Script owner = Environment::InvalidScript);
+	void remark(const char* path);
 
 	template<typename T> void registerObject(const char* exposedName, const char* doc = nullptr, std::tuple<T*, const char*> instance = {});
 	template<typename T> void addEnvironment();
@@ -59,13 +66,15 @@ protected:
 	void onFileChange(const FileChangeEvent&);
 	void addDependency(const char* name);
 
+	bool imguiColourPicker4(StringView name, ImGuiColorEditFlags flags, float colour[4], float prevColour[4]);
+
+	glm::vec4 m_testColour;
+	glm::vec4 m_prevColour;
+
 protected:
 	lua_State* m_state{ nullptr };
 	TextEditor* m_editor{ nullptr };
 	std::string m_editorSavePath;
-	
-	std::list<Environment*> m_languages;
-
 	struct ScriptData
 	{
 		Environment* m_env;
@@ -73,7 +82,12 @@ protected:
 		std::vector<ScriptData*> m_children;
 		std::set<std::string> m_dependencies;
 		std::string m_path;
+		Markup m_markup;
 	};
+
+	ScriptData* m_editorScriptData;
+	
+	std::list<Environment*> m_languages;
 	std::forward_list<ScriptData> m_scripts;
 	std::vector<ScriptData*> m_callstack;
 

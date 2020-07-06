@@ -39,6 +39,7 @@ public:
 	};
 	std::vector<FileInfo> files(const char* dir) const;
 	void reducePath(std::string&) const;
+	std::string extension(StringView) const;
 	
 	void save(const char* path, std::vector<char>&&);
 

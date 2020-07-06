@@ -111,10 +111,13 @@ ResourcePtr<Rendering::Texture> TextureGenerator::generate(unsigned int width, u
 void TextureGenerator::test()
 {
 	ResourcePtr<Rendering::Texture>* ptr = createTestResource< ResourcePtr<Rendering::Texture> >(EmptyPtr);
-	auto generate = [ptr]()
+	auto generate = [ptr](bool remark)
 	{
 		ResourcePtr<ScriptManager> sm;
-		sm->run("Scripts/Generators/TestGen.py");
+		if(remark)
+			sm->remark("Scripts/Generators/TestGen.py");
+		else
+			sm->run("Scripts/Generators/TestGen.py");
 
 		/*TextureGenerator gen;
 		gen.clear({ 1.0f, 0.0f, 0.0f, 1.0f });
@@ -144,18 +147,26 @@ void TextureGenerator::test()
 	sm->registerObject<TextureGenerator>("TextureGenerator");
 	sm->registerObject<glm::vec2>("vec2");
 	sm->registerObject<glm::vec4>("vec4");
-	generate();
+	generate(false);
 
-	//sm->setEditorContent("", "../Res/Scripts/Generators/TestGen.py");
+	sm->setEditorContent(nullptr, "../Res/Scripts/Generators/TestGen.py");
 
-	/*ResourcePtr<EventManager> events;
+	ResourcePtr<EventManager> events;
 	events->addListener<ScriptReloadedEvent>([=](ScriptReloadedEvent* e) {
 		for (auto& change : e->m_paths)
 		{
-			if(change == "Scripts/Generators/TestGen.py")
-				generate();
+			if (change == "Scripts/Generators/TestGen.py")
+				generate(false);
 		}
-	});*/
+	});
+
+	events->addListener<ScriptRemarkEvent>([=](ScriptRemarkEvent* e) {
+		for (auto& change : e->m_paths)
+		{
+			if (change == "Scripts/Generators/TestGen.py")
+				generate(true);
+		}
+	});
 
 	ResourcePtr<ImGuiManager> imgui;
 	imgui->registerCallback({[](ResourcePtr<Rendering::Texture>* texture)
