@@ -224,7 +224,7 @@ void ScriptManager::imgui()
 	initEditor();
 
 	auto cpos = m_editor->GetCursorPosition();
-	ImGui::Begin("Script editor", m_error ? nullptr : opened, ImGuiWindowFlags_HorizontalScrollbar); // );
+	ImGui::Begin("Script editor", m_error ? nullptr : opened, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGui::SetWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 
 	if (m_editorScriptData)
@@ -263,7 +263,7 @@ void ScriptManager::imgui()
 		if (ImGui::ColorButton(name, ImVec4(c.x, c.y, c.z, c.w)))
 		{
 			ImGui::OpenPopup("colourPicker");
-			m_prevColour = m_testColour;
+			m_prevColour = c;
 		}
 		ImGui::SameLine();
 		ImGui::Text(name);
@@ -272,7 +272,6 @@ void ScriptManager::imgui()
 		if (imguiColourPicker4("colourPicker", 0, &c.x, &m_prevColour.x))
 		{
 			remark = true;
-			m_prevColour = c;
 		}
 
 		std::string label;
@@ -302,7 +301,6 @@ void ScriptManager::imgui()
 	}
 
 	ImGui::End();
-	ImGui::Columns(1);
 }
 
 bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flags, float colour[4], float prevColour[4])
@@ -320,7 +318,7 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 		saved_palette_init = false;
 	}
 
-	ImVec4 imColour(colour[0], colour[1], colour[2], colour[3]), imPrevColour(prevColour[0], prevColour[1], prevColour[2], prevColour[4]);
+	ImVec4 imColour(colour[0], colour[1], colour[2], colour[3]), imPrevColour(prevColour[0], prevColour[1], prevColour[2], prevColour[3]);
 	bool valueChanged = false;
 	if (ImGui::BeginPopup(name))
 	{
