@@ -10,7 +10,8 @@
 ScriptManager::Environment::Script ScriptManager::Environment::InvalidScript = reinterpret_cast<void*>(std::numeric_limits<std::size_t>::max());
 ScriptManager::ScriptManager():
 m_state(luaL_newstate()),
-m_editorScriptData(nullptr)
+m_editorScriptData(nullptr),
+m_colourIndexOpened(-1)
 {
 	LuaStackCheck::s_defaultState = m_state;
 	ResourcePtr<EventManager> e;
@@ -256,44 +257,79 @@ void ScriptManager::imgui()
 		Markup& markup = m_editorScriptData->m_markup;
 		ImGui::NextColumn();
 
-		glm::vec4 c(1.0f, 0.0f, 0.0f, 1.0f);
-		markup.getValue(0, &c);
-
-		const char* name = markup.getName(0);
-		if (ImGui::ColorButton(name, ImVec4(c.x, c.y, c.z, c.w)))
-		{
-			ImGui::OpenPopup("colourPicker");
-			m_prevColour = c;
-		}
-		ImGui::SameLine();
-		ImGui::Text(name);
-
 		bool remark = false;
-		if (imguiColourPicker4("colourPicker", 0, &c.x, &m_prevColour.x))
+		const std::vector<Markup::Mark>& marks = markup.getMarks();
+		for(int i = 0; i < marks.size(); i++)
+		{
+			const Markup::Mark& mark = marks[i];
+			switch(mark.m_type)
+			{
+			case Markup::VariableType::Float:
+				{
+					float f;
+					if (!markup.getValue(i, &f))
+						sscanf((char*)getDefaultValue(markup, i, true).c_str(), "%f", &f);
+
+					if (ImGui::InputFloat(markup.getName(i).c_str(), &f))
+					{
+						markup.setValue(i, f);
+						remark = true;
+					}
+				}
+				break;
+			case Markup::VariableType::String:
+				{
+					std::string s;
+					if (!markup.getValue(i, &s))
+					{
+						std::string d = getDefaultValue(markup, i, false);
+						if (d.front() == '"') d.erase(d.begin());
+						if (d.back() == '"') d.erase(d.end() - 1);
+						s = d;
+					}
+
+					char buffer[512];
+					strcpy_s(buffer, s.c_str());
+					if (ImGui::InputText(markup.getName(i), buffer, countof(buffer)))
+					{
+						markup.setValue(i, buffer);
+						remark = true;
+					}
+				}
+				break;
+			case Markup::VariableType::RGB:
+			case Markup::VariableType::RGBA:
+				{
+					bool hasAlpha = (mark.m_type == Markup::VariableType::RGBA);
+					glm::vec4 c(1.0f, 0.0f, 0.0f, 1.0f);
+					if (!markup.getValue(i, &c))
+					{
+						std::string d = getDefaultValue(markup, i, true);
+						sscanf((char*)d.c_str(), hasAlpha ? "%f,%f,%f,%f" : "%f,%f,%f", &c.x, &c.y, &c.z, &c.w);
+					}
+
+					const char* name = markup.getName(i).c_str();
+					if (ImGui::ColorButton(name, ImVec4(c.x, c.y, c.z, c.w)))
+					{
+						ImGui::OpenPopup("colourPicker");
+						m_colourIndexOpened = i;
+						m_currentColour = m_prevColour = c;
+					}
+					ImGui::SameLine();
+					ImGui::Text(name);
+				}
+				break;
+			}
+		}
+		
+		if (imguiColourPicker4("colourPicker", 0, &m_currentColour.x, &m_prevColour.x))
 		{
 			remark = true;
-		}
-
-		std::string label;
-		if (!markup.getValue(1, &label))
-		{
-			markup.getDefault(1, &label);
-			label = label.substr(1, label.size() - 2); // trim off the quotes
-		}
-
-		char buffer[512];
-		strcpy_s(buffer, label.c_str());
-		const char* labelName = markup.getName(1);
-		if (ImGui::InputText(labelName, buffer, sizeof(buffer)))
-		{
-			remark = true;
-			markup.setValue(1, buffer);
+			markup.setValue(m_colourIndexOpened, m_currentColour);
 		}
 
 		if (remark)
 		{
-			markup.setValue(0, c);
-
 			ResourcePtr<EventManager> e;
 			auto event = e->addOneFrameEvent<ScriptRemarkEvent>();
 			event->m_paths.push_back(m_editorScriptData->m_path);
@@ -301,6 +337,16 @@ void ScriptManager::imgui()
 	}
 
 	ImGui::End();
+}
+
+std::string ScriptManager::getDefaultValue(const Markup& mark, int index, bool stripWhitespace) const
+{
+	std::string s;
+	mark.getDefault(index, &s);
+	if(stripWhitespace)
+		s.erase(std::remove_if(s.begin(), s.end(), [](char c) {return c == ' '; }));
+
+	return std::move(s);
 }
 
 bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flags, float colour[4], float prevColour[4])
@@ -332,7 +378,10 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 		ImGui::ColorButton("##current", imColour, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40));
 		ImGui::Text("Previous");
 		if (ImGui::ColorButton("##previous", imPrevColour, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40)))
+		{
 			memcpy(colour, prevColour, sizeof(float) * 3);
+			valueChanged = true;
+		}
 
 		/*ImGui::Separator();
 		ImGui::Text("Palette");

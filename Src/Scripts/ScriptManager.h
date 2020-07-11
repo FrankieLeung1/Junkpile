@@ -67,9 +67,8 @@ protected:
 	void addDependency(const char* name);
 
 	bool imguiColourPicker4(StringView name, ImGuiColorEditFlags flags, float colour[4], float prevColour[4]);
+	std::string getDefaultValue(const Markup&, int index, bool stripWhitespace) const;
 
-	glm::vec4 m_testColour;
-	glm::vec4 m_prevColour;
 
 protected:
 	lua_State* m_state{ nullptr };
@@ -90,6 +89,10 @@ protected:
 	std::list<Environment*> m_languages;
 	std::forward_list<ScriptData> m_scripts;
 	std::vector<ScriptData*> m_callstack;
+
+
+	glm::vec4 m_currentColour, m_prevColour;
+	int m_colourIndexOpened;
 
 	Environment::Error m_error;
 

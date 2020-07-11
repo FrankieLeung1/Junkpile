@@ -205,7 +205,6 @@ bool Markup::getValue(std::size_t index, glm::vec4* v) const
 
 bool Markup::getDefault(std::size_t index, std::string* s) const
 {
-	CHECK_F(m_marks[index].m_type == VariableType::String);
 	*s = m_marks[index].m_default;
 	return true;
 }

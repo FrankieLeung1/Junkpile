@@ -479,7 +479,7 @@ void VulkanFramework::update()
 		g_SwapChainRebuild = false;
 		ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 		ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
-		m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format, g_MainWindowData.Frames[0].DepthStencil->getFormat());
+		//m_device->createRenderPass((vk::Format)g_MainWindowData.SurfaceFormat.format, g_MainWindowData.Frames[0].DepthStencil->getFormat());
 		m_device->setFrameBufferDimensions(&g_MainWindowData, { g_SwapChainResizeWidth, g_SwapChainResizeHeight });
 		g_MainWindowData.FrameIndex = 0;
 
