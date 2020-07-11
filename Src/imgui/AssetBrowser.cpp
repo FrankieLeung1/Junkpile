@@ -5,6 +5,7 @@
 #include "../Rendering/Texture.h"
 #include "../Rendering/RenderingDevice.h"
 #include "../Framework/Framework.h"
+#include "../Threading/ThreadPool.h"
 
 AssetBrowser::AssetBrowser()
 {
@@ -55,6 +56,8 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
         ImGui::EndChild();
         ImGui::NextColumn();
 
+        std::lock_guard<std::mutex> l(m_current.m_mutex);
+
         // right
         ImGui::BeginGroup();
         ImGui::BeginChild("top part", ImVec2(0, 18));
@@ -71,6 +74,11 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
         {
             const CurrentInfo::Texture& current = *m_current.m_textures[i];
             Rendering::Texture* texture = &(*current.m_texture);
+            if (!texture->getVkImage())
+            {
+                ResourcePtr<VulkanFramework> vf;
+                vf->uploadTexture(&(*texture));
+            }
             ImGui::ImageButton(texture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1);
             if (ImGui::IsItemHovered())
             {
@@ -111,44 +119,60 @@ void AssetBrowser::setCurrent(const char* path)
 
     ResourcePtr<Rendering::Device> device;
     device->waitIdle();
+
+    std::lock_guard<std::mutex> l(m_current.m_mutex);
     m_current.m_textures.clear();
+    m_current.m_path = path;
 
     if (!path)
         return;
 
-    ResourcePtr<FileManager> fileManager;
-    std::vector<FileManager::FileInfo> files = fileManager->files(path);
-    for (int i = 0; i < files.size(); ++i)
+    auto task = [this]()
     {
-        FileManager::FileInfo& currentFile = files[i];
-        const std::string& path = currentFile.m_path;
-        if (currentFile.m_type != FileManager::Type::File)
-            continue;
-        
-        if (path.substr(path.find_last_of('.')) == ".png")
+        std::string folderPath;
         {
-            ResourcePtr<File> file(NewPtr, path.c_str());
-            ResourcePtr<VulkanFramework> vf;
+            std::lock_guard<std::mutex> l(m_current.m_mutex);
+            folderPath = m_current.m_path;
+        }
 
-            unsigned char* pixels;
-            unsigned int width, height;
-            int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents().c_str(), file->getSize());
-            if (error == 0)
+        ResourcePtr<FileManager> fileManager;
+        std::vector<FileManager::FileInfo> files = fileManager->files(folderPath.c_str());
+        for (int i = 0; i < files.size(); ++i)
+        {
+            FileManager::FileInfo& currentFile = files[i];
+            std::string path = currentFile.m_path;
+            if (currentFile.m_type != FileManager::Type::File)
+                continue;
+
+            if (path.substr(path.find_last_of('.')) == ".png")
             {
-                std::shared_ptr<Rendering::Texture> texture(new Rendering::Texture());
-                texture->setSoftware(width, height, 32);
-                char* dest = (char*)texture->map();
-                memcpy(dest, pixels, width * height * 4);
-                texture->unmap();
-                free(pixels);
+                ResourcePtr<File> file(NewPtr, path.c_str());
+                ResourcePtr<VulkanFramework> vf;
 
-                vf->uploadTexture(&(*texture));
+                unsigned char* pixels;
+                unsigned int width, height;
+                int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents().c_str(), file->getSize());
+                if (error == 0)
+                {
+                    std::shared_ptr<Rendering::Texture> texture(new Rendering::Texture());
+                    texture->setSoftware(width, height, 32);
+                    char* dest = (char*)texture->map();
+                    memcpy(dest, pixels, width * height * 4);
+                    texture->unmap();
+                    free(pixels);
 
-                std::size_t name = path.find_last_of('/') + 1;
-                m_current.m_textures.push_back(std::shared_ptr<CurrentInfo::Texture>(new CurrentInfo::Texture{ path.substr(name), (int)width, (int)height, texture }));
+                    std::size_t name = path.find_last_of('/') + 1;
+                    {
+                        std::lock_guard<std::mutex> l(m_current.m_mutex);
+                        m_current.m_textures.push_back(std::shared_ptr<CurrentInfo::Texture>(new CurrentInfo::Texture{ path.substr(name), (int)width, (int)height, texture }));
+                        if (folderPath != m_current.m_path)
+                            return;
+                    }
+                }
             }
         }
-    }
+    };
 
-    m_current.m_path = path;
+    ResourcePtr<ThreadPool> pool;
+    pool->enqueue(task);
 }

@@ -22,6 +22,7 @@ protected:
 	struct CurrentInfo
 	{
 		std::string m_path;
+		std::mutex m_mutex;
 
 		struct Texture
 		{
