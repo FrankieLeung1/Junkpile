@@ -204,10 +204,10 @@ bool Meta::PythonRegisterer::addObject(PyObject* mod)
 	m_typeDef.tp_doc = m_doc.empty() ? nullptr : m_doc.c_str();
 	m_typeDef.tp_basicsize = sizeof(InstanceData);
 	m_typeDef.tp_itemsize = 0;
-	m_typeDef.tp_flags = Py_TPFLAGS_DEFAULT;
+	m_typeDef.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE;
 	m_typeDef.tp_new = PyType_GenericNew;
 	m_typeDef.tp_init = (initproc)pyInit;
-	m_typeDef.tp_finalize = pyDealloc;
+	m_typeDef.tp_dealloc = pyDealloc;
 	m_typeDef.tp_members = nomembers;
 	m_typeDef.tp_methods = nomethods;
 	m_typeDef.tp_getattro = pyGet;
@@ -227,10 +227,10 @@ bool Meta::PythonRegisterer::addObject(PyObject* mod)
 	m_callableDef.tp_doc = nullptr;
 	m_callableDef.tp_basicsize = sizeof(PyCallable);
 	m_callableDef.tp_itemsize = 0;
-	m_callableDef.tp_flags = Py_TPFLAGS_DEFAULT;
+	m_callableDef.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE;
 	m_callableDef.tp_new = PyType_GenericNew;
 	m_callableDef.tp_call = pyCallableCall;
-	m_callableDef.tp_finalize = pyCallableDealloc;
+	m_callableDef.tp_dealloc = pyCallableDealloc;
 	m_callableDef.tp_members = nomembers;
 	m_callableDef.tp_methods = nomethods;
 	if (PyType_Ready(&m_callableDef) < 0)
@@ -283,7 +283,7 @@ int Meta::PythonRegisterer::pyInit(InstanceData* self, PyObject* args, PyObject*
 void Meta::PythonRegisterer::pyDealloc(PyObject* object)
 {
 	InstanceData* self = (InstanceData*)object;
-	self->m_class->m_metaObject.destruct(self->m_ptr.get<void*>());
+	self->m_class->m_metaObject.destruct(self->m_ptr.toVoidPtr());
 }
 
 PyObject* Meta::PythonRegisterer::pyGet(PyObject* self, PyObject* attr)

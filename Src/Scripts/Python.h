@@ -13,7 +13,7 @@ public:
 	bool isScript(const char* path) const;
 	Script newScript(const char* debugName);
 	void deleteScript(Script);
-	Error loadScript(Script, const char* buffer, std::size_t);
+	Error loadScript(Script, StringView);
 	bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance);
 
 protected:
@@ -45,6 +45,7 @@ protected:
 	};
 	std::vector<ExportedObject> m_exported;
 	PyModuleDef m_moduleDef;
+	PyObject* m_global;
 
 	struct ModuleState
 	{

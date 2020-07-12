@@ -134,6 +134,8 @@ namespace Meta
 			PyObject_HEAD
 			Any m_ptr;
 			PythonRegisterer* m_class;
+			InstanceData() { LOG_F(INFO, "InstanceData()\n"); }
+			~InstanceData() { LOG_F(INFO, "~InstanceData()\n"); }
 		};
 
 		PyTypeObject m_typeDef;

@@ -24,7 +24,7 @@ std::size_t File::getSize() const
 
 StringView File::getContents() const
 {
-	return { &m_contents[0], m_contents.size()};
+	return { &m_contents[0], m_contents.size() - 1};
 }
 
 const std::string& File::getPath() const

@@ -6,6 +6,7 @@
 
 struct lua_State;
 class TextEditor;
+class ScriptManager;
 struct FileChangeEvent;
 struct ScriptReloadedEvent : public Event<ScriptReloadedEvent>
 {
@@ -41,7 +42,7 @@ public:
 		virtual bool isScript(const char* path) const = 0;
 		virtual Script newScript(const char* debugName) =0;
 		virtual void deleteScript(Script) = 0;
-		virtual Error loadScript(Script, const char* buffer, std::size_t size) =0;
+		virtual Error loadScript(Script, StringView) =0;
 		virtual bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance = {}) =0;
 	};
 
@@ -68,6 +69,8 @@ protected:
 
 	bool imguiColourPicker4(StringView name, ImGuiColorEditFlags flags, float colour[4], float prevColour[4]);
 	std::string getDefaultValue(const Markup&, int index, bool stripWhitespace) const;
+
+	void registerObjects();
 
 
 protected:

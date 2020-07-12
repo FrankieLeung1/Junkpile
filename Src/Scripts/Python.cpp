@@ -3,7 +3,8 @@
 #include "../Meta/Meta.h"
 #include "../Framework/Framework.h"
 
-PythonEnvironment::PythonEnvironment()
+PythonEnvironment::PythonEnvironment():
+m_global(nullptr)
 {
 }
 
@@ -11,6 +12,8 @@ PythonEnvironment::~PythonEnvironment()
 {
 	if (m_pythonInited)
 	{
+		//Py_DECREF(m_global);
+		PyDict_Clear(m_global);
 		int r = Py_FinalizeEx();
 		LOG_IF_F(ERROR, r != 0, "Python exited with %d\n", r);
 	}
@@ -23,6 +26,9 @@ void PythonEnvironment::init()
 	{
 		m_pythonInited = true;
 		Py_Initialize();
+
+		//m_global = PyEval_GetGlobals();
+		m_global = PyModule_GetDict(PyImport_ImportModule("__main__"));
 
 		const char* code =
 			"import Junkpile\n"
@@ -38,12 +44,14 @@ void PythonEnvironment::init()
 			"sys.stderr = Error()\n"
 			"class MyMetaFinder():\n"
 			"	def find_spec(self, fullname, path, target = None):\n"
-			"		print(type(path))\n"
+			//"		print(type(path))\n"
 			"		if path == None:\n"
 			"			Junkpile.addModuleDependency(fullname, path)\n"
 			"		return None\n"
 			"sys.meta_path.insert(0, MyMetaFinder())";
 		auto r = PyRun_SimpleString(stringf(code, "../Res/Tray/").c_str());
+		/*std::string s = stringf(code, "../Res/Tray/");
+		auto r = PyRun_String(s.c_str(), Py_file_input, m_global, nullptr);*/
 		LOG_IF_F(FATAL, r != 0, "PyRun_SimpleString failed\n");
 	}
 }
@@ -73,20 +81,19 @@ void PythonEnvironment::deleteScript(Script s)
 	LOG_F(FATAL, "todo");
 }
 
-PythonEnvironment::Error PythonEnvironment::loadScript(Script script, const char* buffer, std::size_t size)
+PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView codeString)
 {
 	init();
 
-	char* b = (char*)alloca(size + 1);
-	memcpy(b, buffer, size);
-	b[size] = '\0';
+	char* b = (char*)alloca(codeString.size() + 1);
+	memcpy(b, codeString.c_str(), codeString.size());
+	b[codeString.size()] = '\0';
 	
 	std::string name = m_scripts[(std::size_t)script].m_debugName.c_str();
 	PyObject* code = Py_CompileString(b, name.c_str(), Py_file_input);
 	if (code != nullptr)
 	{
-		PyObject* global = PyModule_GetDict(PyImport_AddModule("__main__"));
-		PyObject* result = PyEval_EvalCode(code, global, nullptr);
+		PyObject* result = PyEval_EvalCode(code, m_global, m_global);
 		if (!PyErr_Occurred())
 		{
 			Py_DECREF(code);

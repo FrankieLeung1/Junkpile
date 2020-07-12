@@ -18,6 +18,8 @@ m_colourIndexOpened(-1)
 	ResourcePtr<TimeManager> t;
 
 	e->addListener<FileChangeEvent>([this](FileChangeEvent* c) { onFileChange(*c); });
+
+	registerObjects();
 }
 
 ScriptManager::~ScriptManager()
@@ -69,7 +71,7 @@ bool ScriptManager::run(const char* path, Environment::Script script, Environmen
 			{
 				data.m_markup.parseScript(f->getContents());
 				std::string marked = data.m_markup.markUp(f->getContents());
-				error = language->loadScript(script, marked.c_str(), marked.size());
+				error = language->loadScript(script, marked);
 				m_error = error;
 				if (!error)
 					break;
@@ -99,7 +101,7 @@ void ScriptManager::remark(const char* path)
 		{
 			ResourcePtr<File> f(NewPtr, path);
 			std::string marked = it->m_markup.markUp(f->getContents());
-			it->m_env->loadScript(it->m_script, marked.c_str(), marked.size());
+			it->m_env->loadScript(it->m_script, marked);
 		}
 	}
 }
@@ -225,7 +227,7 @@ void ScriptManager::imgui()
 	initEditor();
 
 	auto cpos = m_editor->GetCursorPosition();
-	ImGui::Begin("Script editor", m_error ? nullptr : opened, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::Begin("Script Editor", m_error ? nullptr : opened, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGui::SetWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 
 	if (m_editorScriptData)
@@ -413,4 +415,15 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 	}
 
 	return valueChanged;
+}
+
+// all the classes exposed the scripts
+#include "../Generators/TextureGenerator.h"
+#include "../Scripts/Python.h"
+void ScriptManager::registerObjects()
+{
+	addEnvironment<PythonEnvironment>();
+	registerObject<TextureGenerator>("TextureGenerator");
+	registerObject<glm::vec2>("vec2");
+	registerObject<glm::vec4>("vec4");
 }

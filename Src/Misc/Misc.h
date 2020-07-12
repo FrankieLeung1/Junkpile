@@ -1,5 +1,4 @@
 #pragma once
-
 template<typename T, size_t N>
 constexpr size_t countof(T(&)[N])
 {
@@ -119,8 +118,29 @@ public:
 	static TypeHelperInstance<T> s_instance;
 	void destruct(void* v) { static_cast<T*>(v)->~T(); }
 	void moveConstruct(void* dest, void* src) { new(dest)T(std::move(*static_cast<T*>(src))); }
-	std::size_t getSize() const { return sizeof(T); };
+	std::size_t getSize() const { return sizeof(T); }
 };
 
 template<typename T>
 TypeHelperInstance<T> TypeHelperInstance<T>::s_instance;
+
+class Scope
+{
+public:
+	Scope() {}
+	template<typename T> Scope(const T& onExit) { exit(onExit); }
+	~Scope() { if (m_exit) m_exit(); }
+	Scope(const Scope&) = delete;
+
+	template<typename T> Scope& exit(const T& onExit)
+	{
+		m_exit = onExit;
+		return *this;
+	}
+
+protected:
+	std::function<void()> m_exit;
+};
+
+#define HERE { LOG_F(INFO, "HERE\n"); }; (void)0
+#define HERE_SCOPE(varName) { LOG_F(INFO, "HERE START (varName)\n"); } Scope varName([](){LOG_F(INFO, "HERE END (varName)\n");)}); (void)0

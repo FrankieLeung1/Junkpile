@@ -358,9 +358,7 @@ namespace Meta
 	template<typename T> Object& Object::defaultFactory()
 	{
 		glm::vec4* (*f)(float f1, float f2, float f3, float f4) = [](float f1, float f2, float f3, float f4) { return new glm::vec4(f1, f2, f3, f4); };
-		new Meta::StaticFunction(m_name, f, true, nullptr, nullptr);
-
-		return factory([](void*) -> void* { return new T; }, [](void* ud, void* v) { delete (T*)v; });
+		return factory([](void*) -> void* { return new T; }, [](void* ud, void* v) { delete *(T**)v; });
 	}
 
 	template<typename T, typename... Args> Object& Object::constructor()
