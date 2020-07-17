@@ -14,7 +14,7 @@ void logToOutput(void*, const loguru::Message& message)
 	OutputDebugStringA(buffer);
 
 #if _WIN32
-	if (message.verbosity >= loguru::Verbosity_FATAL)
+	if (message.verbosity <= loguru::Verbosity_FATAL)
 		MessageBoxA(NULL, message.message, "Fatal Error", MB_OK | MB_ICONERROR);
 #endif
 }
