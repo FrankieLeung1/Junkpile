@@ -25,6 +25,13 @@ void PythonEnvironment::init()
 	if (!m_pythonInited)
 	{
 		m_pythonInited = true;
+
+#ifdef _WIN32
+		WCHAR pythonHome[MAX_PATH + 1];
+		if(GetEnvironmentVariable(L"PYTHONHOME", pythonHome, sizeof(pythonHome)) == 0)
+			LOG_F(FATAL, "Environment variable PYTHONHOME does not exist");
+#endif
+		
 		Py_Initialize();
 
 		//m_global = PyEval_GetGlobals();

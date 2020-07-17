@@ -12,6 +12,11 @@ void logToOutput(void*, const loguru::Message& message)
 		sprintf_s(buffer, "%s(%d) : %s", message.filename, message.line, message.message);
 	
 	OutputDebugStringA(buffer);
+
+#if _WIN32
+	if (message.verbosity >= loguru::Verbosity_FATAL)
+		MessageBoxA(NULL, message.message, "Fatal Error", MB_OK | MB_ICONERROR);
+#endif
 }
 
 LONG CALLBACK unhandledExceptionFilter(EXCEPTION_POINTERS* pointers)

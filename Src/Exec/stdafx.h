@@ -29,6 +29,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <functional>
 #include <thread>
 #include <future>
 #include <queue>

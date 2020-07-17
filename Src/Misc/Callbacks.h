@@ -1,5 +1,9 @@
 #pragma once
 
+// BasicFunction: encapsulates the "void* userdata" callback pattern
+// Function: stores the callable object within itself (no memory allocation), can be accessed via FunctionBase<R, Args...>
+// std::function: for everything else
+
 template<typename R, typename... Args>
 class BasicFunction
 {
