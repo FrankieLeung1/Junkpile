@@ -34,6 +34,9 @@ namespace Meta
 		int startFunction(const char* name, bool hasReturn, bool isConstructor);
 		int endFunction();
 
+		int startFunctionObject(const char* name, bool hasReturn);
+		int endFunctionObject();
+
 		template<typename T>
 		void open(lua_State*);
 		void open(const Object&);

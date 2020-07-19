@@ -15,7 +15,12 @@ void logToOutput(void*, const loguru::Message& message)
 
 #if _WIN32
 	if (message.verbosity <= loguru::Verbosity_FATAL)
-		MessageBoxA(NULL, message.message, "Fatal Error", MB_OK | MB_ICONERROR);
+	{
+		const char* cstr = nullptr;
+		if (strcmp(message.message, " ") == 0)	cstr = message.prefix;
+		else									cstr = message.message;
+		MessageBoxA(NULL, cstr, "Fatal Error", MB_OK | MB_ICONERROR);
+	}
 #endif
 }
 

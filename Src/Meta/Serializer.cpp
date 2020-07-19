@@ -113,6 +113,16 @@ int Serializer::endFunction()
 	return 0;
 }
 
+int Serializer::startFunctionObject(const char* name, bool hasReturn)
+{
+	return 0;
+}
+
+int Serializer::endFunctionObject()
+{
+	return 0;
+}
+
 std::string Serializer::getString() const
 {
 	return m_stream.str();

@@ -68,7 +68,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_EVERY_1024_DF);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_EVERY_1024_DF);
 	loguru::init(__argc, __argv);
 	initLoggingForVisualStudio("App.log");
 
@@ -79,13 +79,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	ResourceManager r; r.init();
 	ResourcePtr<VulkanFramework> vf; vf->init(type);
+	ResourcePtr<ScriptManager> sm;
 	ResourcePtr<TimeManager> t;
 	ResourcePtr<FileManager> f;
 	ResourcePtr<ImGuiManager> m;
 	ResourcePtr<EventManager> em;
 	ResourcePtr<ComponentManager> cm;
 	ResourcePtr<PhysicsSystem> ps;
-	ResourcePtr<ScriptManager> sm;
 	ResourcePtr<Rendering::Device> rd;
 	ResourcePtr<InputManager> i;
 	ResourcePtr<SpriteSystem> s;
@@ -145,5 +145,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<Rendering::Device> d;
 	d->waitIdle();
 	deleteTestResources();
+	em->clearAllListeners();
 	return 0;
 }

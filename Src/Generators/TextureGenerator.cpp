@@ -143,12 +143,9 @@ void TextureGenerator::test()
 		*ptr = texture;
 	};
 
-	ResourcePtr<ScriptManager> sm;
-	sm->registerObject<TextureGenerator>("TextureGenerator");
-	sm->registerObject<glm::vec2>("vec2");
-	sm->registerObject<glm::vec4>("vec4");
 	generate(false);
 
+	ResourcePtr<ScriptManager> sm;
 	sm->setEditorContent(nullptr, "../Res/Scripts/Generators/TestGen.py");
 
 	ResourcePtr<EventManager> events;

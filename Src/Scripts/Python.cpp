@@ -57,9 +57,19 @@ void PythonEnvironment::init()
 			"		return None\n"
 			"sys.meta_path.insert(0, MyMetaFinder())";
 		auto r = PyRun_SimpleString(stringf(code, "../Res/Tray/").c_str());
-		/*std::string s = stringf(code, "../Res/Tray/");
-		auto r = PyRun_String(s.c_str(), Py_file_input, m_global, nullptr);*/
 		LOG_IF_F(FATAL, r != 0, "PyRun_SimpleString failed\n");
+
+		for (auto& exported : m_exported)
+		{
+			if (std::get<0>(exported.m_instance) != nullptr)
+			{
+				PyObject* name = PyUnicode_FromString(std::get<1>(exported.m_instance));
+				PyObject* ptr = exported.m_registerer->instancePointer(std::get<0>(exported.m_instance));
+				PyDict_SetItem(m_global, name, ptr);
+				Py_DECREF(name);
+				Py_DECREF(ptr);
+			}
+		}
 	}
 }
 
@@ -265,7 +275,7 @@ bool PythonEnvironment::registerObject(const Meta::Object& object, const char* e
 		m_moduleRegistered = true;
 	}
 	// Maybe meta::object references shouldn't be const all the time?
-	m_exported.emplace_back(const_cast<Meta::Object&>(object), exposedName, doc);
+	m_exported.emplace_back(const_cast<Meta::Object&>(object), exposedName, doc, instance);
 	return true;
 }
 
@@ -289,9 +299,24 @@ Meta::PythonRegisterer* PythonEnvironment::findRegisterer(const char* name)
 	return nullptr;
 }
 
-PythonEnvironment::ExportedObject::ExportedObject(Meta::Object& object, const char* name, const char* doc):
+Meta::PythonRegisterer* PythonEnvironment::findRegisterer(const Meta::Object& object)
+{
+	PythonEnvironment* e = getThis();
+	for (auto& exported : e->m_exported)
+	{
+		if (exported.m_registerer->matches(object))
+		{
+			return &(*exported.m_registerer);
+		}
+	}
+
+	return nullptr;
+}
+
+PythonEnvironment::ExportedObject::ExportedObject(Meta::Object& object, const char* name, const char* doc, std::tuple<void*, const char*> instance):
 m_name(name),
-m_registerer(new Meta::PythonRegisterer(object, name, doc))
+m_registerer(new Meta::PythonRegisterer(object, name, doc)),
+m_instance(instance)
 {
 
 }

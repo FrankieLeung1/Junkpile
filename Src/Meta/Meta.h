@@ -64,11 +64,11 @@ namespace Meta
 		template<typename T, typename... Ts> struct TypeChecker<T, Ts...> { static bool check(const Any*, std::size_t); };
 		template<> struct TypeChecker<> { static bool check(const Any*, std::size_t); };
 
-		template<typename... Ts>				struct TypeVisitor;
+		template<typename... Ts>				struct TypeVisitor; // visits visitors with dummy Ts... values
 		template<typename T, typename... Ts>	struct TypeVisitor<T, Ts...> { static int visit(Visitor*, const char** argNames, Any* defaults, std::size_t defaultCount); };
 		template<>								struct TypeVisitor<> { static int visit(Visitor*, const char** argNames, Any* defaults, std::size_t defaultCount); };
 
-		template<typename R, typename Tuple, typename... Ts>				struct CallVisitor;
+		template<typename R, typename Tuple, typename... Ts>				struct CallVisitor; // collects values from a visitor and puts them in the Tuple
 		template<typename R, typename Tuple, typename T, typename... Args>	struct CallVisitor<R, Tuple, T, Args...> {
 			static bool visit(Visitor*, const char** names, Any* defaults, std::size_t defaultCount, Tuple&);
 		};
@@ -102,6 +102,13 @@ namespace Meta
 
 		virtual int startFunction(const char* name, bool hasReturn, bool isConstructor) = 0;
 		virtual int endFunction() = 0;
+
+		virtual int startFunctionObject(const char* name, bool hasReturn) = 0;
+		virtual int endFunctionObject() = 0;
+
+		virtual std::shared_ptr<Visitor> callbackToPreviousFunctionObject(int& id) { return false; }
+		virtual int startCallback(int id) { return -1; }
+		virtual int endCallback() { return -1; }
 	};
 
 	class Base : public VariableSizedMemoryPool<Base>::Element
@@ -530,11 +537,46 @@ namespace Meta
 		return sizeof(Function) + (names ? names->size() * sizeof(const char*) : 0) + (defaults ? defaults->size() * sizeof(Any) : 0);
 	}
 
+	template<typename Arg> struct VisitSpecialObject { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, (void*)&arg, getMeta<std::decay<Arg>::type>()); } }; // meta object
+	template<typename R, typename... Args> struct VisitSpecialObject<std::function<R(Args...)>> {
+		static int visit(Visitor* v, const char* name, std::function<R(Args...)>& arg) { // Function
+			if (v->startFunctionObject(name, !std::is_void<R>::value) == 0)
+			{
+				if (!std::is_void<R>::value)
+				{
+					const char* name = "return";
+					FuncCommon::TypeVisitor<R>::visit(v, &name, nullptr, 0);
+				}
+
+				FuncCommon::TypeVisitor<Args...>::visit(v, nullptr, nullptr, 0);
+				v->endFunctionObject();
+			}
+
+			int funcId = -std::numeric_limits<int>::max();
+			std::shared_ptr<Visitor> callback = v->callbackToPreviousFunctionObject(funcId);
+			if (callback)
+			{
+				// TODO: specialize when R != void
+				arg = [funcId, callback](Args... args) -> void
+				{
+					std::tuple<Args...> t(args...);
+					if (callback->startCallback(funcId) == 0)
+					{
+						FuncCommon::CallVisitor<void, decltype(t), Args...>::visit(callback.get(), nullptr, nullptr, 0, t);
+						callback->endCallback();
+					}
+				};
+			}
+			return 0;
+		}
+	};
+
 	template<typename Arg, bool IsString, bool IsObject, bool IsVoidPtrPtr> struct VisitSpecial { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // primitives
 	template<typename Arg> struct VisitSpecial<Arg, true, true, false> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // std::string
 	template<typename Arg> struct VisitSpecial<Arg, true, false, false> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // const char*
-	template<typename Arg> struct VisitSpecial<Arg, false, true, false> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, (void*)&arg, getMeta<std::decay<Arg>::type>()); } }; // meta objects
-	template<typename Arg> struct VisitSpecial<Arg, false, false, true> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, (void**)arg, getMeta<std::remove_pointer<std::remove_pointer<Arg>::type>::type>()); } }; // void** meta objects
+	template<typename Arg> struct VisitSpecial<Arg, false, true, false> { static int visit(Visitor* v, const char* name, Arg& arg) { return VisitSpecialObject<Arg>::visit(v, name, arg); } }; // object
+	template<typename Arg> struct VisitSpecial<Arg, false, false, true> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, (void**)arg, getMeta<std::remove_pointer<std::remove_pointer<Arg>::type>::type>()); } }; // void** object
+
 
 	template<typename T, typename R, typename... Args> 
 	Function::Function(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults):
@@ -616,19 +658,20 @@ namespace Meta
 	template<typename ClassType, typename R, typename... Args>
 	int FuncCommon::TypeImplementation<ClassType, R, Args...>::visit(Visitor* v, const char* name, bool constructor, void* object, const char** names, Any* defaults, std::size_t defaultCount)
 	{
-		int r = v->startFunction(name, !std::is_void<R>::value, constructor);
-		if (!std::is_void<R>::value)
+		if (v->startFunction(name, !std::is_void<R>::value, constructor) == 0)
 		{
-			const char* name = "return";
-			TypeVisitor<R>::visit(v, &name, nullptr, 0);
+			if (!std::is_void<R>::value)
+			{
+				const char* name = "return";
+				TypeVisitor<R>::visit(v, &name, nullptr, 0);
+			}
+
+			TypeVisitor<Args...>::visit(v, names, defaults, defaultCount);
+
+			v->endFunction();
 		}
 
-		TypeVisitor<Args...>::visit(v, names, defaults, defaultCount);
-
-		if (r == 0)
-			v->endFunction();
-
-		return r;
+		return 0;
 	}
 
 	template<typename R, typename... Args>
@@ -742,9 +785,7 @@ namespace Meta
 		}
 		else
 		{
-			// <typename Arg, bool IsString, bool IsObject, bool IsVoidPtrPtr>
-
-			typedef std::decay<T>::type DT;
+			typedef std::decay<T>::type DT; // DecayedType
 			const auto isVoidPtrPtr = std::is_pointer<DT>::value && std::is_class<std::remove_pointer<DT>::type>::value;
 
 			DT t{};
@@ -787,7 +828,7 @@ namespace Meta
 	template<typename T>
 	Object instanceMeta()
 	{
-		static_assert(false, "No meta data for T");
+		static_assert(false, "No meta object setup");
 		return {};
 	}
 

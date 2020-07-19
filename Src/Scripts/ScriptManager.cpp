@@ -419,6 +419,7 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 
 // all the classes exposed the scripts
 #include "../Generators/TextureGenerator.h"
+#include "../Managers/EventManager.h"
 #include "../Scripts/Python.h"
 void ScriptManager::registerObjects()
 {
@@ -426,4 +427,6 @@ void ScriptManager::registerObjects()
 	registerObject<TextureGenerator>("TextureGenerator");
 	registerObject<glm::vec2>("vec2");
 	registerObject<glm::vec4>("vec4");
+	registerObject<UpdateEvent>("UpdateEvent");
+	registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "events"));
 }

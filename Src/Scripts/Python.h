@@ -20,6 +20,7 @@ protected:
 	inline void init();
 	static PythonEnvironment* getThis();
 	static Meta::PythonRegisterer* findRegisterer(const char* name);
+	static Meta::PythonRegisterer* findRegisterer(const Meta::Object&);
 	static PyObject* moduleInit();
 
 public:
@@ -41,7 +42,8 @@ protected:
 	{
 		std::string m_name;
 		std::unique_ptr<Meta::PythonRegisterer> m_registerer;
-		ExportedObject(Meta::Object& object, const char* name, const char* doc);
+		std::tuple<void*, const char*> m_instance;
+		ExportedObject(Meta::Object& object, const char* name, const char* doc, std::tuple<void*, const char*> instance);
 	};
 	std::vector<ExportedObject> m_exported;
 	PyModuleDef m_moduleDef;

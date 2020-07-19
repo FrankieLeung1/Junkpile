@@ -4,6 +4,7 @@
 #include "../Misc/Callbacks.h"
 #include "../Misc/ResizableMemoryPool.h"
 #include "../Resources/ResourceManager.h"
+#include "../Meta/Meta.h"
 
 class EventBase 
 {
@@ -41,7 +42,7 @@ struct PersistentEvent : public Event<T>
 struct UpdateEvent : public Event<UpdateEvent>
 {
 	float m_delta;
-	unsigned int m_frame;
+	int m_frame;
 };
 
 struct ResourceStateChanged : public Event<ResourceStateChanged>
@@ -62,9 +63,12 @@ public:
 
 	typedef FunctionBase<void, EventBase*> EventCallback;
 	template<typename Event, typename FunctionType> void addListener(FunctionType, int priority = 0);
+	template<typename Event> void addListener(std::function<void(Event*)>, int priority);
 
 	void process(float delta);
 	void imgui();
+
+	void clearAllListeners();
 
 	bool hasEvents() const;
 
@@ -117,3 +121,11 @@ template<typename EventType, typename FunctionType> void EventManager::addListen
 	// TODO: static_assert the arg types
 	m_queuedListeners[EventType::id()][priority].push_back(makeFunction(fn));
 }
+
+template<typename Event> void EventManager::addListener(std::function<void(Event*)> fn, int priority)
+{
+	addListener<Event>([=](EventBase* b) { fn((Event*)b); }, priority);
+}
+
+template<> Meta::Object Meta::instanceMeta<EventManager>();
+template<> Meta::Object Meta::instanceMeta<UpdateEvent>();

@@ -167,6 +167,12 @@ void EventManager::test()
 	}
 }
 
+void EventManager::clearAllListeners()
+{
+	m_listeners.clear();
+	m_queuedListeners.clear();
+}
+
 void EventManager::clearEventBuffer(std::vector<char>& buffer, std::vector<TypeHelper*>& types)
 {
 	auto it = buffer.begin();
@@ -190,3 +196,20 @@ void EventBase::discardEvent()
 {
 	m_discardEvent = true;
 }
+
+template<>
+Meta::Object Meta::instanceMeta<EventManager>()
+{
+	//template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...));
+	return Meta::Object("EventManager").
+		func<EventManager, void, std::function<void(UpdateEvent*)>>("addListener_UpdateEvent", &EventManager::addListener<UpdateEvent>);
+}
+
+template<>
+Meta::Object Meta::instanceMeta<UpdateEvent>()
+{
+	return Meta::Object("UpdateEvent").
+		var("m_delta", &UpdateEvent::m_delta).
+		var("m_frame", &UpdateEvent::m_frame);
+}
+

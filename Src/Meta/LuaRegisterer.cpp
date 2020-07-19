@@ -96,6 +96,16 @@ int LuaRegisterer::endFunction()
 	return 0;
 }
 
+int LuaRegisterer::startFunctionObject(const char* name, bool hasReturn)
+{
+	return 0;
+}
+
+int LuaRegisterer::endFunctionObject()
+{
+	return 0;
+}
+
 int LuaRegisterer::call(lua_State*)
 {
 	return 0;
