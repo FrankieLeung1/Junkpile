@@ -17,7 +17,8 @@ Object::Object(const char* name):
 Base(sizeof(Object), BaseType::Object),
 m_name(name),
 m_factory(),
-m_copyOperator(nullptr)
+m_copyOperator(nullptr),
+m_size(0)
 {
 
 }
@@ -40,6 +41,16 @@ Object::~Object()
 const char* Object::getName() const
 {
 	return m_name;
+}
+
+std::size_t Object::getSize() const
+{
+	return m_size;
+}
+
+void Object::setSize(std::size_t size)
+{
+	m_size = size;
 }
 
 Object& Object::hook(const BasicFunction<int, Visitor*, void*>& fn)
@@ -191,7 +202,7 @@ int Meta::Function::visit(Visitor* v, void* object)
 		}
 	}
 
-	return m_implementation->visit(v, m_name, object, false, argNames, defaults, m_defaultCount);
+	return m_implementation->visit(v, m_name, false, object, argNames, defaults, m_defaultCount);
 }
 
 Any Meta::Function::callWithVisitor(Visitor* v, void* ptr)

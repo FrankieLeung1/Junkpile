@@ -43,6 +43,7 @@ namespace Meta
 		template<typename T> bool visitArg(const char* name, T& d);
 		template<typename T> bool visitMember(const char* name, T& d);
 		template<typename T> int getType(bool null = false) const;
+		static char typeToFmt(int);
 
 		struct InstanceData;
 		static int pyInit(InstanceData* self, PyObject* args, PyObject* kwds);
@@ -184,6 +185,7 @@ namespace Meta
 		std::string m_nameWithModule; // Junkpile. + m_name
 		std::string m_doc;
 		Meta::Object& m_metaObject;
+		char* m_setupHelper;
 
 		struct InstanceData
 		{

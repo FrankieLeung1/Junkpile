@@ -12,7 +12,11 @@ m_doc(doc ? doc : ""),
 m_metaObject(metaObject)
 {
 	m_nameWithModule.append(name);
-	metaObject.visit(this, nullptr);
+
+	// use m_setupHelper to get the offsets of member variables, never access it
+	m_setupHelper = (char*)alloca(metaObject.getSize()); 
+	metaObject.visit(this, m_setupHelper);
+	m_setupHelper = nullptr;
 }
 
 Meta::PythonRegisterer::~PythonRegisterer()
@@ -30,6 +34,20 @@ template<> int Meta::PythonRegisterer::getType<int*>(bool null) const { return n
 template<> int Meta::PythonRegisterer::getType<float*>(bool null) const { return null ? T_NONE : T_FLOAT; }
 template<> int Meta::PythonRegisterer::getType<std::string*>(bool null) const { return null ? T_NONE : T_STRING; }
 template<> int Meta::PythonRegisterer::getType<const Meta::Object>(bool null) const { return null ? T_NONE : T_OBJECT; }
+
+char Meta::PythonRegisterer::typeToFmt(int type)
+{
+	switch (type)
+	{
+	case T_BOOL: return 'b';
+	case T_INT: return 'i';
+	case T_FLOAT: return 'f';
+	case T_STRING: return 's';
+	case T_OBJECT: return 'O';
+	case T_NONE: return 's';
+	default: LOG_F(FATAL, "todo typeToFmt"); return '\0';
+	}
+}
 
 template<typename T> 
 bool Meta::PythonRegisterer::visitArg(const char* name, T& d)
@@ -72,7 +90,7 @@ bool Meta::PythonRegisterer::visitArg(const char* name, T& d)
 	return true;
 }
 
-template<typename T> bool Meta::PythonRegisterer::visitMember(const char* name, T&)
+template<typename T> bool Meta::PythonRegisterer::visitMember(const char* name, T& v)
 {
 	if (m_visitingFunction)
 		return false;
@@ -81,7 +99,7 @@ template<typename T> bool Meta::PythonRegisterer::visitMember(const char* name, 
 	Member& member = m_members.back();
 	member.m_name = name;
 	member.m_type = getType<T>();
-	member.m_offset = 0;
+	member.m_offset = reinterpret_cast<const char*>(&v) - m_setupHelper;
 	return true;
 }
 
@@ -90,8 +108,7 @@ PyObject* Meta::PythonRegisterer::instancePointer(void* ptr)
 {
 	InstanceData* o = PyObject_NEW(InstanceData, &m_typeDef);
 	o->m_class = this;
-	memset(&o->m_ptr, 0x00, sizeof(o->m_ptr)); // uhhh, `Any` isn't initialized in PyObject_NEW so let's memset the whole thing
-	o->m_ptr = ptr;
+	new(&o->m_ptr) Any(ptr); // uhhh, `Any` isn't initialized in PyObject_NEW so let's do it here (destruct somewhere?)
 	o->m_owns = false;
 	return (PyObject*)o;
 }
@@ -328,8 +345,10 @@ int Meta::PythonRegisterer::pyInit(InstanceData* self, PyObject* args, PyObject*
 void Meta::PythonRegisterer::pyDealloc(PyObject* object)
 {
 	InstanceData* self = (InstanceData*)object;
-	if(self->m_owns)
+	if(self->m_owns && self->m_ptr)
 		self->m_class->m_metaObject.destruct(self->m_ptr.toVoidPtr());
+
+	self->m_ptr.~Any();
 }
 
 PyObject* Meta::PythonRegisterer::pyGet(PyObject* self, PyObject* attr)
@@ -350,7 +369,9 @@ PyObject* Meta::PythonRegisterer::pyGet(PyObject* self, PyObject* attr)
 	auto memberIt = std::find_if(data->m_class->m_members.begin(), data->m_class->m_members.end(), [=](const Meta::PythonRegisterer::Member& c) { return c.m_name == name; });
 	if (memberIt != data->m_class->m_members.end())
 	{
-		
+		char format[2] = { typeToFmt(memberIt->m_type), '\0' };
+		char* instance = (char*)(*(void**)data->m_ptr.toVoidPtr());
+		return Py_BuildValue(format, *(int*)(instance + memberIt->m_offset)); // I think all formats are either 64 bit numbers or pointers?
 	}
 
 	PyErr_SetString(PyExc_TypeError, "could not find member or method");
@@ -409,16 +430,7 @@ m_result(1)
 	int i = 1;
 	for (; i <= callable->m_args.size(); ++i)
 	{
-		switch (callable->m_args[i - 1].m_type)
-		{
-		case T_BOOL: format[i] = 'b'; break;
-		case T_INT: format[i] = 'i'; break;
-		case T_FLOAT: format[i] = 'f'; break;
-		case T_STRING: format[i] = 's'; break;
-		case T_OBJECT: format[i] = 'O'; break; 
-		case T_NONE: format[i] = 's'; break;
-		default: LOG_F(FATAL, "todo");
-		}
+		format[i] = typeToFmt(callable->m_args[i - 1].m_type);
 	}
 	format[i] = '\0';
 
@@ -470,8 +482,8 @@ int Meta::PythonRegisterer::ArgsVisitor::startArray(const char* name) { return -
 int Meta::PythonRegisterer::ArgsVisitor::endArray(std::size_t) { return -1; }
 int Meta::PythonRegisterer::ArgsVisitor::startFunction(const char* name, bool hasReturn, bool isConstructor) { return -1; }
 int Meta::PythonRegisterer::ArgsVisitor::endFunction() { return -1; }
-int Meta::PythonRegisterer::ArgsVisitor::startFunctionObject(const char* name, bool hasReturn){ return 0; }
-int Meta::PythonRegisterer::ArgsVisitor::endFunctionObject(){ return 0; }
+int Meta::PythonRegisterer::ArgsVisitor::startFunctionObject(const char* name, bool hasReturn){ return -1; }
+int Meta::PythonRegisterer::ArgsVisitor::endFunctionObject(){ return -1; }
 std::shared_ptr<Meta::Visitor> Meta::PythonRegisterer::ArgsVisitor::callbackToPreviousFunctionObject(int& id) {
 	m_argIndex++;
 	if (m_data[m_argIndex - 1] == (void*)0xFE)

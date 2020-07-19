@@ -142,6 +142,8 @@ namespace Meta
 		~Object();
 
 		const char* getName() const;
+		std::size_t getSize() const;
+		void setSize(std::size_t);
 
 		template<typename Variable, typename T> Object& var(const char* name, Variable(T::*));
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
@@ -174,6 +176,7 @@ namespace Meta
 	protected:
 		const char* m_name;
 		Factory m_factory;
+		std::size_t m_size;
 		void (*m_copyOperator)(void*, void*);
 		VariableSizedMemoryPool<Base, PODPoolType<Base>> m_variables;
 	};
@@ -571,11 +574,14 @@ namespace Meta
 		}
 	};
 
-	template<typename Arg, bool IsString, bool IsObject, bool IsVoidPtrPtr> struct VisitSpecial { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // primitives
-	template<typename Arg> struct VisitSpecial<Arg, true, true, false> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // std::string
-	template<typename Arg> struct VisitSpecial<Arg, true, false, false> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // const char*
-	template<typename Arg> struct VisitSpecial<Arg, false, true, false> { static int visit(Visitor* v, const char* name, Arg& arg) { return VisitSpecialObject<Arg>::visit(v, name, arg); } }; // object
-	template<typename Arg> struct VisitSpecial<Arg, false, false, true> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, (void**)arg, getMeta<std::remove_pointer<std::remove_pointer<Arg>::type>::type>()); } }; // void** object
+	// PtrType: 0 = &, 1 = *, 2 = **
+	template<typename T> constexpr int ptrType() { return std::is_pointer<T>::value ? (std::is_pointer<std::remove_pointer<T>::type>::value ? 2 : 1) : 0; };
+	template<typename Arg, bool IsString, bool IsObject, int PtrType> struct VisitSpecial { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // primitives
+	template<typename Arg> struct VisitSpecial<Arg, true, true, 0> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // std::string
+	template<typename Arg> struct VisitSpecial<Arg, true, false, 0> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // const char*
+	template<typename Arg> struct VisitSpecial<Arg, false, true, 0> { static int visit(Visitor* v, const char* name, Arg& arg) { return VisitSpecialObject<Arg>::visit(v, name, arg); } }; // object
+	template<typename Arg> struct VisitSpecial<Arg, false, true, 1> { static int visit(Visitor* v, const char* name, Arg& arg) { return VisitSpecialObject<std::remove_pointer<Arg>::type>::visit(v, name, *arg); } }; // object*
+	template<typename Arg> struct VisitSpecial<Arg, false, false, 2> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, (void**)arg, getMeta<std::remove_pointer<std::remove_pointer<Arg>::type>::type>()); } }; // void** object
 
 
 	template<typename T, typename R, typename... Args> 
@@ -790,7 +796,7 @@ namespace Meta
 
 			DT t{};
 			VisitSpecial<DT, std::is_same<DT, std::string>::value || std::is_same<T, const char*>::value,
-				std::is_class<DT>::value, isVoidPtrPtr>::visit(v, argNames ? *argNames : nullptr, t);
+				std::is_class<std::remove_pointer<DT>::type>::value, ptrType<DT>()>::visit(v, argNames ? *argNames : nullptr, t);
 		}
 		return r == 0 ? TypeVisitor<Ts...>::visit(v, argNames ? ++argNames : nullptr, defaults, defaultCount) : r;
 	}
@@ -810,9 +816,9 @@ namespace Meta
 	{
 		// collect T
 		typedef std::decay<T>::type DT;
+		typedef std::remove_pointer<DT>::type removedPtr;
 		const auto i = std::tuple_size<Tuple>::value - sizeof...(Args) - 1;
-		const auto isVoidPtrPtr = std::is_pointer<DT>::value && std::is_class<std::remove_pointer<DT>::type>::value;
-		if(VisitSpecial<T, std::is_same<std::string, DT>::value || std::is_same<T, const char*>::value, std::is_class<DT>::value, isVoidPtrPtr>::visit(v, names ? names[i] : nullptr, std::get<i>(args)) != 0)
+		if(VisitSpecial<T, std::is_same<std::string, DT>::value || std::is_same<T, const char*>::value, std::is_class<removedPtr>::value, ptrType<DT>()>::visit(v, names ? names[i] : nullptr, std::get<i>(args)) != 0)
 		{
 			if ((sizeof...(Args)) >= defaultCount)
 				return false;
@@ -835,7 +841,13 @@ namespace Meta
 	template<typename T>
 	Object& getMeta()
 	{
-		static Object o = instanceMeta<T>();
+		auto init = []()
+		{
+			Object o = instanceMeta<T>();
+			o.setSize(sizeof(T));
+			return o;
+		};
+		static Object o = init();
 		return o;
 	}
 
