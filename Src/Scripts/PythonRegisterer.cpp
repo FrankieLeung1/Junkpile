@@ -103,12 +103,11 @@ template<typename T> bool Meta::PythonRegisterer::visitMember(const char* name, 
 	return true;
 }
 
-
 PyObject* Meta::PythonRegisterer::instancePointer(void* ptr)
 {
 	InstanceData* o = PyObject_NEW(InstanceData, &m_typeDef);
 	o->m_class = this;
-	new(&o->m_ptr) Any(ptr); // uhhh, `Any` isn't initialized in PyObject_NEW so let's do it here (destruct somewhere?)
+	new(&o->m_ptr) Any(ptr);
 	o->m_owns = false;
 	return (PyObject*)o;
 }

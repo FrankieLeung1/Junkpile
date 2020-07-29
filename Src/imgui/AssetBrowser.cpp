@@ -42,7 +42,7 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
 
         if (!resPath)
         {
-            static std::string resPathStr = std::string(Framework::getResPath()) + "2D assets";
+            static std::string resPathStr = std::string(Framework::getResPath());
             resPath = resPathStr.c_str();
         }
 
