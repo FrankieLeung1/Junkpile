@@ -24,13 +24,14 @@ protected:
 		std::string m_path;
 		std::mutex m_mutex;
 
-		struct Texture
+		struct File
 		{
+			enum Type { Texture, Script, Folder };
+			Type m_type;
 			std::string m_name;
-			int m_width, m_height;
-			std::shared_ptr<Rendering::Texture> m_texture;
+			ResourcePtr<Rendering::Texture> m_texture;
 		};
-		std::vector<std::shared_ptr<Texture>> m_textures;
+		std::vector<std::shared_ptr<File>> m_files;
 	} m_current;
 	
 };

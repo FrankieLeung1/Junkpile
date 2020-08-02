@@ -3,6 +3,7 @@
 #include "Surface.h"
 #include "DataSource.h"
 typedef void* ImTextureID;
+class File;
 namespace Rendering
 {
 	class Device;
@@ -64,5 +65,33 @@ namespace Rendering
 		VulkanImplImgui* m_p;
 
 		friend class Unit;
+
+	public:
+		class Loader : public Resource::Loader
+		{
+		public:
+			enum Error {
+				FileNotFound = 1
+			};
+
+		public:
+			Loader();
+			Loader(StringView path);
+			~Loader() override;
+			Resource* load(std::tuple<int, std::string>* error) override;
+			Loader* createReloader() override;
+			std::string getDebugName() const override;
+			StringView getTypeName() const override;
+
+		protected:
+			std::string m_path;
+			ResourcePtr<File> m_file;
+		};
+
+		static Loader* createLoader(StringView path);
+		static Resource* getSingleton();
+
+		static std::tuple<bool, std::size_t> getSharedHash();
+		static std::tuple<bool, std::size_t> getSharedHash(StringView path);
 	};
 }

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 #include "Texture.h"
-
+#include "../Misc/Misc.h"
 #include "../Files/File.h"
 #include "VulkanHelpers.h"
 #include "RenderingDevice.h"
@@ -512,4 +512,90 @@ Unit& Texture::getSampler(std::size_t index)
 	}
 
 	return *m_defaultSampler;
+}
+
+Texture::Loader::Loader():
+m_path(),
+m_file(EmptyPtr)
+{
+}
+
+Texture::Loader::Loader(StringView path):
+m_path(path.c_str()),
+m_file(NewPtr, path)
+{
+}
+
+Texture::Loader::~Loader()
+{
+}
+
+Resource* Texture::Loader::load(std::tuple<int, std::string>* error)
+{
+	if (!ready(error, m_file))
+		return nullptr;
+
+	std::string ext = m_path.substr(m_path.find_last_of('.'));
+	if (ext == ".png")
+	{
+		unsigned char* pixels;
+		unsigned int width, height;
+		int pngerror = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)m_file->getContents().c_str(), m_file->getSize());
+		if (pngerror == 0)
+		{
+			Rendering::Texture* texture = new Rendering::Texture();
+			texture->setSoftware(width, height, 32);
+			char* dest = (char*)texture->map();
+			memcpy(dest, pixels, width * height * 4);
+			texture->unmap();
+			free(pixels);
+
+			return texture;
+		}
+		else
+		{
+			*error = { -1, stringf("loadpng failed \"%s\" (%d)", m_path.c_str(), pngerror) };
+		}
+	}
+	else
+	{
+		*error = { -1, stringf("Unknown texture format \"%s\"", m_path) };
+	}
+
+	return nullptr;
+}
+
+Texture::Loader* Texture::Loader::createReloader()
+{
+	return nullptr;
+}
+
+std::string Texture::Loader::getDebugName() const
+{
+	return m_path;
+}
+
+StringView Texture::Loader::getTypeName() const
+{
+	return "Texture";
+}
+
+Texture::Loader* Texture::createLoader(StringView path)
+{
+	return new Loader(path);
+}
+
+std::tuple<bool, std::size_t> Texture::getSharedHash()
+{
+	return { false, 0 };
+}
+
+std::tuple<bool, std::size_t> Texture::getSharedHash(StringView path)
+{
+	return { true, std::hash<const char*>{}(path.c_str()) };
+}
+
+Resource* Texture::getSingleton()
+{
+	return nullptr;
 }

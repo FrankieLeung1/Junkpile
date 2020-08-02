@@ -1,6 +1,13 @@
 import Junkpile
 from Junkpile import vec2, vec4
 
+def my_function(e):
+    print("update!", e.m_delta)
+
+events.addListener_UpdateEvent(my_function, 0)
+
+
+
 gen = Junkpile.TextureGenerator()
 gen.clear(vec4( `RGBA:Background:1.0, 0.0, 0.0, 1.0` ))
 gen.text(`string:Label:"PROTOTYPE TEXTURE"`, vec2( 0.0, 0.0 ), 10, vec4(1.0, 1.0, 1.0, 1.0))

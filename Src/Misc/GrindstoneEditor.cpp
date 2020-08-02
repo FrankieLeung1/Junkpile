@@ -9,7 +9,7 @@
 GrindstoneEditor::GrindstoneEditor() :
 m_data(NewPtr, "Grindstone/GrindstoneData.lua", 0),
 m_logoFile(NewPtr, "Grindstone/Logo.png"),
-m_logoTexture(TakeOwnershipPtr, new Rendering::Texture),
+m_logoTexture(NewPtr, "Grindstone/Logo.png"),
 m_textEditor(nullptr)
 {
 	m_textEditor = new TextEditor;
@@ -30,18 +30,6 @@ std::string GrindstoneEditor::loadData()
 	std::tuple<int, std::string> e;
 	if (m_data.error(&e))
 		return std::get<1>(e);
-
-	unsigned char* pixels;
-	unsigned int width, height;
-	int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)m_logoFile->getContents().c_str(), m_logoFile->getSize());
-	if (error == 0)
-	{
-		m_logoTexture->setSoftware(width, height, 32);
-		char* dest = (char*)m_logoTexture->map();
-		memcpy(dest, pixels, width * height * 4);
-		m_logoTexture->unmap();
-		free(pixels);
-	}
 
 	auto loadIntoVector = [](const LuaTable& data, std::vector<char>& vector)
 	{

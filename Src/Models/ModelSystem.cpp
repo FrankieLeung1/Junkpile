@@ -86,29 +86,16 @@ void ModelSystem::test()
 	ResourcePtr<ComponentManager> components;
 	auto entityIt = components->addEntity<TransformComponent, ModelComponent>();
 	ModelComponent* model = entityIt.get<ModelComponent>();
-	model->m_model = models->getModel("Models/Model/characterMedium.fbx");
+	model->m_model = models->getModel("Art/Characters1/Model/characterMedium.fbx");
+	model->m_texture1 = ResourcePtr<Rendering::Texture>(NewPtr, "Art/Characters1/Skins/criminalMaleA.png");
 	//model->m_model = models->getModel("Models/Animations/idle.fbx");
 	
+	model->m_texture1.waitReady(nullptr);
 
-	ResourcePtr<File> file(NewPtr, "Models/Skins/criminalMaleA.png");
-	//ResourcePtr<File> file(NewPtr, "Models/Skins/uv.png");
-	unsigned char* pixels;
-	unsigned int width, height;
-	int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents().c_str(), file->getSize());
-	if (error == 0)
-	{
-		model->m_texture1 = ResourcePtr<Rendering::Texture>(TakeOwnershipPtr, new Rendering::Texture());
-		model->m_texture1->setSoftware(width, height, 32);
-		char* dest = (char*)model->m_texture1->map();
-		memcpy(dest, pixels, width * height * 4);
-		model->m_texture1->unmap();
-		free(pixels);
-
-		Rendering::Unit unit;
-		unit.in(model->m_texture1);
-		unit.out(*model->m_texture1);
-		unit.submit();
-	}
+	Rendering::Unit unit;
+	unit.in(model->m_texture1);
+	unit.out(*model->m_texture1.get());
+	unit.submit();
 	
 	auto cameraIt = components->addEntity<TransformComponent, CameraComponent>();
 	cameraIt.get<CameraComponent>()->m_controlType = CameraComponent::Orbit;

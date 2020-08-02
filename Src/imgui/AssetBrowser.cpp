@@ -47,7 +47,12 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
         }
 
         ImGui::Columns(2);
-        ImGui::SetColumnWidth(-1, 300);
+        static bool first = true;
+        if (first)
+        {
+            ImGui::SetColumnWidth(-1, 200);
+            first = false;
+        }
 
         // left
         ImGui::BeginChild("left pane", ImVec2(0, 0), false);
@@ -61,48 +66,59 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
         // right
         ImGui::BeginGroup();
         ImGui::BeginChild("top part", ImVec2(0, 18));
-        ImGui::Text("%s (%d)", selected ? selected : "(null)", m_current.m_textures.size());
+        ImGui::Text("%s (%d)", selected ? selected : "(null)", m_current.m_files.size());
         ImGui::Separator();
         ImGui::EndChild();
 
-        ImGui::BeginChild("item view");
+        float itemViewHeight = ImGui::GetFrameHeightWithSpacing() - 52.0f;
+        ImGui::BeginChild("item view", ImVec2(0.0f, itemViewHeight));
         float padding = ImGui::GetStyle().FramePadding.x;
         float spacing = ImGui::GetStyle().ItemSpacing.x;
         int itemsPerRow = (int) (ImGui::GetWindowContentRegionWidth() / (32.0f + (padding * 2) + spacing));
         itemsPerRow = std::max(itemsPerRow, 1);
-        for (int i = 0; i < m_current.m_textures.size(); i++)
+        for (int i = 0; i < m_current.m_files.size(); i++)
         {
-            const CurrentInfo::Texture& current = *m_current.m_textures[i];
-            Rendering::Texture* texture = &(*current.m_texture);
+            const CurrentInfo::File& current = *m_current.m_files[i];
+            ResourcePtr<Rendering::Texture> texture = current.m_texture;
+            std::tuple<int, std::string> error;
+            if(!texture.ready(&error) || std::get<0>(error) != 0)
+                continue;
+
+            int width = (int)current.m_texture->getWidth(), height = (int)current.m_texture->getHeight();
             if (!texture->getVkImage())
             {
                 ResourcePtr<VulkanFramework> vf;
                 vf->uploadTexture(&(*texture));
             }
+
             ImGui::ImageButton(texture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1);
             if (ImGui::IsItemHovered())
             {
                 ImVec2 size;
-                if (current.m_width < 256 && current.m_height < 256)
+                if (width < 256 && height < 256)
                 {
-                    size = ImVec2((float)current.m_width, (float)current.m_height);
+                    size = ImVec2((float)width, (float)height);
                 }
                 else
                 {
-                    float ratio = (float)current.m_width / (float)current.m_height;
+                    float ratio = (float)width / (float)height;
                     size = ImVec2(256.0f * ratio, 256.0f);
                 }
 
                 ImGui::BeginTooltip();                
                 ImGui::Image(texture, size);
                 ImGui::Separator();
-                ImGui::Text("%s (%d x %d)", current.m_name.c_str(), current.m_width, current.m_height);
+                ImGui::Text("%s (%d x %d)", current.m_name.c_str(), width, height);
                 ImGui::EndTooltip();
             }
 
             if (i % itemsPerRow != itemsPerRow - 1)
                 ImGui::SameLine();
         }
+        ImGui::EndChild();
+        ImGui::BeginChild("OpenAsLevel");
+        ImGui::SameLine(ImGui::GetColumnWidth() - 100.0f);
+        ImGui::Button("Open as level");
         ImGui::EndChild();
         ImGui::EndGroup();
 
@@ -121,7 +137,7 @@ void AssetBrowser::setCurrent(const char* path)
     device->waitIdle();
 
     std::lock_guard<std::mutex> l(m_current.m_mutex);
-    m_current.m_textures.clear();
+    m_current.m_files.clear();
     m_current.m_path = path;
 
     if (!path)
@@ -144,31 +160,20 @@ void AssetBrowser::setCurrent(const char* path)
             if (currentFile.m_type != FileManager::Type::File)
                 continue;
 
-            if (path.substr(path.find_last_of('.')) == ".png")
+            std::string ext = path.substr(path.find_last_of('.'));
+            if (ext == ".png")
             {
-                ResourcePtr<File> file(NewPtr, path.c_str());
-                ResourcePtr<VulkanFramework> vf;
-
-                unsigned char* pixels;
-                unsigned int width, height;
-                int error = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file->getContents().c_str(), file->getSize());
-                if (error == 0)
+                std::size_t name = path.find_last_of('/') + 1;
                 {
-                    std::shared_ptr<Rendering::Texture> texture(new Rendering::Texture());
-                    texture->setSoftware(width, height, 32);
-                    char* dest = (char*)texture->map();
-                    memcpy(dest, pixels, width * height * 4);
-                    texture->unmap();
-                    free(pixels);
-
-                    std::size_t name = path.find_last_of('/') + 1;
-                    {
-                        std::lock_guard<std::mutex> l(m_current.m_mutex);
-                        m_current.m_textures.push_back(std::shared_ptr<CurrentInfo::Texture>(new CurrentInfo::Texture{ path.substr(name), (int)width, (int)height, texture }));
-                        if (folderPath != m_current.m_path)
-                            return;
-                    }
+                    std::lock_guard<std::mutex> l(m_current.m_mutex);
+                    m_current.m_files.push_back(std::shared_ptr<CurrentInfo::File>(new CurrentInfo::File{ CurrentInfo::File::Type::Texture, path.substr(name), {NewPtr, StringView(path)} }));
+                    if (folderPath != m_current.m_path)
+                        return;
                 }
+            }
+            else if (ext == ".py")
+            {
+
             }
         }
     };
