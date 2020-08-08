@@ -142,5 +142,24 @@ protected:
 	std::function<void()> m_exit;
 };
 
+template<typename T, typename Friend = Scope, typename UnderlyingType = void*, UnderlyingType InvalidValue = nullptr> // use Scope as a dummy
+class OpaqueHandle
+{
+public:
+	typedef OpaqueHandle<T, Friend, UnderlyingType, InvalidValue> MyT;
+	OpaqueHandle() = default;
+	OpaqueHandle(const MyT&) = default;
+	~OpaqueHandle() = default;
+	MyT& operator=(const MyT& p) { m_value = p.m_value; return *this; }
+	bool operator==(const MyT& p) const { return p.m_value == m_value; }
+	operator bool() const { return m_value == InvalidValue; }
+
+protected:
+	MyT& operator=(const UnderlyingType& v) { m_value = v; return *this; }
+	UnderlyingType m_value{ InvalidValue };
+	operator UnderlyingType () { return m_value; }
+	friend typename Friend;
+};
+
 #define HERE { LOG_F(INFO, "HERE\n"); }; (void)0
 #define HERE_SCOPE(varName) { LOG_F(INFO, "HERE START (varName)\n"); } Scope varName([](){LOG_F(INFO, "HERE END (varName)\n");)}); (void)0

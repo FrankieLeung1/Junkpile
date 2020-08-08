@@ -7,7 +7,7 @@
 #include "EntityIterator.h"
 
 class ComponentManager;
-typedef unsigned int Entity;
+struct Entity : public OpaqueHandle<Entity, ComponentManager, unsigned int, std::numeric_limits<unsigned int>::max()> { friend class PhysicsSystem; };
 typedef std::size_t ComponentId;
 #define INVALID_ENTITY 0
 
@@ -150,6 +150,31 @@ protected:
 	T* m_component;
 };
 
+
+template<typename Super>
+struct ComponentBase
+{
+	Entity m_entity;
+	static ComponentId componentId() { return typeid(Super).hash_code(); }
+};
+
+template<typename Super, typename System = void>
+struct Component : public ComponentBase<Super>
+{
+	template<class T = System> static typename std::enable_if<std::is_same<T, void>::value, void>::type initSystem() { }
+	template<class T = System> static typename std::enable_if<!std::is_same<T, void>::value, void>::type initSystem() { SingletonResource<T>::getSingleton(); }
+};
+
+struct EmptyComponent : public Component<EmptyComponent>
+{
+	//static constexpr const char* m_cid = "Empty";
+};
+
+struct NameComponent : public Component<NameComponent>
+{
+	char m_name[32];
+};
+
 // ----------------------- IMPLEMENTATION ----------------------- 
 template<typename T>
 void ComponentManager::addComponentType(std::size_t reserve)
@@ -179,10 +204,10 @@ EntityIterator<Components...> ComponentManager::addEntity()
 	addComponents<Components...>(m_nextFreeEntityId);
 
 	EntityIterator<Components...> result(this, true);
-	result.m_currentEntity = m_nextFreeEntityId - 1; // set to the entity before and next()
+	result.m_currentEntity.m_value = m_nextFreeEntityId.m_value - 1; // set to the entity before and next()
 	result.next();
 
-	m_nextFreeEntityId++;
+	m_nextFreeEntityId.m_value++;
 	m_entityCount++;
 
 	return std::move(result);
@@ -194,8 +219,8 @@ EntityIterator<Component, Components...> ComponentManager::addComponents(Entity 
 	//static_assert(std::is_trivially_copyable<Component>::value, "Components must be a POD type");
 	static_assert(std::is_base_of<::ComponentBase<Component>, Component>::value, "Components must inherit from Component<>");
 
-	if (eid == INVALID_ENTITY)
-		eid = m_nextFreeEntityId++;
+	if (!eid)
+		eid.m_value = m_nextFreeEntityId.m_value++;
 
 	Component::initSystem();
 
@@ -215,7 +240,7 @@ EntityIterator<Component, Components...> ComponentManager::addComponents(Entity 
 	addComponents<Components...>(eid);
 
 	EntityIterator<Component, Components...> result(this, true);
-	result.m_currentEntity = eid - 1; // set to the entity before and next()
+	result.m_currentEntity.m_value = eid - 1; // set to the entity before and next()
 	result.next();
 	return std::move(result);
 }
@@ -308,7 +333,7 @@ template<int> void ComponentManager::removeComponents(Entity){}
 template<typename... Components> EntityIterator<Components...> ComponentManager::findEntity(Entity e)
 {
 	EntityIterator<Components...> it(this, false);
-	it.m_currentEntity = e - 1;
+	it.m_currentEntity.m_value = e.m_value - 1;
 	it.next();
 
 	return it.m_currentEntity == e ? it : EntityIterator<Components...>(this, false);
@@ -346,7 +371,7 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 {
 	CHECK_F(it != nullptr);
 
-	it->m_currentEntity += 1;
+	it->m_currentEntity.m_value += 1;
 
 	bool hasValidComponent = false;
 	bool foundAllComponents = true;
@@ -454,7 +479,7 @@ template <typename... Ts>
 EntityIterator<Ts...>::EntityIterator(ComponentManager* manager, bool allComponentsMustExist) :
 m_manager(manager),
 m_allComponentsMustExist(allComponentsMustExist),
-m_currentEntity(INVALID_ENTITY)
+m_currentEntity()
 {
 	CHECK_F(manager->hasComponentType<Ts...>());
 	manager->setupIterator(std::true_type(), *this);
@@ -537,7 +562,7 @@ void EntityIterator<Ts...>::accept(std::true_type, VFN fn)
 	/*args.m_index*/	i,
 	/*args.m_id*/		ComponentType::componentId(),
 	/*args.m_size*/		sizeof(ComponentType),
-	/*args.m_entity*/	p ? p->m_entity : INVALID_ENTITY,
+	/*args.m_entity*/	p ? p->m_entity : Entity(),
 	/*args.m_vp*/		vp
 	};
 	

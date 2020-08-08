@@ -52,6 +52,8 @@ struct ResourceStateChanged : public Event<ResourceStateChanged>
 	ResourceStateChanged(ResourceData* data = nullptr, ResourceData::State state = ResourceData::State::WAITING) :m_resourceData(data), m_newState(state) {}
 };
 
+class ScriptManager;
+struct ScriptUnloadedEvent;
 class EventManager : public SingletonResource<EventManager>
 {
 public:
@@ -75,7 +77,10 @@ public:
 	static void test();
 
 protected:
+	void adjustListenerData(EventBase::Id, int priority, std::size_t index); // adjust m_listenerData when given listener is deleted
+	void onNewListener(EventBase::Id eventId, int priority, std::size_t index);
 	void clearEventBuffer(std::vector<char>&, std::vector<TypeHelper*>&);
+	void onScriptUnloaded(ScriptUnloadedEvent*);
 
 protected:
 	typedef VariableSizedMemoryPool<EventCallback, EventCallback::PoolHelper> FunctionPool;
@@ -83,9 +88,22 @@ protected:
 	std::map<EventBase::Id, std::map<int, FunctionPool> > m_queuedListeners;
 	std::map<EventBase::Id, const char*> m_idToName;
 
+	struct ListenerData
+	{
+		std::string m_path; //temp
+		Any m_script; // typeof ScriptManager::Environment::Script
+		EventBase::Id m_eventId;
+		int m_priority;
+		std::size_t m_index;
+		ListenerData& operator=(const ListenerData& d) { m_path = d.m_path; m_script = d.m_script; m_eventId = d.m_eventId; m_priority = d.m_priority; m_index = d.m_index; return *this; }
+		bool operator==(const ListenerData& d) const { return d.m_script == m_script && d.m_eventId == m_eventId && d.m_priority == m_priority && d.m_index == m_index; }
+	};
+	std::vector<ListenerData> m_listenerData;
+
 	std::vector<char> m_oneFrameBuffer;
 	std::vector<TypeHelper*> m_oneFrameBufferTypes;
 	std::forward_list< std::unique_ptr<EventBase> > m_persistentEvents;
+	bool m_listenersRegistered;
 };
 
 // ----------------------- IMPLEMENTATION ----------------------- 
@@ -119,7 +137,11 @@ template<typename EventType, typename FunctionType> void EventManager::addListen
 {
 	//static_assert(std::is_same<decltype(fn((EventType*)nullptr)), ListenerResult>::value, "fn must return ListenerResult");
 	// TODO: static_assert the arg types
-	m_queuedListeners[EventType::id()][priority].push_back(makeFunction(fn));
+	auto& eventListeners = m_queuedListeners[EventType::id()];
+	auto& priortyListeners = eventListeners[priority];
+	std::size_t index = priortyListeners.size();
+	priortyListeners.push_back(makeFunction(fn));
+	onNewListener(EventType::id(), priority, index);
 }
 
 template<typename Event> void EventManager::addListener(std::function<void(Event*)> fn, int priority)

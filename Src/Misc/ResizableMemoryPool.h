@@ -58,6 +58,8 @@ public:
 	Iterator begin();
 	Iterator end();
 
+	std::size_t size() const; // probably not the best name but matches std
+
 	static void test();
 
 protected:
@@ -65,12 +67,14 @@ protected:
 
 	std::vector<char> m_buffer;
 	std::size_t m_size; // actual used size (in bytes); m_buffer.size() is our capacity
+	std::size_t m_elementCount;
 };
 
 // ----------------------- IMPLEMENTATION ----------------------- 
 template<typename T, typename TypeHelper>
 VariableSizedMemoryPool<T, TypeHelper>::VariableSizedMemoryPool():
-m_size(0)
+m_size(0),
+m_elementCount(0)
 {
 	
 }
@@ -106,14 +110,17 @@ void VariableSizedMemoryPool<T, TypeHelper>::move_back(VariableSizedMemoryPool<T
 
 	void* newMemory = allocateBack(m.m_size);
 	TypeHelper::move(newMemory, m.m_buffer.data(), m.m_size);
+	m_elementCount += m.m_elementCount;
 	m.m_buffer.clear();
 	m.m_size = 0;
+	m.m_elementCount = 0;
 }
 
 template<typename T, typename TypeHelper>
 template<typename NewElement>
 NewElement* VariableSizedMemoryPool<T, TypeHelper>::push_back(const NewElement& element)
 {
+	m_elementCount++;
 	return new(allocateBack(sizeof(NewElement))) NewElement(element);
 }
 
@@ -121,6 +128,7 @@ template<typename T, typename TypeHelper>
 template<typename NewElement, typename... Ts> 
 NewElement* VariableSizedMemoryPool<T, TypeHelper>::emplace_back(Ts&&... args)
 {
+	m_elementCount++;
 	return new(allocateBack(sizeof(NewElement))) NewElement(std::forward<Ts>(args)...);
 }
 
@@ -128,6 +136,7 @@ template<typename T, typename TypeHelper>
 template<typename NewElement, typename... Ts>
 NewElement* VariableSizedMemoryPool<T, TypeHelper>::emplace_back_with_size(std::size_t size, Ts&&... args)
 {
+	m_elementCount++;
 	return new(allocateBack(size)) NewElement(std::forward<Ts>(args)...);
 }
 
@@ -144,6 +153,7 @@ typename VariableSizedMemoryPool<T, TypeHelper>::Iterator VariableSizedMemoryPoo
 		TypeHelper::destruct(*current);
 		static_cast<char*>(current) += elementSize;
 		m_size -= elementSize;
+		m_elementCount -= 1;
 	}
 
 	return Iterator(m_buffer.erase(begin, end));
@@ -164,6 +174,7 @@ typename VariableSizedMemoryPool<T, TypeHelper>::Iterator VariableSizedMemoryPoo
 		std::size_t elementSize = TypeHelper::getSize(&(*current));
 		TypeHelper::destruct(&(*current++));
 		m_size -= elementSize;
+		m_elementCount -= 1;
 	}
 	CHECK_F(m_size >= 0);
 
@@ -189,6 +200,12 @@ template<typename T, typename TypeHelper>
 typename VariableSizedMemoryPool<T, TypeHelper>::Iterator VariableSizedMemoryPool<T, TypeHelper>::end()
 {
 	return Iterator(m_buffer.begin() + m_size);
+}
+
+template<typename T, typename TypeHelper>
+std::size_t VariableSizedMemoryPool<T, TypeHelper>::size() const
+{
+	return m_elementCount;
 }
 
 template<typename T, typename TypeHelper>

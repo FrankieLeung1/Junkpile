@@ -132,7 +132,7 @@ std::string Markup::markUp(StringView scriptView) const
 		lastMarksEnd = mark.m_end;
 	}
 
-	std::size_t s = scriptView.size() - lastMarksEnd - 1;
+	std::size_t s = scriptView.size() - lastMarksEnd;
 	ss.write(script + lastMarksEnd, s);
 	return std::move(ss.str());
 }

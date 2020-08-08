@@ -6,6 +6,7 @@
 #include "../Rendering/RenderingDevice.h"
 #include "../Framework/Framework.h"
 #include "../Threading/ThreadPool.h"
+#include "../Scripts/ScriptManager.h"
 
 AssetBrowser::AssetBrowser()
 {
@@ -74,6 +75,7 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
         ImGui::BeginChild("item view", ImVec2(0.0f, itemViewHeight));
         float padding = ImGui::GetStyle().FramePadding.x;
         float spacing = ImGui::GetStyle().ItemSpacing.x;
+        bool hasScript = false;
         int itemsPerRow = (int) (ImGui::GetWindowContentRegionWidth() / (32.0f + (padding * 2) + spacing));
         itemsPerRow = std::max(itemsPerRow, 1);
         for (int i = 0; i < m_current.m_files.size(); i++)
@@ -114,12 +116,23 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
 
             if (i % itemsPerRow != itemsPerRow - 1)
                 ImGui::SameLine();
+
+            hasScript = (hasScript || current.m_type == CurrentInfo::File::Script);
         }
         ImGui::EndChild();
-        ImGui::BeginChild("OpenAsLevel");
-        ImGui::SameLine(ImGui::GetColumnWidth() - 100.0f);
-        ImGui::Button("Open as level");
-        ImGui::EndChild();
+        if (hasScript)
+        {
+            ResourcePtr<ScriptManager> scripts;
+            ImGui::BeginChild("Run");
+            ImGui::SameLine(ImGui::GetColumnWidth() - 100.0f);
+            if (ImGui::Button("Run All"))
+            {
+                // unload current level
+                scripts->runScriptsInFolder(m_current.m_path);
+            }
+            ImGui::EndChild();
+        }
+
         ImGui::EndGroup();
 
         ImGui::Columns(1);
@@ -160,21 +173,26 @@ void AssetBrowser::setCurrent(const char* path)
             if (currentFile.m_type != FileManager::Type::File)
                 continue;
 
+            std::shared_ptr<CurrentInfo::File> data;
+            std::size_t name = path.find_last_of('/') + 1;
             std::string ext = path.substr(path.find_last_of('.'));
             if (ext == ".png")
             {
-                std::size_t name = path.find_last_of('/') + 1;
-                {
-                    std::lock_guard<std::mutex> l(m_current.m_mutex);
-                    m_current.m_files.push_back(std::shared_ptr<CurrentInfo::File>(new CurrentInfo::File{ CurrentInfo::File::Type::Texture, path.substr(name), {NewPtr, StringView(path)} }));
-                    if (folderPath != m_current.m_path)
-                        return;
-                }
+                data = std::shared_ptr<CurrentInfo::File>(new CurrentInfo::File{ CurrentInfo::File::Type::Texture, path.substr(name), {NewPtr, StringView(path)} });
             }
             else if (ext == ".py")
             {
-
+                data = std::shared_ptr<CurrentInfo::File>(new CurrentInfo::File{ CurrentInfo::File::Type::Script, path.substr(name), {NewPtr, StringView("Art/File Icons/Python.png")} });
             }
+
+            if(data)
+            {
+                std::lock_guard<std::mutex> l(m_current.m_mutex);
+                m_current.m_files.push_back(data);
+            }
+
+			if (folderPath != m_current.m_path)
+				return;
         }
     };
 

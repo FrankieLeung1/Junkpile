@@ -12,7 +12,7 @@ m_idSprites(),
 m_nameSprites(),
 m_nextSpriteId()
 {
-	m_nextSpriteId.makeValid();
+	m_nextSpriteId.m_value = 0u;
 }
 
 SpriteManager::~SpriteManager()
@@ -32,7 +32,7 @@ SpriteId SpriteManager::getSprite(const char* path)
 		// load it
 		ResourcePtr<SpriteData> data{ NewPtr, normalizedPath.c_str() };
 		m_nameSprites.insert(decltype(m_nameSprites)::value_type(normalizedPath, data));
-		m_nextSpriteId.advanceHandle();
+		m_nextSpriteId.m_value++;
 		sprite = m_nextSpriteId;
 		m_idSprites.insert(decltype(m_idSprites)::value_type(sprite, data));
 

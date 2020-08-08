@@ -24,6 +24,7 @@
 #include <set>
 #include <list>
 #include <forward_list>
+#include <stack>
 #include <string>
 #include <map>
 #include <fstream>

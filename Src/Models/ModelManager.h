@@ -2,9 +2,11 @@
 
 #include "../Resources/ResourceManager.h"
 #include "../ECS/ECS.h"
+#include "../Misc/Misc.h"
 
 class File;
-struct Model : public Handle<Model> { };
+class ModelManager;
+struct Model : public OpaqueHandle<Model, ModelManager, unsigned int, std::numeric_limits<unsigned int>::max()> { };
 namespace Rendering
 {
 	class Buffer;

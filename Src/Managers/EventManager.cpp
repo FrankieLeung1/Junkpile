@@ -2,10 +2,10 @@
 #include "EventManager.h"
 #include "../imgui/ImGuiManager.h"
 #include "../Managers/TimeManager.h"
+#include "../Scripts/ScriptManager.h"
 
-// IDEA: prioritize listeners. Process higher priority listeners first
-
-EventManager::EventManager()
+EventManager::EventManager():
+m_listenersRegistered(false)
 {
 }
 
@@ -16,6 +16,12 @@ EventManager::~EventManager()
 
 void EventManager::process(float delta)
 {
+	if (!m_listenersRegistered)
+	{
+		m_listenersRegistered = true;
+		addListener<ScriptUnloadedEvent>([this](ScriptUnloadedEvent* e) { onScriptUnloaded(e); });
+	}
+
 	std::vector<char> processingEvents = std::move(m_oneFrameBuffer);
 	std::vector<TypeHelper*> types = std::move(m_oneFrameBufferTypes);
 
@@ -45,6 +51,7 @@ void EventManager::process(float delta)
 			for (auto it = listeners.rbegin(); it != listeners.rend(); ++it)
 			{
 				int priority = it->first;
+				int listenerIndex = 0;
 				FunctionPool& listenersOfSamePriority = it->second;
 				for (auto it = listenersOfSamePriority.begin(); it != listenersOfSamePriority.end();)
 				{
@@ -53,10 +60,16 @@ void EventManager::process(float delta)
 					if (event->m_discardEvent)
 						goto endOfEvent;
 
-					if(event->m_discardListener)
+					if (event->m_discardListener)
+					{
+						adjustListenerData(event->m_id, priority, listenerIndex);
 						it = listenersOfSamePriority.erase(it);
+					}
 					else
+					{
+						++listenerIndex;
 						++it;
+					}
 				}
 			}
 
@@ -74,6 +87,8 @@ void EventManager::process(float delta)
 		std::map<int, FunctionPool>& map = m_listeners[event->m_id];
 		for (auto it = map.rbegin(); it != map.rend(); ++it)
 		{
+			int priority = it->first;
+			int listenerIndex = 0;
 			FunctionPool& listeners = it->second;
 			for (auto& listener = listeners.begin(); listener != listeners.end();)
 			{
@@ -86,9 +101,15 @@ void EventManager::process(float delta)
 				}
 
 				if (event->m_discardListener)
+				{
+					adjustListenerData(event->id(), priority, listenerIndex);
 					listener = listeners.erase(listener);
+				}
 				else
+				{
 					++listener;
+					++listenerIndex;
+				}
 			}
 		}
 
@@ -103,6 +124,46 @@ void EventManager::process(float delta)
 			prevIt = it;
 			++it;
 		}
+	}
+}
+
+void EventManager::adjustListenerData(EventBase::Id id, int priority, std::size_t index)
+{
+	for (auto dataIt = m_listenerData.begin(); dataIt != m_listenerData.end();)
+	{
+		if (dataIt->m_eventId == id && dataIt->m_priority == priority)
+		{
+			if (dataIt->m_index > index) // if we're after the deleted listener
+			{
+				LOG_F(INFO, "Adjusting from %d to %d\n", dataIt->m_index, dataIt->m_index - 1);
+				dataIt->m_index--;
+				++dataIt;
+			}
+			else if (dataIt->m_index == index) // if we are the deleted listener
+			{
+				LOG_F(INFO, "found %d\n", index);
+				dataIt = m_listenerData.erase(dataIt);
+			}
+			else
+				++dataIt;
+		}
+		else
+			++dataIt;
+	}
+}
+
+void EventManager::onNewListener(EventBase::Id eventId, int priority, std::size_t index)
+{
+	if (!ScriptManager::s_inited)
+	{
+		// special case: ScriptManager registers listeners which makes a circular loop if we're constructing
+		m_listenerData.push_back({"", ScriptManager::Environment::InvalidScript, eventId, priority, index });
+	}
+	else
+	{
+		ResourcePtr<ScriptManager> scripts;
+		StringView path = scripts->getScriptPath(scripts->getRunningScript());
+		m_listenerData.push_back({ path, scripts->getRunningScript(), eventId, priority, index });
 	}
 }
 
@@ -171,6 +232,7 @@ void EventManager::clearAllListeners()
 {
 	m_listeners.clear();
 	m_queuedListeners.clear();
+	m_listenerData.clear();
 }
 
 void EventManager::clearEventBuffer(std::vector<char>& buffer, std::vector<TypeHelper*>& types)
@@ -185,6 +247,44 @@ void EventManager::clearEventBuffer(std::vector<char>& buffer, std::vector<TypeH
 	}
 	buffer.clear();
 	types.clear();
+}
+
+void EventManager::onScriptUnloaded(ScriptUnloadedEvent* e)
+{
+	ResourcePtr<ScriptManager> scripts;
+	std::vector<ListenerData> scriptsToRemove;
+	for (std::vector<ListenerData>::iterator it = m_listenerData.begin(); it != m_listenerData.end(); ++it)
+	{
+		if (!it->m_script)
+			continue;
+
+		auto script = it->m_script.get<ScriptManager::Environment::Script>();
+		StringView path = scripts->getScriptPath(script);
+		if (path)
+		{
+			// BUG? Expression: vector iterators incompatible
+			/*auto begin = e->m_paths.begin();
+			auto end = e->m_paths.end();
+			auto found = std::find(begin, end, path);*/
+
+			for (const StringView& _path : e->m_paths)
+			{
+				if(_path == path)
+					scriptsToRemove.push_back(*it);
+			}
+		}
+	}
+
+	for(auto& script : scriptsToRemove)
+	{
+		FunctionPool& pool = m_listeners[script.m_eventId][script.m_priority];
+		auto it = pool.begin();
+		for (int i = 0; i < script.m_index; i++)
+			++it;
+
+		pool.erase(it);
+		adjustListenerData(script.m_eventId, script.m_priority, script.m_index);
+	}
 }
 
 void EventBase::discardListener()

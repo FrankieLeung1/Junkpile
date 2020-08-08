@@ -8,7 +8,7 @@
 
 ModelManager::ModelManager()
 {
-	m_nextModelId.makeValid();
+	m_nextModelId.m_value = 0u;
 }
 
 ModelManager::~ModelManager()
@@ -29,7 +29,8 @@ Model ModelManager::getModel(const char* _path)
 			return model.first;
 	}
 
-	Model model = m_nextModelId.getAndAdvance();
+	Model model = m_nextModelId;
+	m_nextModelId.m_value++;
 	auto it = m_models.emplace(std::make_pair(model, ModelData(path.c_str())));
 	ModelData& modelData = it.first->second;
 

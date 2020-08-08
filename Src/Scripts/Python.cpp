@@ -90,7 +90,7 @@ PythonEnvironment::Script PythonEnvironment::newScript(const char* debugName)
 {
 	init();
 	m_scripts.push_back(ScriptData{debugName});
-	return reinterpret_cast<Script>(m_scripts.size() - 1);
+	return { (void*)(m_scripts.size() - 1) };
 }
 
 void PythonEnvironment::deleteScript(Script s)
@@ -106,7 +106,7 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 	memcpy(b, codeString.c_str(), codeString.size());
 	b[codeString.size()] = '\0';
 	
-	std::string name = m_scripts[(std::size_t)script].m_debugName.c_str();
+	std::string name = m_scripts[(std::size_t)script.m_ud].m_debugName.c_str();
 	PyObject* code = Py_CompileString(b, name.c_str(), Py_file_input);
 	if (code != nullptr)
 	{

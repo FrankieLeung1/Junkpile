@@ -61,6 +61,7 @@ void ImGuiManager::imguiLoop(Pred& pred)
 	while (!pred())
 	{
 		update();
+		fc->update();
 		fc->render();
 
 		if (fc->shouldQuit())

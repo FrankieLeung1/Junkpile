@@ -3,9 +3,9 @@
 #include "../imgui/ImGuiManager.h"
 
 ComponentManager::ComponentManager():
-m_nextFreeEntityId(1)
+m_nextFreeEntityId()
 {
-
+	m_nextFreeEntityId.m_value = 1u;
 }
 
 ComponentManager::~ComponentManager()

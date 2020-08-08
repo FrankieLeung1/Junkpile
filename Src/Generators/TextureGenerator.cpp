@@ -149,7 +149,7 @@ void TextureGenerator::test()
 	sm->setEditorContent(nullptr, "../Res/Scripts/Generators/TestGen.py");
 
 	ResourcePtr<EventManager> events;
-	events->addListener<ScriptReloadedEvent>([=](ScriptReloadedEvent* e) {
+	events->addListener<ScriptLoadedEvent>([=](ScriptLoadedEvent* e) {
 		for (auto& change : e->m_paths)
 		{
 			if (change == "Scripts/Generators/TestGen.py")

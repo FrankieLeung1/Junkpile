@@ -162,8 +162,8 @@ void PhysicsSystem::tickCallback(btDynamicsWorld* world, btScalar timeStep)
 			event = m_events->addPersistentEvent<CollisionEvent>();
 
 		CHECK_F(countof(event->m_pointOn1) <= numContacts);
-		event->m_entity[0] = (Entity)obA->getUserIndex();
-		event->m_entity[1] = (Entity)obB->getUserIndex();
+		event->m_entity[0].m_value = obA->getUserIndex();
+		event->m_entity[1].m_value = obB->getUserIndex();
 		event->m_eventDeath = std::numeric_limits<float>::infinity();
 		
 		memset(event->m_pointOn1, 0x00, sizeof(event->m_pointOn1));

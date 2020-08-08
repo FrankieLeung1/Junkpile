@@ -7,19 +7,19 @@
 #include "../Misc/Misc.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
 
-ScriptManager::Environment::Script ScriptManager::Environment::InvalidScript = reinterpret_cast<void*>(std::numeric_limits<std::size_t>::max());
-ScriptManager::ScriptManager():
-m_state(luaL_newstate()),
-m_editorScriptData(nullptr),
-m_colourIndexOpened(-1)
+bool ScriptManager::s_inited = false;
+ScriptManager::Environment::Script ScriptManager::Environment::InvalidScript = { reinterpret_cast<void*>(std::numeric_limits<std::size_t>::max()) };
+ScriptManager::ScriptManager() :
+	m_state(luaL_newstate()),
+	m_editorScriptData(nullptr),
+	m_colourIndexOpened(-1),
+	m_objectsRegistered(false)
 {
 	LuaStackCheck::s_defaultState = m_state;
 	ResourcePtr<EventManager> e;
-	ResourcePtr<TimeManager> t;
-
 	e->addListener<FileChangeEvent>([this](FileChangeEvent* c) { onFileChange(*c); });
 
-	registerObjects();
+	s_inited = true;
 }
 
 ScriptManager::~ScriptManager()
@@ -31,22 +31,39 @@ ScriptManager::~ScriptManager()
 		delete l;
 }
 
-void ScriptManager::runScriptsInFolder(const char* path, bool recursive)
+void ScriptManager::runScriptsInFolder(StringView path, bool recursive, ScriptLoadedEvent* event)
 {
 	ResourcePtr<FileManager> fileManagers;
 	std::vector<FileManager::FileInfo> files = fileManagers->files(path);
+	if (files.empty())
+		return;
+
+	if (!event)
+	{
+		ResourcePtr<EventManager> events;
+		event = events->addOneFrameEvent<ScriptLoadedEvent>();
+	}
+
 	for (const FileManager::FileInfo& current : files)
 	{
 		const std::string path = current.m_path;
 		if (recursive && current.m_type == FileManager::Type::Directory)
-			runScriptsInFolder(path.c_str(), true);
-		else if (current.m_type == FileManager::Type::File && !run(path.c_str()))
-			break;
+			runScriptsInFolder(path.c_str(), true, event);
+		else if (current.m_type == FileManager::Type::File)
+		{
+			if(run(path.c_str()))
+				event->m_paths.push_back(path);
+			else
+				break;
+		}
 	}
+	event->m_reloading = false;
 }
 
 bool ScriptManager::run(const char* path, Environment::Script script, Environment::Script owner)
 {
+	registerObjects();
+
 	for (auto& language : m_languages)
 	{
 		if (language->isScript(path))
@@ -71,7 +88,9 @@ bool ScriptManager::run(const char* path, Environment::Script script, Environmen
 			{
 				data.m_markup.parseScript(f->getContents());
 				std::string marked = data.m_markup.markUp(f->getContents());
+				m_scriptStack.push(script);
 				error = language->loadScript(script, marked);
+				m_scriptStack.pop();
 				m_error = error;
 				if (!error)
 					break;
@@ -109,6 +128,17 @@ void ScriptManager::remark(const char* path)
 lua_State* ScriptManager::getLua() const
 {
 	return m_state;
+}
+
+ScriptManager::Environment::Script ScriptManager::getRunningScript() const
+{
+	return m_scriptStack.empty() ? Environment::InvalidScript : m_scriptStack.top();
+}
+
+StringView ScriptManager::getScriptPath(Environment::Script script) const
+{
+	auto it = std::find_if(m_scripts.begin(), m_scripts.end(), [script](const ScriptData& scriptData) { return scriptData.m_script == script; });
+	return it == m_scripts.end() ? StringView() : StringView(it->m_path);
 }
 
 void ScriptManager::setEditorContent(const char* content, const char* pathToSave)
@@ -194,19 +224,31 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 		}
 	}
 
-	ResourcePtr<EventManager> events;
-	ScriptReloadedEvent* scriptEvent = events->addOneFrameEvent<ScriptReloadedEvent>();
-	while (!scriptsToReload.empty())
-	{
-		LOG_F(INFO, "reloading %s\n", e.m_files.front().c_str());
+	if (scriptsToReload.empty())
+		return;
 
-		ScriptData* script = *scriptsToReload.begin();
+	ResourcePtr<EventManager> events;
+	ScriptUnloadedEvent* scriptUnloadedEvent = events->addOneFrameEvent<ScriptUnloadedEvent>();
+	for(ScriptData* script : scriptsToReload)
+	{
 		ResourcePtr<File> f(NewPtr, script->m_path.c_str());
 		f->checkChanged();
-		run(script->m_path.c_str(), script->m_script);
-		scriptEvent->m_paths.push_back(script->m_path);
-		scriptsToReload.erase(scriptsToReload.begin());
+		scriptUnloadedEvent->m_paths.push_back(script->m_path);
 	}
+	scriptUnloadedEvent->m_reloading = true;
+
+	events->addListener<ScriptUnloadedEvent>([events, scriptsToReload, this](ScriptUnloadedEvent* e) {
+		ScriptLoadedEvent* scriptLoadedEvent = events->addOneFrameEvent<ScriptLoadedEvent>();
+		for (ScriptData* script : scriptsToReload)
+		{
+			LOG_F(INFO, "reloading %s\n", script->m_path.c_str());
+
+			run(script->m_path.c_str(), script->m_script);
+			scriptLoadedEvent->m_paths.push_back(script->m_path);
+		}
+		scriptLoadedEvent->m_reloading = true;
+		e->discardListener();
+	}, -10);
 }
 
 void ScriptManager::addDependency(const char* name)
@@ -423,10 +465,15 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 #include "../Scripts/Python.h"
 void ScriptManager::registerObjects()
 {
-	addEnvironment<PythonEnvironment>();
-	registerObject<TextureGenerator>("TextureGenerator");
-	registerObject<glm::vec2>("vec2");
-	registerObject<glm::vec4>("vec4");
-	registerObject<UpdateEvent>("UpdateEvent");
-	registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "events"));
+	if (!m_objectsRegistered)
+	{
+		m_objectsRegistered = true;
+
+		addEnvironment<PythonEnvironment>();
+		registerObject<TextureGenerator>("TextureGenerator");
+		registerObject<glm::vec2>("vec2");
+		registerObject<glm::vec4>("vec4");
+		registerObject<UpdateEvent>("UpdateEvent");
+		registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "events"));
+	}
 }

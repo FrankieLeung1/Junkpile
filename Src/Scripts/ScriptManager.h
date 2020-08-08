@@ -8,15 +8,22 @@ struct lua_State;
 class TextEditor;
 class ScriptManager;
 struct FileChangeEvent;
-struct ScriptReloadedEvent : public Event<ScriptReloadedEvent>
+struct ScriptUnloadedEvent : public Event<ScriptUnloadedEvent>
 {
 	// TODO: replace this with Script or something
-	std::vector<std::string> m_paths;
+	std::vector<StringView> m_paths;
+	bool m_reloading;
+};
+struct ScriptLoadedEvent : public Event<ScriptLoadedEvent>
+{
+	// TODO: replace this with Script or something
+	std::vector<StringView> m_paths;
+	bool m_reloading;
 };
 struct ScriptRemarkEvent : public Event<ScriptRemarkEvent>
 {
 	// TODO: replace this with Script or something
-	std::vector<std::string> m_paths;
+	std::vector<StringView> m_paths;
 };
 
 namespace Meta { class Object; }
@@ -26,7 +33,7 @@ public:
 	class Environment
 	{
 	public:
-		typedef void* Script;
+		struct Script { void* m_ud; bool operator==(const Script& s) const { return m_ud == s.m_ud; } };
 		static Script InvalidScript;
 
 		struct Error
@@ -50,12 +57,15 @@ public:
 	ScriptManager();
 	~ScriptManager();
 
-	void runScriptsInFolder(const char* path, bool recursive = false);
+	void runScriptsInFolder(StringView path, bool recursive = false, ScriptLoadedEvent* event = nullptr);
 	bool run(const char* path, Environment::Script script = Environment::InvalidScript, Environment::Script owner = Environment::InvalidScript);
 	void remark(const char* path);
 
 	template<typename T> void registerObject(const char* exposedName, const char* doc = nullptr, std::tuple<T*, const char*> instance = {});
 	template<typename T> void addEnvironment();
+
+	Environment::Script getRunningScript() const;
+	StringView getScriptPath(Environment::Script) const;
 
 	void setEditorContent(const char* content, const char* pathToSave);
 	lua_State* getLua() const;
@@ -72,6 +82,8 @@ protected:
 
 	void registerObjects();
 
+	static bool s_inited;
+	friend class EventManager;
 
 protected:
 	lua_State* m_state{ nullptr };
@@ -93,11 +105,13 @@ protected:
 	std::forward_list<ScriptData> m_scripts;
 	std::vector<ScriptData*> m_callstack;
 
+	std::stack<Environment::Script> m_scriptStack;
 
 	glm::vec4 m_currentColour, m_prevColour;
 	int m_colourIndexOpened;
 
 	Environment::Error m_error;
+	bool m_objectsRegistered;
 
 	friend class PythonEnvironment;
 };

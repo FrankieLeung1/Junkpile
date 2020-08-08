@@ -38,6 +38,7 @@ public:
 
 	template<typename T> AnyWithSize& operator!=(T);
 	template<typename T> bool operator==(T) const;
+	bool operator==(const AnyWithSize<BufferSize>&) const;
 
 	void copyValueFrom(const AnyWithSize&);
 	void copyValueFrom(AnyWithSize&&);
@@ -313,11 +314,17 @@ template<typename T> AnyWithSize<BufferSize>& AnyWithSize<BufferSize>::operator!
 }
 
 template<std::size_t BufferSize>
-template<typename T> bool AnyWithSize<BufferSize>::operator==(T) const
+template<typename T> bool AnyWithSize<BufferSize>::operator==(T t) const
 {
 	if (!isType<T>()) return false;
 	if (usingInternalBuffer())	return t == reinterpret_cast<T>(*m_buffer);
 	else						return t == *static_cast<T*>(m_ptr);
+}
+
+template<std::size_t BufferSize>
+bool AnyWithSize<BufferSize>::operator==(const AnyWithSize<BufferSize>& a) const
+{
+	return a.m_impl == m_impl && memcmp(a.m_buffer, m_buffer, BufferSize) == 0;
 }
 
 template<std::size_t BufferSize>

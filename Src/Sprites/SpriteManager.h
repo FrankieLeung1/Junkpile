@@ -1,11 +1,13 @@
 #pragma once
 
 #include "../Resources/ResourceManager.h"
+#include "../Misc/Misc.h"
 #include "../ECS/ECS.h"
 
 class SpriteData;
+class SpriteManager;
 namespace Rendering { class TextureAtlas; }
-struct SpriteId : public Handle<SpriteId> { };
+struct SpriteId : public OpaqueHandle<SpriteId, SpriteManager, unsigned int, std::numeric_limits<unsigned int>::max()> { };
 class SpriteManager : public SingletonResource<SpriteManager>
 {
 public:

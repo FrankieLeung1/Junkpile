@@ -40,6 +40,9 @@ public:
 	static T* getSingleton();
 	static Loader* createLoader(...) { return nullptr; } // prevent compile errors
 	static std::tuple<bool, std::size_t> getSharedHash();
+
+protected:
+	static std::mutex s_mutex;
 };
 
 struct ResourceData
@@ -509,10 +512,12 @@ ResourcePtr<Resource> ResourcePtr<Resource>::fromResourceData(ResourceData* data
 }
 
 template<typename T>
+std::mutex SingletonResource<T>::s_mutex;
+
+template<typename T>
 T* SingletonResource<T>::getSingleton()
 {
-	static std::mutex mutex;
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(s_mutex);
 	static T* singleton = new T();
 	return singleton;
 }
