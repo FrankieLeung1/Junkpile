@@ -25,3 +25,9 @@ public:
 protected:
 	ResourcePtr<ComponentManager> m_components;
 };
+
+namespace Meta
+{
+	template<> Object instanceMeta<TransformComponent>();
+	template<> Object instanceMeta<TransformSystem>();
+}

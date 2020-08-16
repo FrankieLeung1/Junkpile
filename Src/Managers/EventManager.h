@@ -6,6 +6,11 @@
 #include "../Resources/ResourceManager.h"
 #include "../Meta/Meta.h"
 
+namespace Rendering
+{
+	class RenderTarget;
+}
+
 class EventBase 
 {
 public:
@@ -43,6 +48,13 @@ struct UpdateEvent : public Event<UpdateEvent>
 {
 	float m_delta;
 	int m_frame;
+};
+
+struct RenderEvent : public Event<RenderEvent>
+{
+	float m_delta;
+	glm::mat4x4 m_projection;
+	Rendering::RenderTarget* m_target;
 };
 
 struct ResourceStateChanged : public Event<ResourceStateChanged>
@@ -135,13 +147,15 @@ template<typename EventType> EventType* EventManager::addPersistentEvent()
 
 template<typename EventType, typename FunctionType> void EventManager::addListener(FunctionType fn, int priority)
 {
-	//static_assert(std::is_same<decltype(fn((EventType*)nullptr)), ListenerResult>::value, "fn must return ListenerResult");
 	// TODO: static_assert the arg types
 	auto& eventListeners = m_queuedListeners[EventType::id()];
 	auto& priortyListeners = eventListeners[priority];
-	std::size_t index = priortyListeners.size();
+
+	// find the index we're gonna be when we get added to m_listeners
+	std::size_t queuedIndex = priortyListeners.size(), listenerIndex = m_listeners[EventType::id()][priority].size();
+	onNewListener(EventType::id(), priority, queuedIndex + listenerIndex);
+
 	priortyListeners.push_back(makeFunction(fn));
-	onNewListener(EventType::id(), priority, index);
 }
 
 template<typename Event> void EventManager::addListener(std::function<void(Event*)> fn, int priority)

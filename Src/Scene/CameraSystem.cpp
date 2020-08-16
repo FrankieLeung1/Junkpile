@@ -7,12 +7,57 @@
 
 CameraSystem::CameraSystem()
 {
+	m_components->addComponentType<CameraComponent>();
+
 	ResourcePtr<EventManager> events;
 	events->addListener<UpdateEvent>([this](UpdateEvent* e) { update(e); });
 }
 
 CameraSystem::~CameraSystem()
 {
+}
+
+CameraComponent* CameraSystem::addComponentPerspective(Entity e, float fov)
+{
+	ResourcePtr<ComponentManager> components;
+	CameraComponent* component = components->addComponents<CameraComponent>(e).get<CameraComponent>();
+	component->m_controlType = CameraComponent::WASD;
+	component->m_flags = CameraComponent::Perspective;
+	component->m_aspect = 16.0f / 9.0f;
+	component->m_near = 0.1f;
+	component->m_far = 10000.0f;
+	component->m_angles = glm::vec3(0.0f);
+	component->m_offset = glm::vec3(0.0f);
+	component->m_fov = fov;
+	return component;
+}
+
+CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
+{
+	ResourcePtr<ComponentManager> components;
+	CameraComponent* component = components->addComponents<CameraComponent>(e).get<CameraComponent>();
+	component->m_controlType = CameraComponent::WASD;
+	component->m_flags = CameraComponent::Orthographic;
+	component->m_left = 0.0f;
+	component->m_right = 0.0f;
+	component->m_bottom = 0.0f;
+	component->m_top = 0.0f;
+	component->m_angles = glm::vec3(0.0f);
+	component->m_offset = glm::vec3(0.0f);
+	return component;
+}
+
+void CameraSystem::setCameraActive(Entity e)
+{
+	ResourcePtr<ComponentManager> components;
+	EntityIterator<TransformComponent, CameraComponent> it(components, true);
+	while (it.next())
+	{
+		if (it.getEntity() == e)
+			it.get<CameraComponent>()->m_flags |= CameraComponent::ActiveCamera;
+		else
+			it.get<CameraComponent>()->m_flags &= ~CameraComponent::ActiveCamera;
+	}
 }
 
 void CameraSystem::update(const UpdateEvent* e)
@@ -94,6 +139,23 @@ void CameraSystem::update(const UpdateEvent* e)
 			}
 		}
 	}
+}
+
+bool CameraSystem::getActiveMatrices(glm::mat4* view, glm::mat4* projection) const
+{
+	ResourcePtr<ComponentManager> components;
+	EntityIterator<TransformComponent, CameraComponent> it(components, true);
+	while (it.next())
+	{
+		CameraComponent* c = it.get<CameraComponent>();
+		if ((c->m_flags & CameraComponent::ActiveCamera) != 0)
+		{
+			getMatrices(it.getEntity(), view, projection);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void CameraSystem::getMatrices(Entity e, glm::mat4* view, glm::mat4* projection) const

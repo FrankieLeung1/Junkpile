@@ -4,7 +4,10 @@
 #include "../Misc/ResizableMemoryPool.h"
 #include "../Misc/Misc.h"
 #include "../Misc/Callbacks.h"
-#include "../Misc/Any.h"
+//#include "../Misc/Any.h"
+
+template<std::size_t BufferSize> class AnyWithSize;
+typedef AnyWithSize<8> Any;
 
 namespace Meta
 {
@@ -91,10 +94,11 @@ namespace Meta
 		virtual int visit(const char* name, float*) = 0;
 		virtual int visit(const char* name, std::string*) = 0;
 		virtual int visit(const char* name, void** object, const Object&) = 0;
-		virtual int visit(const char* name, const char*& v) { return visit(name, std::string(v ? v : "")); }
+		virtual int visit(const char* name, const char*& v) { return visit(name, (std::string&)std::string(v ? v : "")); }
+		virtual int visit(const char* name, StringView& v) { std::string s = v; auto r = visit(name, (std::string&)s); return r; }
 		// TODO: pointer-to-array? you monster!
 
-		virtual int startObject(const char* name, const Meta::Object& objectInfo) = 0;
+		virtual int startObject(const char* name, void* v, const Meta::Object& objectInfo) = 0;
 		virtual int endObject() = 0;
 
 		virtual int startArray(const char* name) = 0;
@@ -187,7 +191,7 @@ namespace Meta
 		static const std::size_t MemberPointerSize = sizeof(int(Variable::*));
 
 	public:
-		template<typename ClassType, typename VariableType> Variable(const char* name, VariableType (ClassType::*Pointer));
+		template<typename ClassType, typename VariableType> Variable(const char* name, VariableType(ClassType::* Pointer));
 		int visit(Visitor*, void* object);
 
 	protected:
@@ -201,7 +205,7 @@ namespace Meta
 		static int visitImplementation(Visitor*, const char* name, void* ptr, void* obj);
 		template<typename ClassType, typename VariableType, typename MetaType<VariableType>::PointerType::Object = 0>
 		static int visitImplementation(Visitor*, const char* name, void* ptr, void* obj);
-		
+
 	protected:
 		char m_pointerBuffer[MemberPointerSize];
 		int(*m_visitFunction)(Visitor*, const char* name, void* ptr, void* obj);
@@ -216,8 +220,8 @@ namespace Meta
 	public:
 		typedef FuncCommon::CallFailure CallFailure;
 		template<typename T, typename R, typename... Args>
-		static std::size_t sizeNeeded(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults);
-		template<typename T, typename R, typename... Args> Function(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>*);
+		static std::size_t sizeNeeded(const char* name, R(T::* f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults);
+		template<typename T, typename R, typename... Args> Function(const char* name, R(T::* f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>*);
 		~Function();
 
 		int visit(Visitor*, void* object);
@@ -235,7 +239,7 @@ namespace Meta
 		std::size_t m_defaultCount;
 		// (arg names and defaults are stored after this class)
 	};
-	
+
 	class StaticFunction : public Base
 	{
 	protected:
@@ -282,8 +286,10 @@ namespace Meta
 	template<typename ClassType, typename R, typename... Args>
 	FuncCommon::MemTypeImplementation<ClassType, R, Args...> FuncCommon::MemTypeImplementation<ClassType, R, Args...>::Instance;
 
-	template<typename T> Object instanceMeta();
+	template<typename T> Object instanceMeta() noexcept;
 	template<typename T> Object& getMeta();
+	template<typename T> constexpr bool hasMeta();
+	template<typename T> Object* getMetaIfAvailable();
 	template<typename Object> int visit(Visitor* v, const char* name, Object* o);
 
 	void test();
@@ -320,28 +326,29 @@ namespace Meta
 	template<> Object Meta::instanceMeta<glm::vec4>();
 	template<> Object Meta::instanceMeta<glm::vec3>();
 	template<> Object Meta::instanceMeta<glm::vec2>();
+	template<> Object Meta::instanceMeta<glm::quat>();
 
 
 	template<typename Variable, typename T>
-	Object& Object::var(const char* name, Variable(T::*v))
+	Object& Object::var(const char* name, Variable(T::* v))
 	{
 		m_variables.emplace_back<Meta::Variable>(name, v);
 		return *this;
 	}
 
-	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults)
+	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::* f)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults)
 	{
 		m_variables.emplace_back_with_size<Meta::Function>(Function::sizeNeeded(name, f, &names, &defaults), name, f, &names, &defaults);
 		return *this;
 	}
 
-	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>& names)
+	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::* f)(Args...), const std::array<const char*, sizeof...(Args)>& names)
 	{
 		m_variables.emplace_back_with_size<Meta::Function>(Function::sizeNeeded(name, f, &names, nullptr), name, f, &names, nullptr);
 		return *this;
 	}
 
-	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::*f)(Args...))
+	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::* f)(Args...))
 	{
 		m_variables.emplace_back_with_size<Meta::Function>(Function::sizeNeeded(name, f, nullptr, nullptr), name, f, nullptr, nullptr);
 		return *this;
@@ -368,7 +375,7 @@ namespace Meta
 	template<typename T> Object& Object::defaultFactory()
 	{
 		glm::vec4* (*f)(float f1, float f2, float f3, float f4) = [](float f1, float f2, float f3, float f4) { return new glm::vec4(f1, f2, f3, f4); };
-		return factory([](void*) -> void* { return new T; }, [](void* ud, void* v) { delete *(T**)v; });
+		return factory([](void*) -> void* { return new T; }, [](void* ud, void* v) { delete* (T**)v; });
 	}
 
 	template<typename T, typename... Args> Object& Object::constructor()
@@ -396,13 +403,13 @@ namespace Meta
 	{
 		m_copyOperator = [](void* dest, void* src) {
 			T* d = static_cast<T*>(dest);
-			T* s = static_cast<T*>(src); 
+			T* s = static_cast<T*>(src);
 			*d = *s;
 		};
 		return *this;
 	}
 
-	template<typename T, typename R, typename std::enable_if<!std::is_void<R>::value, int>::type, typename... Args> 
+	template<typename T, typename R, typename std::enable_if<!std::is_void<R>::value, int>::type, typename... Args>
 	R Object::call(const char* name, Args...)
 	{
 		for (Base& base : m_variables)
@@ -417,7 +424,7 @@ namespace Meta
 		return R{};
 	}
 
-	template<typename T, typename R, typename std::enable_if<std::is_void<R>::value, int>::type, typename... Args> 
+	template<typename T, typename R, typename std::enable_if<std::is_void<R>::value, int>::type, typename... Args>
 	void Object::call(const char* name, Args...)
 	{
 		for (Base& base : m_variables)
@@ -462,11 +469,11 @@ namespace Meta
 		return R{};
 	}
 
-	template<typename ClassType, typename VariableType> 
-	Variable::Variable(const char* name, VariableType(ClassType::*pointer)):
-	Base(sizeof(*this), BaseType::Variable),
-	m_visitFunction(&visitImplementation<ClassType, VariableType>),
-	m_name(name)
+	template<typename ClassType, typename VariableType>
+	Variable::Variable(const char* name, VariableType(ClassType::* pointer)) :
+		Base(sizeof(*this), BaseType::Variable),
+		m_visitFunction(&visitImplementation<ClassType, VariableType>),
+		m_name(name)
 	{
 		CHECK_F(sizeof(pointer) == MemberPointerSize);
 		CHECK_F(std::is_trivially_destructible<decltype(pointer)>::value);
@@ -476,7 +483,7 @@ namespace Meta
 	template<typename ClassType, typename VariableType, typename MetaType<VariableType>::Fundamental>
 	int Variable::visitImplementation(Visitor* v, const char* name, void* voidptr, void* voidobj)
 	{
-		typedef VariableType (ClassType::*PtrType);
+		typedef VariableType(ClassType::* PtrType);
 		PtrType ptr = *reinterpret_cast<PtrType*>(voidptr);
 		ClassType* obj = (ClassType*)voidobj;
 		return v->visit(name, (obj->*ptr));
@@ -485,7 +492,7 @@ namespace Meta
 	template<typename ClassType, typename VariableType, typename MetaType<VariableType>::Array>
 	int Variable::visitImplementation(Visitor* v, const char* name, void* voidptr, void* voidobj)
 	{
-		typedef VariableType(ClassType::*PtrType);
+		typedef VariableType(ClassType::* PtrType);
 		PtrType ptr = *reinterpret_cast<PtrType*>(voidptr);
 		ClassType* obj = (ClassType*)voidobj;
 		if (v->startArray(name) == 0)
@@ -510,7 +517,7 @@ namespace Meta
 	template<typename ClassType, typename VariableType, typename MetaType<VariableType>::Class>
 	int Variable::visitImplementation(Visitor* v, const char* name, void* voidptr, void* voidobj)
 	{
-		typedef VariableType(ClassType::*PtrType);
+		typedef VariableType(ClassType::* PtrType);
 		PtrType ptr = *reinterpret_cast<PtrType*>(voidptr);
 		ClassType* obj = (ClassType*)voidobj;
 		return Meta::visit<VariableType>(v, name, static_cast<VariableType*>(&(obj->*ptr)));
@@ -519,7 +526,7 @@ namespace Meta
 	template<typename ClassType, typename VariableType, typename MetaType<VariableType>::PointerType::Object>
 	static int Variable::visitImplementation(Visitor* v, const char* name, void* voidptr, void* voidobj)
 	{
-		typedef VariableType(ClassType::*PtrType);
+		typedef VariableType(ClassType::* PtrType);
 		PtrType ptr = *reinterpret_cast<PtrType*>(voidptr);
 		ClassType* obj = (ClassType*)voidobj;
 		return v->visit(name, obj ? (obj->*ptr) : nullptr, getMeta<std::remove_pointer<VariableType>::type>());
@@ -528,14 +535,14 @@ namespace Meta
 	template<typename ClassType, typename VariableType, typename MetaType<VariableType>::PointerType::Fundamental>
 	int Variable::visitImplementation(Visitor* v, const char* name, void* voidptr, void* voidobj)
 	{
-		typedef VariableType(ClassType::*PtrType);
+		typedef VariableType(ClassType::* PtrType);
 		PtrType ptr = *reinterpret_cast<PtrType*>(voidptr);
 		ClassType* obj = (ClassType*)voidobj;
 		return v->visit(name, obj ? (obj->*ptr) : nullptr);
 	}
 
 	template<typename T, typename R, typename... Args>
-	std::size_t Function::sizeNeeded(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults)
+	std::size_t Function::sizeNeeded(const char* name, R(T::* f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults)
 	{
 		return sizeof(Function) + (names ? names->size() * sizeof(const char*) : 0) + (defaults ? defaults->size() * sizeof(Any) : 0);
 	}
@@ -576,22 +583,23 @@ namespace Meta
 
 	// PtrType: 0 = &, 1 = *, 2 = **
 	template<typename T> constexpr int ptrType() { return std::is_pointer<T>::value ? (std::is_pointer<std::remove_pointer<T>::type>::value ? 2 : 1) : 0; };
+	template<typename T> constexpr int isString() { typedef std::decay<T>::type DT;  return std::is_same<DT, std::string>::value || std::is_same<T, const char*>::value || std::is_same<DT, StringView>::value; }
 	template<typename Arg, bool IsString, bool IsObject, int PtrType> struct VisitSpecial { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // primitives
-	template<typename Arg> struct VisitSpecial<Arg, true, true, 0> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // std::string
+	template<typename Arg> struct VisitSpecial<Arg, true, true, 0> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // std::string / StringView
 	template<typename Arg> struct VisitSpecial<Arg, true, false, 0> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, arg); } }; // const char*
 	template<typename Arg> struct VisitSpecial<Arg, false, true, 0> { static int visit(Visitor* v, const char* name, Arg& arg) { return VisitSpecialObject<Arg>::visit(v, name, arg); } }; // object
 	template<typename Arg> struct VisitSpecial<Arg, false, true, 1> { static int visit(Visitor* v, const char* name, Arg& arg) { return VisitSpecialObject<std::remove_pointer<Arg>::type>::visit(v, name, *arg); } }; // object*
 	template<typename Arg> struct VisitSpecial<Arg, false, false, 2> { static int visit(Visitor* v, const char* name, Arg& arg) { return v->visit(name, (void**)arg, getMeta<std::remove_pointer<std::remove_pointer<Arg>::type>::type>()); } }; // void** object
 
 
-	template<typename T, typename R, typename... Args> 
-	Function::Function(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults):
-	Base(Function::sizeNeeded(name, f, names, defaults), BaseType::Function),
-	m_implementation(&FuncCommon::MemTypeImplementation<T, R, Args...>::Instance),
-	m_pointerBuffer(),
-	m_name(name),
-	m_argCount(names ? names->size() : 0),
-	m_defaultCount(defaults ? defaults->size() : 0)
+	template<typename T, typename R, typename... Args>
+	Function::Function(const char* name, R(T::* f)(Args...), const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults) :
+		Base(Function::sizeNeeded(name, f, names, defaults), BaseType::Function),
+		m_implementation(&FuncCommon::MemTypeImplementation<T, R, Args...>::Instance),
+		m_pointerBuffer(),
+		m_name(name),
+		m_argCount(names ? names->size() : 0),
+		m_defaultCount(defaults ? defaults->size() : 0)
 	{
 		CHECK_F(sizeof(f) == MemberPointerSize);
 		CHECK_F(std::is_trivially_destructible<decltype(f)>::value);
@@ -626,14 +634,14 @@ namespace Meta
 	}
 
 	template<typename R, typename... Args>
-	StaticFunction::StaticFunction(const char* name, R(*f)(Args...), bool isConstructor, const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults):
-	Base(StaticFunction::sizeNeeded(name, f, isConstructor, names, defaults), BaseType::StaticFunction),
-	m_implementation(&FuncCommon::PtrTypeImplementation<R, Args...>::Instance),
-	m_isConstructor(isConstructor),
-	m_pointerBuffer(),
-	m_name(name),
-	m_argCount(names ? names->size() : 0),
-	m_defaultCount(defaults ? defaults->size() : 0)
+	StaticFunction::StaticFunction(const char* name, R(*f)(Args...), bool isConstructor, const std::array<const char*, sizeof...(Args)>* names, const std::vector<Any>* defaults) :
+		Base(StaticFunction::sizeNeeded(name, f, isConstructor, names, defaults), BaseType::StaticFunction),
+		m_implementation(&FuncCommon::PtrTypeImplementation<R, Args...>::Instance),
+		m_isConstructor(isConstructor),
+		m_pointerBuffer(),
+		m_name(name),
+		m_argCount(names ? names->size() : 0),
+		m_defaultCount(defaults ? defaults->size() : 0)
 	{
 		CHECK_F(sizeof(f) == MemberPointerSize);
 		CHECK_F(std::is_trivially_destructible<decltype(f)>::value);
@@ -784,7 +792,7 @@ namespace Meta
 		if (sizeof...(Ts) < defaultCount)
 		{
 			Any& t = defaults[defaultCount - (sizeof...(Ts) + 1)];
-			if(t.isType<int>()) r = v->visit(argNames ? *argNames : nullptr, t.get<int>());
+			if (t.isType<int>()) r = v->visit(argNames ? *argNames : nullptr, t.get<int>());
 			else if (t.isType<float>()) r = v->visit(argNames ? *argNames : nullptr, t.get<float>());
 			else if (t.isType<std::string>()) r = v->visit(argNames ? *argNames : nullptr, t.get<std::string>());
 			else CHECK_F(false, "Unknown default type");
@@ -795,8 +803,7 @@ namespace Meta
 			const auto isVoidPtrPtr = std::is_pointer<DT>::value && std::is_class<std::remove_pointer<DT>::type>::value;
 
 			DT t{};
-			VisitSpecial<DT, std::is_same<DT, std::string>::value || std::is_same<T, const char*>::value,
-				std::is_class<std::remove_pointer<DT>::type>::value, ptrType<DT>()>::visit(v, argNames ? *argNames : nullptr, t);
+			VisitSpecial<DT, isString<T>(), std::is_class<std::remove_pointer<DT>::type>::value, ptrType<DT>()>::visit(v, argNames ? *argNames : nullptr, t);
 		}
 		return r == 0 ? TypeVisitor<Ts...>::visit(v, argNames ? ++argNames : nullptr, defaults, defaultCount) : r;
 	}
@@ -818,7 +825,7 @@ namespace Meta
 		typedef std::decay<T>::type DT;
 		typedef std::remove_pointer<DT>::type removedPtr;
 		const auto i = std::tuple_size<Tuple>::value - sizeof...(Args) - 1;
-		if(VisitSpecial<T, std::is_same<std::string, DT>::value || std::is_same<T, const char*>::value, std::is_class<removedPtr>::value, ptrType<DT>()>::visit(v, names ? names[i] : nullptr, std::get<i>(args)) != 0)
+		if (VisitSpecial<T, isString<T>(), std::is_class<removedPtr>::value, ptrType<DT>()>::visit(v, names ? names[i] : nullptr, std::get<i>(args)) != 0)
 		{
 			if ((sizeof...(Args)) >= defaultCount)
 				return false;
@@ -832,10 +839,27 @@ namespace Meta
 	template<typename R, typename Tuple> bool FuncCommon::CallVisitor<R, Tuple>::visit(Visitor*, const char**, Any*, std::size_t, Tuple&) { return true; }
 
 	template<typename T>
-	Object instanceMeta()
+	Object instanceMeta() noexcept
 	{
 		static_assert(false, "No meta object setup");
 		return {};
+	}
+
+	template<typename T>
+	constexpr bool hasMeta()
+	{
+		// we're trying to figure out if instanceMeta is specialized without evaluating it and triggering the static_assert, specializations shouldn't have a noexcept modifier on them so let's exploit that
+		return !noexcept(instanceMeta<T>());
+	}
+
+	template<typename T, bool> struct GetMetaIfAvailable {};
+	template<typename T> struct GetMetaIfAvailable<T, true> { static Object* get() { return &getMeta<T>(); } };
+	template<typename T> struct GetMetaIfAvailable<T, false> { static Object* get() { return nullptr; } };
+
+	template<typename T>
+	Object* getMetaIfAvailable()
+	{
+		return GetMetaIfAvailable<T, hasMeta<T>()>::get();
 	}
 
 	template<typename T>
@@ -856,7 +880,7 @@ namespace Meta
 	{
 		Meta::Object& o = getMeta<Object>();
 		int result = 0;
-		if(v->startObject(name, o) == 0)
+		if(v->startObject(name, instance, o) == 0)
 		{
 			result = o.visit(v, instance);
 			v->endObject();

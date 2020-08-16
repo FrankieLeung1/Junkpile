@@ -24,7 +24,7 @@ namespace Meta
 		int visit(const char* name, std::string*);
 		int visit(const char* name, void** object, const Object&);
 
-		int startObject(const char* name, const Meta::Object& objectInfo);
+		int startObject(const char* name, void* v, const Meta::Object& objectInfo);
 		int endObject();
 
 		int startArray(const char* name);

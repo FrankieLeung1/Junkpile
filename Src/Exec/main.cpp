@@ -40,6 +40,8 @@
 #include "../Scene/TransformSystem.h"
 #include "../Managers/TestManager.h"
 #include "../imgui/AssetBrowser.h"
+#include "../Scene/CameraSystem.h"
+#include "../Rendering/Unit.h"
 #include "../Game/Game.h"
 
 //#define GRINDSTONE_EDITOR
@@ -64,6 +66,9 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
+
+	ResourcePtr<ScriptManager> scripts;
+	scripts->runScriptsInFolder("Levels/Tests");
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -91,6 +96,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<SpriteSystem> s;
 	ResourcePtr<TransformSystem> transformSystem;
 	ResourcePtr<AssetBrowser> ab;
+	ResourcePtr<CameraSystem> cs;
 	ResourcePtr<Game> g;
 	
 	r.setFreeResources(false);
@@ -139,11 +145,21 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		auto* update = em->addOneFrameEvent<UpdateEvent>();
 		update->m_delta = t->getDelta();
 		update->m_frame = t->getFrame();
+
+		glm::mat4x4 view, proj;
+		if (cs->getActiveMatrices(&view, &proj))
+		{
+			auto render = em->addOneFrameEvent<RenderEvent>();
+			render->m_delta = t->getDelta();
+			render->m_projection = proj * view; //glm::perspective(90.f, 16.0f / 9.0f, -0.01f, 100.0f);
+		}
+
 		em->process(update->m_delta);
 	}
 
 	ResourcePtr<Rendering::Device> d;
 	d->waitIdle();
+	d->getRootUnit().clearSubmitted();
 	deleteTestResources();
 	em->clearAllListeners();
 	return 0;

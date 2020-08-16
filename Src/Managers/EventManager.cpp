@@ -25,13 +25,14 @@ void EventManager::process(float delta)
 	std::vector<char> processingEvents = std::move(m_oneFrameBuffer);
 	std::vector<TypeHelper*> types = std::move(m_oneFrameBufferTypes);
 
-	// throw m_queuedListeners into m_listeners
+	// throw m_queuedListeners into m_listeners (uh, I should rename all these variables)
 	for (auto& queuedListeners : m_queuedListeners)
 	{
 		std::map<int, FunctionPool>& eventListeners = m_listeners[queuedListeners.first];
 		for (auto& eventListener : queuedListeners.second)
 		{
-			eventListeners[eventListener.first].move_back(eventListener.second);
+			FunctionPool& pool = eventListeners[eventListener.first];
+			pool.move_back(eventListener.second);
 		}
 	}
 
@@ -135,13 +136,13 @@ void EventManager::adjustListenerData(EventBase::Id id, int priority, std::size_
 		{
 			if (dataIt->m_index > index) // if we're after the deleted listener
 			{
-				LOG_F(INFO, "Adjusting from %d to %d\n", dataIt->m_index, dataIt->m_index - 1);
+				LOG_F(INFO, "Adjusting %d %d from %d to %d\n", id, priority, dataIt->m_index, dataIt->m_index - 1);
 				dataIt->m_index--;
 				++dataIt;
 			}
 			else if (dataIt->m_index == index) // if we are the deleted listener
 			{
-				LOG_F(INFO, "found %d\n", index);
+				LOG_F(INFO, "removing %d %d %d\n", id, priority, index);
 				dataIt = m_listenerData.erase(dataIt);
 			}
 			else
@@ -282,7 +283,12 @@ void EventManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 		for (int i = 0; i < script.m_index; i++)
 			++it;
 
+		std::size_t size = pool.size();
+		//LOG_F(INFO, "size %d\n", size);
 		pool.erase(it);
+
+		size = pool.size();
+		//LOG_F(INFO, "size %d\n", size);
 		adjustListenerData(script.m_eventId, script.m_priority, script.m_index);
 	}
 }

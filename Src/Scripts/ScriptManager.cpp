@@ -53,8 +53,6 @@ void ScriptManager::runScriptsInFolder(StringView path, bool recursive, ScriptLo
 		{
 			if(run(path.c_str()))
 				event->m_paths.push_back(path);
-			else
-				break;
 		}
 	}
 	event->m_reloading = false;
@@ -231,6 +229,7 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 	ScriptUnloadedEvent* scriptUnloadedEvent = events->addOneFrameEvent<ScriptUnloadedEvent>();
 	for(ScriptData* script : scriptsToReload)
 	{
+		LOG_F(INFO, "unloading %s\n", script->m_path.c_str());
 		ResourcePtr<File> f(NewPtr, script->m_path.c_str());
 		f->checkChanged();
 		scriptUnloadedEvent->m_paths.push_back(script->m_path);
@@ -290,7 +289,7 @@ void ScriptManager::imgui()
 	{
 		ResourcePtr<FileManager> f;
 		std::string s = m_editor->GetText();
-		std::vector<char> content(s.begin(), s.end());
+		std::vector<char> content(s.begin(), s.end() - 1); // BUG: TextEditor adds a newline to the end of GetText(), don't save it
 		f->save(m_editorSavePath.c_str(), std::move(content));
 	}
 
@@ -461,7 +460,10 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 
 // all the classes exposed the scripts
 #include "../Generators/TextureGenerator.h"
+#include "../Scene/TransformSystem.h"
+#include "../Sprites/SpriteSystem.h"
 #include "../Managers/EventManager.h"
+#include "../Scene/CameraSystem.h"
 #include "../Scripts/Python.h"
 void ScriptManager::registerObjects()
 {
@@ -472,8 +474,17 @@ void ScriptManager::registerObjects()
 		addEnvironment<PythonEnvironment>();
 		registerObject<TextureGenerator>("TextureGenerator");
 		registerObject<glm::vec2>("vec2");
+		registerObject<glm::vec3>("vec3");
 		registerObject<glm::vec4>("vec4");
 		registerObject<UpdateEvent>("UpdateEvent");
-		registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "events"));
+		registerObject<Entity>("Entity");
+		registerObject<TransformComponent>("TransformComponent");
+		registerObject<SpriteComponent>("SpriteComponent");
+		registerObject<CameraComponent>("CameraComponent");
+		registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "eventManager"));
+		registerObject<ComponentManager>("ComponentManager", nullptr, std::make_tuple(ResourcePtr<ComponentManager>(NewPtr).get(), "componentManager"));
+		registerObject<TransformSystem>("TransformSystem", nullptr, std::make_tuple(ResourcePtr<TransformSystem>(NewPtr).get(), "transformSystem"));
+		registerObject<SpriteSystem>("SpriteSystem", nullptr, std::make_tuple(ResourcePtr<SpriteSystem>(NewPtr).get(), "spriteSystem"));
+		registerObject<CameraSystem>("CameraSystem", nullptr, std::make_tuple(ResourcePtr<CameraSystem>(NewPtr).get(), "cameraSystem"));
 	}
 }

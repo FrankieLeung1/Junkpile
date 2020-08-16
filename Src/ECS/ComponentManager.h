@@ -92,6 +92,7 @@ public:
 	template<typename T, typename T2, typename... Ts> bool hasComponentType() const;
 
 	template<typename... Components> EntityIterator<Components...> addEntity();
+	Entity newEntity();
 	void removeEntity(Entity);
 
 	template<typename Component, typename... Components> EntityIterator<Component, Components...> addComponents(Entity);
@@ -129,6 +130,7 @@ protected:
 
 namespace Meta {
 	template<> Object instanceMeta<ComponentManager>();
+	template<> Object instanceMeta<Entity>();
 }
 
 template<typename T>

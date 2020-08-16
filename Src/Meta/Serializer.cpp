@@ -65,7 +65,7 @@ int Serializer::visit(const char* name, void* object, const Object&)
 	return writeValue(name, '"' + stringf("0x%p", object) + '"');
 }
 
-int Serializer::startObject(const char* name, const Meta::Object& objectInfo)
+int Serializer::startObject(const char* name, void* v, const Meta::Object& objectInfo)
 {
 	prepareForValue();
 	modifyIndent(1);

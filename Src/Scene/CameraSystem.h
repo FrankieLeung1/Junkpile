@@ -35,10 +35,36 @@ public:
 	CameraSystem();
 	~CameraSystem();
 
+	CameraComponent* addComponentPerspective(Entity e, float fov = 90.0f);
+	CameraComponent* addComponentOrthographic(Entity e);
+	void setCameraActive(Entity);
+
 	void update(const UpdateEvent*);
 
+	bool getActiveMatrices(glm::mat4* view, glm::mat4* projection) const;
 	void getMatrices(Entity, glm::mat4* view, glm::mat4* projection) const;
 
 protected:
 	ResourcePtr<ComponentManager> m_components;
 };
+
+namespace Meta
+{
+	template<> inline Object instanceMeta<CameraComponent>()
+	{
+		return Object("CameraComponent").
+			var("m_flags", &CameraComponent::m_flags).
+			//var("m_controlType", &CameraComponent::m_controlType).
+			var("m_angles", &CameraComponent::m_angles).
+			var("m_offset", &CameraComponent::m_offset);
+	}
+
+	template<> inline Object instanceMeta<CameraSystem>()
+	{
+		return Object("CameraSystem").
+			func("addComponentPerspective", &CameraSystem::addComponentPerspective, { "entity", "fov" }, { 90.0f }).
+			func("addComponentOrthographic", &CameraSystem::addComponentOrthographic).
+			func("setCameraActive", &CameraSystem::setCameraActive);
+		
+	}
+}

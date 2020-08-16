@@ -11,9 +11,11 @@ namespace Meta
 
 		bool addObject(PyObject* pythonModule);
 		PyObject* instancePointer(void*);
+		PyObject* instanceValue(const Any&);
 
 		bool matches(const char* name) const;
 		bool matches(const Meta::Object&) const;
+		StringView getName() const;
 
 		int visit(const char* name, bool&);
 		int visit(const char* name, int&);
@@ -27,7 +29,7 @@ namespace Meta
 		int visit(const char* name, std::string*);
 		int visit(const char* name, void** object, const Object&);
 
-		int startObject(const char* name, const Meta::Object& objectInfo);
+		int startObject(const char* name, void* v, const Meta::Object& objectInfo);
 		int endObject();
 
 		int startArray(const char* name);
@@ -39,10 +41,14 @@ namespace Meta
 		int startFunctionObject(const char* name, bool hasReturn);
 		int endFunctionObject();
 
+		bool set(const char* name, void* instance, PyObject* value);
+
 	protected:
 		template<typename T> bool visitArg(const char* name, T& d);
-		template<typename T> bool visitMember(const char* name, T& d);
+		template<typename T> bool visitMember(const char* name, T& d, const Meta::Object* metaObject = nullptr);
 		template<typename T> int getType(bool null = false) const;
+		template<typename T> std::size_t calculateOffset(T&);
+		std::size_t calculateOffset(void*);
 		static char typeToFmt(int);
 
 		struct InstanceData;
@@ -59,6 +65,7 @@ namespace Meta
 		{
 			std::string m_name;
 			int m_type;
+			const Meta::Object* m_metaObject;
 			std::size_t m_offset;
 		};
 		std::vector<Member> m_members;
@@ -115,7 +122,7 @@ namespace Meta
 			int visit(const char* name, std::string*);
 			int visit(const char* name, void* object, const Object&);
 			int visit(const char* name, void** object, const Object&);
-			int startObject(const char* name, const Meta::Object& objectInfo);
+			int startObject(const char* name, void* v, const Meta::Object& objectInfo);
 			int endObject();
 			int startArray(const char* name);
 			int endArray(std::size_t);
@@ -154,7 +161,8 @@ namespace Meta
 			int visit(const char* name, std::string*);
 			int visit(const char* name, void* object, const Object&);
 			int visit(const char* name, void** object, const Object&);
-			int startObject(const char* name, const Meta::Object& objectInfo);
+			int visit(const char* name, StringView& v);
+			int startObject(const char* name, void* v, const Meta::Object& objectInfo);
 			int endObject();
 			int startArray(const char* name);
 			int endArray(std::size_t);
@@ -168,7 +176,7 @@ namespace Meta
 			int getResult() const;
 
 		protected:
-			template<typename T> int visit(T&);
+			template<typename T, typename DataT = T> int visit(T&);
 
 		protected:
 			std::size_t m_argIndex;

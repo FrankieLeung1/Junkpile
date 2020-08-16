@@ -37,3 +37,7 @@ protected:
 
 	SpriteId m_nextSpriteId;
 };
+
+namespace Meta{
+	template<> Object instanceMeta<SpriteId>();
+}

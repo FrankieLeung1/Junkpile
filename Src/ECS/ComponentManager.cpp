@@ -13,6 +13,13 @@ ComponentManager::~ComponentManager()
 
 }
 
+Entity ComponentManager::newEntity()
+{
+	Entity result = m_nextFreeEntityId;
+	m_nextFreeEntityId.m_value++;
+	return result;
+}
+
 void ComponentManager::removeEntity(Entity)
 {
 	LOG_F(FATAL, "TODO");
@@ -48,5 +55,11 @@ void ComponentManager::clearAllComponents()
 
 template<> Meta::Object Meta::instanceMeta<ComponentManager>()
 {
-	return Object("ComponentManager");
+	return Object("ComponentManager").
+		func("newEntity", &ComponentManager::newEntity);
+}
+
+template<> Meta::Object Meta::instanceMeta<Entity>()
+{
+	return Object("Entity");
 }

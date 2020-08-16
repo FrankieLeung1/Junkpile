@@ -154,6 +154,7 @@ void ResourceManager::freeUnreferenced(bool freeSingleton)
 	{
 		if (it->m_refCount <= 0 && (freeSingleton || it->m_singleton == false))
 		{
+			// if you crash here, you might have a circular dependence in your ResourcePtr's
 			m_resources.erase_after(itBefore);
 
 			// the deconstructor of the thing we erased might erase more stuff, start loop back at the beginning

@@ -13,57 +13,30 @@
 #include "../Misc/Misc.h"
 #include "../Scene/CameraSystem.h"
 #include "../Scene/TransformSystem.h"
+#include "../Managers/EventManager.h"
 
-SpriteSystem::SpriteSystem()
+SpriteSystem::SpriteSystem():
+m_vertexShader(EmptyPtr),
+m_fragmentShader(EmptyPtr)
 {
+	m_components->addComponentType<SpriteComponent>();
 
-}
-
-SpriteSystem::~SpriteSystem()
-{
-
-}
-
-void SpriteSystem::process(float)
-{
-
-}
-
-void SpriteSystem::render()
-{
-
-}
-
-void SpriteSystem::imgui()
-{
-
-}
-
-void SpriteSystem::test(std::function<void(float)>& update, std::function<void()>& render)
-{
-	ResourcePtr<Rendering::Device> device;
-	ResourcePtr<ComponentManager> components;
-	ResourcePtr<TransformSystem> transforms;
-	ResourcePtr<SpriteSystem> sprites;
-	ResourcePtr<SpriteManager> spriteManager;
-
-	const int spriteCount = 1;
-	struct Vert { glm::vec3 m_position; glm::vec2 m_uv; };
-	Rendering::Buffer* vbuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vert) * 4 * spriteCount);
-	vbuffer->setFormat({
+	int spriteCount = 999;
+	m_vertexBuffer = std::make_shared<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vertex) * 4 * spriteCount);
+	m_vertexBuffer->setFormat({
 			{vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)},
 			{vk::Format::eR32G32Sfloat, sizeof(glm::vec2)},
-		}, sizeof(Vert));
+		}, sizeof(Vertex));
 
-	Rendering::Buffer* ibuffer = createTestResource<Rendering::Buffer>(Rendering::Buffer::Index, Rendering::Buffer::Mapped, sizeof(short) * 4);
+	m_indexBuffer = std::make_shared<Rendering::Buffer>(Rendering::Buffer::Index, Rendering::Buffer::Mapped, sizeof(short) * 4);
 	{
-		short* index = (short*)ibuffer->map();
+		short* index = (short*)m_indexBuffer->map();
 		for (short i = 0; i < 4; i++)
 			index[i] = i;
 
-		ibuffer->unmap();
+		m_indexBuffer->unmap();
 	}
-	ibuffer->setFormat({ {vk::Format::eR16Sint, sizeof(short)} }, sizeof(short));
+	m_indexBuffer->setFormat({ {vk::Format::eR16Sint, sizeof(short)} }, sizeof(short));
 
 	char vertexCode[] =
 		"#version 450 core\n"
@@ -78,7 +51,7 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		"	UV = aUV;\n"
 		"}";
 
-	ResourcePtr<Rendering::Shader> vertShader(NewPtr, Rendering::Shader::Type::Vertex, vertexCode);
+	 m_vertexShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Vertex, vertexCode);
 
 	char pixelCode[] =
 		"#version 450 core\n"
@@ -90,7 +63,122 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 		"	fColor = texture(sTexture, UV.st);\n"
 		"}";
 
-	ResourcePtr<Rendering::Shader> fragShader(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
+	m_fragmentShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
+
+	ResourcePtr<EventManager> events;
+	events->addListener<UpdateEvent>([this](UpdateEvent* e) { process(e->m_delta); });
+	events->addListener<RenderEvent>([this](RenderEvent* e) { render(*e); });
+}
+
+SpriteSystem::~SpriteSystem()
+{
+
+}
+
+void SpriteSystem::process(float delta)
+{
+	ResourcePtr<SpriteManager> spriteManager;
+	ResourcePtr<ComponentManager> components;
+	EntityIterator<TransformComponent, SpriteComponent> it(components, true);
+	Vertex* map = (Vertex*)m_vertexBuffer->map();
+	while (it.next())
+	{
+		auto sprite = it.get<SpriteComponent>();
+		sprite->m_time += delta;
+
+		std::tuple<SpriteData*, Rendering::TextureAtlas*> spriteData = spriteManager->getSpriteData(sprite->m_sprite);
+		if (!std::get<1>(spriteData))
+			continue; // still loading
+
+		glm::vec2 uv1, uv2;
+		const SpriteData::FrameData& frame = std::get<0>(spriteData)->getFrame(sprite->m_time);
+		std::tie(uv1, uv2) = std::get<1>(spriteData)->getUV(frame.m_id);
+
+		TransformComponent* transform = it.get<TransformComponent>();
+		float scale = 1.0f;
+		float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale;
+		float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale;
+
+		map[0] = Vertex{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
+		map[1] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv1.y } };
+		map[2] = Vertex{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv2.y } };
+		map[3] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv2.y } };
+		map += 4;
+	}
+
+	m_vertexBuffer->unmap();
+}
+
+void SpriteSystem::render(const RenderEvent& e)
+{
+	if (!ready(nullptr, m_vertexShader, m_fragmentShader))
+		return;
+
+	ResourcePtr<SpriteManager> spriteManager;
+	ResourcePtr<ComponentManager> components;
+	EntityIterator<SpriteComponent> it(components, true);
+
+	ResourcePtr<Rendering::Device> device;
+	/*ResourcePtr<CameraSystem> cameras;
+	glm::mat4 view, proj;
+	cameras->getMatrices(cameraEntity, &view, &proj);
+
+	glm::mat4x4 cameraMatrix = proj * view;*/
+	std::vector<char> pushData(sizeof(glm::mat4));
+	memcpy(&pushData[0], &e.m_projection, sizeof(glm::mat4));
+
+	Rendering::Unit unit(device->getRootUnit());
+	unit.in(&(*m_vertexBuffer));
+	unit.in(&(*m_indexBuffer));
+	unit.in(m_vertexShader);
+	unit.in(m_fragmentShader);
+	unit.in(std::array<float, 4>{ m_clearColour.x, m_clearColour.y, m_clearColour.z, m_clearColour.w, });
+
+	unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
+
+	int i = 0;
+	while (it.next())
+	{
+		auto sprite = it.get<SpriteComponent>();
+		std::tuple<SpriteData*, Rendering::TextureAtlas*> spriteData = spriteManager->getSpriteData(sprite->m_sprite);
+		ResourcePtr<Rendering::Texture> texture(NoOwnershipPtr, std::get<1>(spriteData));
+		if (!std::get<1>(spriteData))
+			continue; // still loading
+
+		if (i == 0)
+			unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
+
+		unit.in({ 4, 1, (uint32_t)i++ * 4, 0 });
+	}
+
+	if (i > 0)
+		unit.submit();
+}
+
+void SpriteSystem::imgui()
+{
+
+}
+
+SpriteComponent* SpriteSystem::addComponent(Entity e, StringView spritePath)
+{
+	ResourcePtr<SpriteManager> spriteManager;
+	ResourcePtr<ComponentManager> components;
+	SpriteComponent* sprite = components->addComponents<SpriteComponent>(e).get<SpriteComponent>();
+	sprite->m_sprite = spriteManager->getSprite(spritePath);
+	sprite->m_time = 0.0f;
+	return sprite;
+}
+
+void SpriteSystem::test(std::function<void(float)>& update, std::function<void()>& render)
+{
+	ResourcePtr<Rendering::Device> device;
+	ResourcePtr<ComponentManager> components;
+	ResourcePtr<TransformSystem> transforms;
+	ResourcePtr<SpriteSystem> sprites;
+	ResourcePtr<SpriteManager> spriteManager;
+
+	const int spriteCount = 1;
 	
 	for (int i = 0; i < spriteCount; i++)
 	{
@@ -106,83 +194,19 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	camera.get<TransformComponent>()->m_position.z = -250.0f;
 	//camera.get<CameraComponent>()->m_controlType = CameraComponent::Orbit;
 	camera.get<CameraComponent>()->m_controlType = CameraComponent::WASD;
-
-	update = [vbuffer, spriteManager](float delta)
-	{
-		ResourcePtr<ComponentManager> components;
-		EntityIterator<TransformComponent, SpriteComponent> it(components, true);
-		Vert* map = (Vert*)vbuffer->map();
-		while (it.next())
-		{
-			auto sprite = it.get<SpriteComponent>();
-			sprite->m_time += delta;
-
-			std::tuple<SpriteData*, Rendering::TextureAtlas*> spriteData = spriteManager->getSpriteData(sprite->m_sprite);
-			if (!std::get<1>(spriteData))
-				continue; // still loading
-
-			glm::vec2 uv1, uv2;
-			const SpriteData::FrameData& frame = std::get<0>(spriteData)->getFrame(sprite->m_time);
-			std::tie(uv1, uv2) = std::get<1>(spriteData)->getUV(frame.m_id);
-
-			TransformComponent* transform = it.get<TransformComponent>();
-			float scale = 1.0f;
-			float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale;
-			float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale;
-
-			map[0] = Vert{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
-			map[1] = Vert{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv1.y } };
-			map[2] = Vert{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv2.y } };
-			map[3] = Vert{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv2.y } } ;
-			map += 4;
-		}
-		
-		vbuffer->unmap();
-	};
-
-	auto& clearColour = m_clearColour;
-	render = [vertShader, fragShader, ibuffer, vbuffer, spriteManager, &clearColour, cameraEntity]()
-	{
-		ResourcePtr<ComponentManager> components;
-		EntityIterator<SpriteComponent> it(components, true);
-		int i = 0;
-
-		ResourcePtr<Rendering::Device> device;
-		ResourcePtr<CameraSystem> cameras;
-		glm::mat4 view, proj;
-		cameras->getMatrices(cameraEntity, &view, &proj);
-
-		glm::mat4x4 cameraMatrix = proj * view;
-		std::vector<char> pushData(sizeof(glm::mat4));
-		memcpy(&pushData[0], &cameraMatrix, sizeof(glm::mat4));
-
-
-		Rendering::Unit unit(device->getRootUnit());
-		unit.in(vbuffer);
-		unit.in(ibuffer);
-		unit.in(vertShader);
-		unit.in(fragShader);
-		unit.in(std::array<float, 4>{ clearColour.x, clearColour.y, clearColour.z, clearColour.w, });
-		
-		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
-
-		while (it.next())
-		{
-			auto sprite = it.get<SpriteComponent>();
-			std::tuple<SpriteData*, Rendering::TextureAtlas*> spriteData = spriteManager->getSpriteData(sprite->m_sprite);
-			ResourcePtr<Rendering::Texture> texture(NoOwnershipPtr, std::get<1>(spriteData));
-			if (!std::get<1>(spriteData))
-				continue; // still loading
-
-			if(i == 0)
-				unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
-
-			unit.in({ 4, 1, (uint32_t)i++ * 4, 0 });
-		}
-
-		if(i > 0)
-			unit.submit();
-	};
 }
 
 glm::vec4 SpriteSystem::m_clearColour(0.45f, 0.55f, 0.6f, 1.0f);
+
+template<> Meta::Object Meta::instanceMeta<SpriteSystem>()
+{
+	return Object("SpriteSystem").
+		func("addComponent", &SpriteSystem::addComponent);
+}
+
+template<> Meta::Object Meta::instanceMeta<SpriteComponent>()
+{
+	return Object("SpriteComponent").
+		var("m_sprite", &SpriteComponent::m_sprite).
+		var("m_time", &SpriteComponent::m_time);
+}

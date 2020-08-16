@@ -3,10 +3,10 @@
 #pragma warning( disable : 4521) // multiple copy constructors specified
 #pragma warning( disable : 4522) // multiple assignment operators specified
 
+#include "../Meta/Meta.h"
 template<std::size_t BufferSize>
 class AnyWithSize
 {
-
 protected:
 	template<typename T, bool ptr = std::is_pointer<T>::value, bool v = std::is_same<T, void*>::value, bool c = std::is_const<std::remove_pointer<T>::type>::value>
 	struct IsAssignablePointer : public std::bool_constant<false> {};
@@ -26,6 +26,9 @@ public:
 	template<typename T> const T& get() const;
 	template<typename T> T* getPtr();
 	template<typename T> const T* getPtr() const;
+	Meta::Object* getMeta() const;
+	Meta::Object* getDerefMeta() const;
+	bool isPtr() const;
 	void* toVoidPtr();
 	void copyTo(void*);
 	void copyDerefTo(void*);
@@ -58,6 +61,9 @@ protected:
 		virtual void destruct(void*) =0;
 		virtual void copy(void* dest, void* copy) =0;
 		virtual std::size_t getSize() const =0;
+		virtual Meta::Object* getMeta() const =0;
+		virtual Meta::Object* getDerefMeta() const = 0;
+		virtual bool isPtr() const =0;
 		virtual void* toVoidPtr(void*) const = 0;
 		virtual void copyTo(void* dest, void* memory) const = 0;
 		virtual void copyDerefTo(void* dest, void* memory) const = 0;
@@ -69,13 +75,16 @@ protected:
 	template<typename T, bool canCopy, bool isPtr> struct ImplCopyDerefTo : public ImplCopy<T, canCopy> { void copyDerefTo(void*, void*) const; };
 	template<typename T> struct ImplCopyDerefTo<T, true, true> : public ImplCopy<T, true> { void copyDerefTo(void*, void*) const; };
 
-	template<typename T, bool canCopy, bool isPtr>
-	struct Impl : public ImplCopyDerefTo<T, canCopy, isPtr>
+	template<typename T, bool canCopy, bool isPtrT>
+	struct Impl : public ImplCopyDerefTo<T, canCopy, isPtrT>
 	{
-		static Impl<T, canCopy, isPtr> Instance;
+		static Impl<T, canCopy, isPtrT> Instance;
 		void destruct(void*);
 		void copy(void* dest, void* copy);
 		std::size_t getSize() const;
+		Meta::Object* getMeta() const;
+		Meta::Object* getDerefMeta() const;
+		bool isPtr() const;
 		void* toVoidPtr(void*) const;
 	};
 protected:
@@ -205,6 +214,24 @@ template<std::size_t BufferSize>
 template<typename T> const T* AnyWithSize<BufferSize>::getPtr() const
 {
 	return isType<T>() ? &get<T>() : nullptr;
+}
+
+template<std::size_t BufferSize>
+Meta::Object* AnyWithSize<BufferSize>::getMeta() const
+{
+	return m_impl->getMeta();
+}
+
+template<std::size_t BufferSize>
+Meta::Object* AnyWithSize<BufferSize>::getDerefMeta() const
+{
+	return m_impl->getDerefMeta();
+}
+
+template<std::size_t BufferSize>
+bool AnyWithSize<BufferSize>::isPtr() const
+{
+	return m_impl->isPtr();
 }
 
 template<std::size_t BufferSize>
@@ -374,10 +401,31 @@ std::size_t AnyWithSize<BufferSize>::Impl<T, c, p>::getSize() const
 
 template<std::size_t BufferSize>
 template<typename T, bool c, bool p>
+Meta::Object* AnyWithSize<BufferSize>::Impl<T, c, p>::getMeta() const
+{
+	return Meta::getMetaIfAvailable<T>();
+}
+
+template<std::size_t BufferSize>
+template<typename T, bool c, bool p>
+Meta::Object* AnyWithSize<BufferSize>::Impl<T, c, p>::getDerefMeta() const
+{
+	return Meta::getMetaIfAvailable<std::remove_pointer<T>::type>();
+}
+
+template<std::size_t BufferSize>
+template<typename T, bool c, bool p>
 void* AnyWithSize<BufferSize>::Impl<T, c, p>::toVoidPtr(void* m) const
 {
 	T* v = static_cast<T*>(m);
 	return (void*)(v);
+}
+
+template<std::size_t BufferSize>
+template<typename T, bool c, bool p>
+bool AnyWithSize<BufferSize>::Impl<T, c, p>::isPtr() const
+{
+	return p;
 }
 
 template<std::size_t BufferSize>

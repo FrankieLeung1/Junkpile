@@ -357,6 +357,18 @@ template<> Object Meta::instanceMeta<glm::vec2>()
 		.var("y", &glm::vec2::y);
 }
 
+template<> Object Meta::instanceMeta<glm::quat>()
+{
+	return Object("glm::quat")
+		.defaultFactory<glm::quat>()
+		.constructor<glm::quat, float, float, float, float>()
+		.copyOperator<glm::quat>()
+		.var("x", &glm::quat::x)
+		.var("y", &glm::quat::y)
+		.var("z", &glm::quat::z)
+		.var("w", &glm::quat::w);
+}
+
 void Meta::test()
 {
 	MetaTest t;

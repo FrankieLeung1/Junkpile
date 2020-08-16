@@ -106,3 +106,8 @@ m_atlas(g_resourceManager->addLoadedResource(atlas, "Texture Atlas"))
 {
 	
 }
+
+template<> Meta::Object Meta::instanceMeta<SpriteId>()
+{
+	return Object("SpriteId");
+}

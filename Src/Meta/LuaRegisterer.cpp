@@ -66,7 +66,7 @@ int LuaRegisterer::visit(const char* name, void* object, const Object&)
 	return 0;
 }
 
-int LuaRegisterer::startObject(const char* name, const Meta::Object& objectInfo)
+int LuaRegisterer::startObject(const char* name, void* v, const Meta::Object& objectInfo)
 {
 	return 0;
 }
