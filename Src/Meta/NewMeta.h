@@ -575,6 +575,7 @@ namespace Meta
 		return GetMetaIfAvailable<T, hasMeta<T>()>::get();
 	}
 
+	extern std::vector<Object*> g_allMetaObjects;
 	template<typename T>
 	Object& getMeta()
 	{
@@ -582,6 +583,7 @@ namespace Meta
 		{
 			Object o = instanceMeta<T>();
 			o.setSize(sizeof(T));
+			g_allMetaObjects.push_back(&o);
 			return o;
 		};
 		static Object o = init();

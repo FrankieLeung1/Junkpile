@@ -2,6 +2,7 @@
 #include "NewMeta.h"
 
 using namespace Meta;
+std::vector<Object*> Meta::g_allMetaObjects;
 
 Object::Object(StringView name)
 {
