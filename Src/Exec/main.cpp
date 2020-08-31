@@ -112,6 +112,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->registerCallback({ [](SpriteSystem* s) { s->imgui(); }, s.get() });
 	m->registerCallback({ [](Game* g) { g->imgui(); }, g.get() });
 	m->registerCallback({ [](AssetBrowser* ab) { ab->imgui(); }, ab.get() });
+	m->registerCallback([](void*) { Meta::Object::imgui(); });
 
 #ifdef GRINDSTONE_EDITOR
 	GrindstoneEditor ge;

@@ -1,10 +1,13 @@
 #include "stdafx.h"
 #include "NewMeta.h"
+#include "../imgui/ImGuiManager.h"
+#include "../Misc/Misc.h"
 
 using namespace Meta;
 std::vector<Object*> Meta::g_allMetaObjects;
 
-Object::Object(StringView name)
+Object::Object(StringView name):
+m_name(name.c_str())
 {
 	auto deleter = [](std::vector<Any>* members)
 	{
@@ -24,6 +27,40 @@ Object::Object(StringView name)
 Object::~Object()
 {
 	
+}
+
+void Object::imgui()
+{
+	ResourcePtr<ImGuiManager> im;
+	bool* opened = im->win("Meta");
+	if (*opened == false)
+		return;
+
+	if (ImGui::Begin(stringf("Meta (%d)", g_allMetaObjects.size()).c_str(), opened))
+	{
+		for (Object* object : g_allMetaObjects)
+		{
+			if (ImGui::TreeNode(stringf("%s (%d)", object->getName(), object->m_members->size()).c_str()))
+			{
+				for (Any& member : *object->m_members)
+				{
+					if (auto m = member.getPtr<MemberVariable*>())
+					{
+						ImGui::Text((*m)->getName());
+					}
+					else if(auto m = member.getPtr<Function*>())
+					{
+						if ((*m)->m_isConstructor)
+							continue;
+
+						ImGui::Text("%s()", (*m)->m_name.c_str());
+					}
+				}
+				ImGui::TreePop();
+			}
+		}
+	}
+	ImGui::End();
 }
 
 const char* Object::getName() const

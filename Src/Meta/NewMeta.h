@@ -50,6 +50,8 @@ namespace Meta
 		Object(StringView name);
 		~Object();
 
+		static void imgui();
+
 		const char* getName() const;
 		std::size_t getSize() const;
 		void setSize(std::size_t);
@@ -583,10 +585,11 @@ namespace Meta
 		{
 			Object o = instanceMeta<T>();
 			o.setSize(sizeof(T));
-			g_allMetaObjects.push_back(&o);
 			return o;
 		};
+		auto reg = [](Object& o) { g_allMetaObjects.push_back(&o); return 0; };
 		static Object o = init();
+		static int i = reg(o);
 		return o;
 	}
 
