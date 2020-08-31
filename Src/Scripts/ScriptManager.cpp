@@ -8,7 +8,6 @@
 #include "ImGuiColorTextEdit/TextEditor.h"
 
 bool ScriptManager::s_inited = false;
-ScriptManager::Environment::Script ScriptManager::Environment::InvalidScript = { reinterpret_cast<void*>(std::numeric_limits<std::size_t>::max()) };
 ScriptManager::ScriptManager() :
 	m_state(luaL_newstate()),
 	m_editorScriptData(nullptr),
@@ -74,7 +73,7 @@ bool ScriptManager::run(const char* path, Environment::Script script, Environmen
 
 			m_callstack.push_back(&data);
 
-			if (script == Environment::InvalidScript)
+			if (!script)
 			{
 				script = language->newScript(path);
 				data.m_script = script;
@@ -130,7 +129,7 @@ lua_State* ScriptManager::getLua() const
 
 ScriptManager::Environment::Script ScriptManager::getRunningScript() const
 {
-	return m_scriptStack.empty() ? Environment::InvalidScript : m_scriptStack.top();
+	return m_scriptStack.empty() ? Environment::Script() : m_scriptStack.top();
 }
 
 StringView ScriptManager::getScriptPath(Environment::Script script) const

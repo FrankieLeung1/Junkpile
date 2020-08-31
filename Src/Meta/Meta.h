@@ -1,4 +1,10 @@
 #pragma once
+
+#define NEWMETA
+#ifdef NEWMETA
+#include "NewMeta.h"
+
+#else
 #include <array>
 #include <initializer_list>
 #include "../Misc/ResizableMemoryPool.h"
@@ -28,7 +34,7 @@ namespace Meta
 	class Visitor;
 	namespace FuncCommon
 	{
-		struct CallFailure {};
+		struct CallFailure { };
 		struct TypeBase
 		{
 			virtual int visit(Visitor*, const char* name, bool constructor, void* object, const char** names, Any* defaults, std::size_t defaultCount) = 0;
@@ -374,7 +380,6 @@ namespace Meta
 
 	template<typename T> Object& Object::defaultFactory()
 	{
-		glm::vec4* (*f)(float f1, float f2, float f3, float f4) = [](float f1, float f2, float f3, float f4) { return new glm::vec4(f1, f2, f3, f4); };
 		return factory([](void*) -> void* { return new T; }, [](void* ud, void* v) { delete* (T**)v; });
 	}
 
@@ -888,3 +893,4 @@ namespace Meta
 		return result;
 	}
 }
+#endif

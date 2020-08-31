@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#ifndef NEWMETA
+
 #include <string>
 #include "Meta.h"
 #include "Serializer.h"
@@ -391,3 +393,5 @@ void Meta::test()
 }
 
 }
+
+#endif

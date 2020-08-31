@@ -94,7 +94,7 @@ PhysicsComponent* PhysicsSystem::createBox(Entity entity, const glm::vec3& size,
 	btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
 	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, component->m_shape, localInertia);
 	component->m_body = new btRigidBody(rbInfo);
-	component->m_body->setUserIndex(entity);
+	component->m_body->setUserIndex(entity.m_value);
 
 	m_world->addRigidBody(component->m_body);
 	return component;

@@ -158,7 +158,7 @@ void EventManager::onNewListener(EventBase::Id eventId, int priority, std::size_
 	if (!ScriptManager::s_inited)
 	{
 		// special case: ScriptManager registers listeners which makes a circular loop if we're constructing
-		m_listenerData.push_back({"", ScriptManager::Environment::InvalidScript, eventId, priority, index });
+		m_listenerData.push_back({"", ScriptManager::Environment::Script(), eventId, priority, index });
 	}
 	else
 	{
@@ -260,6 +260,9 @@ void EventManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 			continue;
 
 		auto script = it->m_script.get<ScriptManager::Environment::Script>();
+		if (!script)
+			continue;
+
 		StringView path = scripts->getScriptPath(script);
 		if (path)
 		{

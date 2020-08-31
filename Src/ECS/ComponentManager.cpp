@@ -6,6 +6,9 @@ ComponentManager::ComponentManager():
 m_nextFreeEntityId()
 {
 	m_nextFreeEntityId.m_value = 1u;
+	ResourcePtr<EventManager> events;
+	events->addListener<ScriptUnloadedEvent>([this](ScriptUnloadedEvent* e) { onScriptUnloaded(e); });
+	events->addListener<ScriptLoadedEvent>([this](ScriptLoadedEvent* e) { onScriptLoaded(e); });
 }
 
 ComponentManager::~ComponentManager()
@@ -15,14 +18,34 @@ ComponentManager::~ComponentManager()
 
 Entity ComponentManager::newEntity()
 {
-	Entity result = m_nextFreeEntityId;
-	m_nextFreeEntityId.m_value++;
-	return result;
+	ResourcePtr<ScriptManager> scripts;
+	ScriptManager::Environment::Script script = scripts->getRunningScript();
+	auto allocateNewEntity = [=]() {Entity e = m_nextFreeEntityId; m_nextFreeEntityId.m_value++; m_entityCount++; return e; };
+	if (script)
+	{
+		ScriptData& data = m_scriptData[script];
+		if (data.m_nextEntityIndex == data.m_entities.size())
+		{
+			Entity e = allocateNewEntity();
+			data.m_entities.push_back(e);
+			data.m_nextEntityIndex++;
+			return e;
+		}
+		else
+		{
+			return data.m_entities[data.m_nextEntityIndex++];
+		}
+	}
+	else
+	{
+		return allocateNewEntity();
+	}
 }
 
 void ComponentManager::removeEntity(Entity)
 {
 	LOG_F(FATAL, "TODO");
+	m_entityCount--;
 }
 
 bool ComponentManager::validPointer(const ComponentPool& pool, void* p) const
@@ -53,13 +76,27 @@ void ComponentManager::clearAllComponents()
 	}
 }
 
-template<> Meta::Object Meta::instanceMeta<ComponentManager>()
+void ComponentManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 {
-	return Object("ComponentManager").
-		func("newEntity", &ComponentManager::newEntity);
+	ResourcePtr<ScriptManager> scripts;
+	for (auto& it : m_scriptData)
+	{
+		StringView path = scripts->getScriptPath(it.first);
+		for (auto unloadedPath : e->m_paths)
+		{
+			if (unloadedPath == path)
+			{
+				it.second.m_nextEntityIndex--;
+				if (!e->m_reloading)
+					it.second.m_entities.pop_back();
+
+				CHECK_F(it.second.m_nextEntityIndex >= 0);
+			}
+		}
+	}
 }
 
-template<> Meta::Object Meta::instanceMeta<Entity>()
+void ComponentManager::onScriptLoaded(ScriptLoadedEvent* e)
 {
-	return Object("Entity");
+
 }

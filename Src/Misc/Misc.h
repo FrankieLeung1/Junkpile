@@ -152,12 +152,16 @@ public:
 	~OpaqueHandle() = default;
 	MyT& operator=(const MyT& p) { m_value = p.m_value; return *this; }
 	bool operator==(const MyT& p) const { return p.m_value == m_value; }
-	operator bool() const { return m_value == InvalidValue; }
+	bool operator<(const MyT& p) const { return m_value < p.m_value; }
+
+	typedef void (MyT::* bool_type)() const;
+	operator bool_type() const { return m_value == InvalidValue ? 0 : &MyT::this_type_does_not_support_comparisons; } // The Safe Bool Idiom
 
 protected:
 	MyT& operator=(const UnderlyingType& v) { m_value = v; return *this; }
 	UnderlyingType m_value{ InvalidValue };
-	operator UnderlyingType () { return m_value; }
+	//operator UnderlyingType () { return m_value; }
+	void this_type_does_not_support_comparisons() const {}
 	friend typename Friend;
 };
 

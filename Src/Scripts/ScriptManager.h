@@ -33,8 +33,7 @@ public:
 	class Environment
 	{
 	public:
-		struct Script { void* m_ud; bool operator==(const Script& s) const { return m_ud == s.m_ud; } };
-		static Script InvalidScript;
+		struct Script : public OpaqueHandle <Script, ScriptManager, std::size_t, std::numeric_limits<std::size_t>::max()> { Script() {} friend class Python; friend class PythonEnvironment; };
 
 		struct Error
 		{
@@ -58,7 +57,7 @@ public:
 	~ScriptManager();
 
 	void runScriptsInFolder(StringView path, bool recursive = false, ScriptLoadedEvent* event = nullptr);
-	bool run(const char* path, Environment::Script script = Environment::InvalidScript, Environment::Script owner = Environment::InvalidScript);
+	bool run(const char* path, Environment::Script script = Environment::Script(), Environment::Script owner = Environment::Script());
 	void remark(const char* path);
 
 	template<typename T> void registerObject(const char* exposedName, const char* doc = nullptr, std::tuple<T*, const char*> instance = {});

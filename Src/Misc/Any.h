@@ -11,6 +11,7 @@ protected:
 	template<typename T, bool ptr = std::is_pointer<T>::value, bool v = std::is_same<T, void*>::value, bool c = std::is_const<std::remove_pointer<T>::type>::value>
 	struct IsAssignablePointer : public std::bool_constant<false> {};
 	template<typename T> struct IsAssignablePointer<T, true, false, false> : public std::bool_constant<true>{ };
+
 public:
 	AnyWithSize();
 	template<typename T> AnyWithSize(T&&);

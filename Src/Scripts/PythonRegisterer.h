@@ -174,6 +174,7 @@ namespace Meta
 			std::shared_ptr<Visitor> callbackToPreviousFunctionObject(int& id);
 
 			int getResult() const;
+			StringView getError() const;
 
 		protected:
 			template<typename T, typename DataT = T> int visit(T&);
@@ -181,6 +182,7 @@ namespace Meta
 		protected:
 			std::size_t m_argIndex;
 			int m_result;
+			std::string m_error;
 
 			// we store the arg data here. Max 9 of arguments, max size of a 64 bits
 			std::array<void*, 9> m_data;

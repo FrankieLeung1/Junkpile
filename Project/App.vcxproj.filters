@@ -564,6 +564,9 @@
     <ClCompile Include="..\Src\Misc\StringView.cpp">
       <Filter>Source Files\Misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Meta\NewMeta.cpp">
+      <Filter>Source Files\Meta</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1375,6 +1378,9 @@
     </ClInclude>
     <ClInclude Include="..\Src\Misc\StringView.h">
       <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Meta\NewMeta.h">
+      <Filter>Header Files\Meta</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

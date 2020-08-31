@@ -440,6 +440,7 @@
     <ClCompile Include="..\Src\Managers\TimeManager.cpp" />
     <ClCompile Include="..\Src\Meta\LuaRegisterer.cpp" />
     <ClCompile Include="..\Src\Meta\Meta.cpp" />
+    <ClCompile Include="..\Src\Meta\NewMeta.cpp" />
     <ClCompile Include="..\Src\Meta\Serializer.cpp" />
     <ClCompile Include="..\Src\Misc\GrindstoneEditor.cpp" />
     <ClCompile Include="..\Src\Misc\Misc.cpp" />
@@ -705,6 +706,7 @@
     <ClInclude Include="..\Src\Managers\TimeManager.h" />
     <ClInclude Include="..\Src\Meta\LuaRegisterer.h" />
     <ClInclude Include="..\Src\Meta\Meta.h" />
+    <ClInclude Include="..\Src\Meta\NewMeta.h" />
     <ClInclude Include="..\Src\Meta\Serializer.h" />
     <ClInclude Include="..\Src\Misc\Any.h" />
     <ClInclude Include="..\Src\Misc\Callbacks.h" />

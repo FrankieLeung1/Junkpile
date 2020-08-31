@@ -90,7 +90,9 @@ PythonEnvironment::Script PythonEnvironment::newScript(const char* debugName)
 {
 	init();
 	m_scripts.push_back(ScriptData{debugName});
-	return { (void*)(m_scripts.size() - 1) };
+	Script s;
+	s.m_value = m_scripts.size() - 1;
+	return s; // TODO: figure out a way to store this for multiple environments
 }
 
 void PythonEnvironment::deleteScript(Script s)
@@ -106,7 +108,7 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 	memcpy(b, codeString.c_str(), codeString.size());
 	b[codeString.size()] = '\0';
 	
-	std::string name = m_scripts[(std::size_t)script.m_ud].m_debugName.c_str();
+	std::string name = m_scripts[(std::size_t)script.m_value].m_debugName.c_str();
 	PyObject* code = Py_CompileString(b, name.c_str(), Py_file_input);
 	if (code != nullptr)
 	{
@@ -217,21 +219,6 @@ static PyMethodDef JunkpileMethods[] = {
 	{"addModuleDependency", PythonEnvironment::addModuleDependencyMethod, METH_VARARGS, "registers a loaded module"},
 	{NULL, NULL, 0, NULL}        /* Sentinel */
 };
-
-// object test
-static int meta_init(Meta::MetaTest* self, PyObject *args, PyObject *kwds)
-{
-	new(self) Meta::MetaTest();
-	self->m_pointer2 = reinterpret_cast<Meta::MetaTest::InnerMetaTest*>(0x01);
-	self->m_variable4 = "inited!";
-	return 0;
-}
-
-static PyObject* meta_test(Meta::MetaTest* self, PyObject* args)
-{
-	LOG_F(INFO, "test\n");
-	return PyLong_FromLong(0);
-}
 
 PyObject* meta_call(PyObject* self, PyObject* args, PyObject* kwargs)
 {

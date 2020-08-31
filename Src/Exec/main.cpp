@@ -54,7 +54,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("Sprite", &Sprite::test);
 	tests->addTest("Physics", &physicsTest);
 
-	tests->addTest("Meta", &Meta::test);
+	//tests->addTest("Meta", &Meta::test);
 	tests->addTest("Shader", &Rendering::Shader::test);
 	tests->addTest("EventManager", &EventManager::test);
 	tests->addTest("Function", &functionTest);
@@ -151,7 +151,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		{
 			auto render = em->addOneFrameEvent<RenderEvent>();
 			render->m_delta = t->getDelta();
-			render->m_projection = proj * view; //glm::perspective(90.f, 16.0f / 9.0f, -0.01f, 100.0f);
+			render->m_projection = proj * view;
 		}
 
 		em->process(update->m_delta);

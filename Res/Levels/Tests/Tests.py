@@ -10,3 +10,8 @@ t = transformSystem.addComponent(e)
 c = cameraSystem.addComponentPerspective(e)
 cameraSystem.setCameraActive(e)
 t.m_position.z = -250.0
+
+def update(e):
+    print("hi")
+
+#eventManager.addListener_UpdateEvent(update, 0)

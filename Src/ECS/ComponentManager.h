@@ -4,6 +4,7 @@
 #include "../ECS/ECS.h"
 #include "../Misc/Any.h"
 #include "../Meta/Meta.h"
+#include "../Scripts/ScriptManager.h"
 #include "EntityIterator.h"
 
 class ComponentManager;
@@ -119,18 +120,37 @@ protected:
 	template<int = 0, typename... Ts> void setupIterator(std::true_type, EntityIterator<Ts...>&);
 	template<int = 0, typename... Ts> void setupIterator(std::false_type, EntityIterator<Ts...>&);
 
+	void onScriptUnloaded(ScriptUnloadedEvent*);
+	void onScriptLoaded(ScriptLoadedEvent*);
+
 protected:
 	std::map< ComponentId, ComponentPool > m_pools;
 	Entity m_nextFreeEntityId;
 	std::size_t m_entityCount;
+
+	struct ScriptData
+	{
+		// store entities 
+		int m_nextEntityIndex{ 0 };
+		std::vector<Entity> m_entities;
+	};
+	std::map<ScriptManager::Environment::Script, ScriptData> m_scriptData;
 
 	template<typename... Ts> friend class EntityIterator;
 	template<typename T> friend class ComponentPtr;
 };
 
 namespace Meta {
-	template<> Object instanceMeta<ComponentManager>();
-	template<> Object instanceMeta<Entity>();
+	template<> inline Object instanceMeta<ComponentManager>()
+	{
+		return Object("ComponentManager").
+			func("newEntity", &ComponentManager::newEntity);
+	}
+
+	template<> inline Object instanceMeta<Entity>()
+	{
+		return Object("Entity");
+	}
 }
 
 template<typename T>
@@ -203,13 +223,13 @@ bool ComponentManager::hasComponentType() const
 template<typename... Components>
 EntityIterator<Components...> ComponentManager::addEntity()
 {
-	addComponents<Components...>(m_nextFreeEntityId);
+	Entity entity = newEntity();
+	addComponents<Components...>(entity);
 
 	EntityIterator<Components...> result(this, true);
-	result.m_currentEntity.m_value = m_nextFreeEntityId.m_value - 1; // set to the entity before and next()
+	result.m_currentEntity.m_value = entity.m_value - 1; // set to the entity before and next()
 	result.next();
 
-	m_nextFreeEntityId.m_value++;
 	m_entityCount++;
 
 	return std::move(result);
@@ -222,7 +242,7 @@ EntityIterator<Component, Components...> ComponentManager::addComponents(Entity 
 	static_assert(std::is_base_of<::ComponentBase<Component>, Component>::value, "Components must inherit from Component<>");
 
 	if (!eid)
-		eid.m_value = m_nextFreeEntityId.m_value++;
+		eid = newEntity();
 
 	Component::initSystem();
 
@@ -242,7 +262,7 @@ EntityIterator<Component, Components...> ComponentManager::addComponents(Entity 
 	addComponents<Components...>(eid);
 
 	EntityIterator<Component, Components...> result(this, true);
-	result.m_currentEntity.m_value = eid - 1; // set to the entity before and next()
+	result.m_currentEntity.m_value = eid.m_value - 1; // set to the entity before and next()
 	result.next();
 	return std::move(result);
 }

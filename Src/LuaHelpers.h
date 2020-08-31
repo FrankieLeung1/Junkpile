@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resources/ResourceManager.h"
+#include "Misc/Misc.h"
 #include "Misc/Any.h"
 
 class File;

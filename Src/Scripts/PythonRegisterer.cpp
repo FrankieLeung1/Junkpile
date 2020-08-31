@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PythonRegisterer.h"
 #include "Python.h"
+#include "../Scene/TransformSystem.h"
 
 Meta::PythonRegisterer::PythonRegisterer(Meta::Object& metaObject, const char* name, const char* doc):
 m_members(),
@@ -301,6 +302,7 @@ bool Meta::PythonRegisterer::set(const char* name, void* _instance, PyObject* va
 			case T_FLOAT:
 				if (!PyFloat_Check(value)) return false;
 				{
+					glm::vec3* c = (glm::vec3*)instance;
 					*((float*)(instance + member.m_offset)) = (float)PyFloat_AsDouble(value);
 				}
 				break;
@@ -403,7 +405,7 @@ int Meta::PythonRegisterer::pyInit(InstanceData* self, PyObject* args, PyObject*
 		if (visitor.getResult() == 1)
 		{
 			Any r = self->m_class->m_metaObject.callWithVisitor(callable.m_name.c_str(), &visitor);
-			if (r.isType<Meta::StaticFunction::CallFailure>())
+			if (r.isType<Meta::CallFailure>())
 				continue;
 
 			self->m_ptr = r;
@@ -490,9 +492,9 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 
 	InstanceData* instance = pyCallable->m_instance;
 	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr.isType<void*>() ? instance->m_ptr.get<void*>() : nullptr, &visitor);
-	if (r.isType<Meta::Function::CallFailure>())
+	if (r.isType<Meta::CallFailure>())
 	{
-		PyErr_SetString(PyExc_ValueError, "callWithVisitor failed");
+		PyErr_SetString(PyExc_ValueError, stringf("callWithVisitor failed: %s", visitor.getError().c_str()).c_str());
 		return NULL;
 	}
 
@@ -514,7 +516,7 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	}
 	else
 	{
-		return PyLong_FromLong(0);
+		return Py_None;
 	}
 }
 
@@ -524,13 +526,14 @@ void Meta::PythonRegisterer::pyCallableDealloc(PyObject* object)
 	PyObject_Del(object);
 }
 
+namespace { static_assert(sizeof(void*) == sizeof(intptr_t), ""); void* invalidData = reinterpret_cast<void*>(std::numeric_limits<intptr_t >::max()); }
 Meta::PythonRegisterer::ArgsVisitor::ArgsVisitor(Callable* callable, PyObject* args, PyObject* keywords):
 m_argIndex(0),
 m_result(1)
 {
 	CHECK_F(m_data.size() >= callable->m_args.size());
-	//memset(m_data.front(), 0xFE, sizeof(m_data));
-	std::fill(m_data.begin(), m_data.end(), (void*)0xFE);
+	//memset(m_data.front(), invalidData, sizeof(m_data));
+	std::fill(m_data.begin(), m_data.end(), (void*)invalidData);
 
 	const std::size_t ts = std::tuple_size<decltype(m_data)>() + 2;
 	char format[ts] = { '|' };
@@ -556,8 +559,11 @@ int Meta::PythonRegisterer::ArgsVisitor::visit(T& v)
 {
 	CHECK_F(m_result == 1);
 	m_argIndex++;
-	if (m_data[m_argIndex - 1] == (void*)0xFE)
+	if (m_data[m_argIndex - 1] == invalidData)
+	{
+		m_error = stringf("Expected %d arguments\n", m_argIndex);
 		return -1;
+	}
 
 	const DataT* vptr = reinterpret_cast<const DataT*>(&m_data[m_argIndex - 1]);
 	v = *vptr;
@@ -575,8 +581,11 @@ int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, float* v) { ret
 int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, std::string* v) { return visit(v); }
 int Meta::PythonRegisterer::ArgsVisitor::visit(const char* name, void* object, const Object& o) {
 	m_argIndex++;
-	if (m_data[m_argIndex - 1] == (void*)0xFE)
+	if (m_data[m_argIndex - 1] == invalidData)
+	{
+		m_error = stringf("Expected %d arguments\n", m_argIndex);
 		return -1;
+	}
 
 	InstanceData* data = (InstanceData*)m_data[m_argIndex - 1];
 	if (data->m_ptr.isPtr())
@@ -597,12 +606,16 @@ int Meta::PythonRegisterer::ArgsVisitor::startFunctionObject(const char* name, b
 int Meta::PythonRegisterer::ArgsVisitor::endFunctionObject(){ return -1; }
 std::shared_ptr<Meta::Visitor> Meta::PythonRegisterer::ArgsVisitor::callbackToPreviousFunctionObject(int& id) {
 	m_argIndex++;
-	if (m_data[m_argIndex - 1] == (void*)0xFE)
+	if (m_data[m_argIndex - 1] == invalidData)
+	{
+		m_error = stringf("Expected %d arguments\n", m_argIndex);
 		return nullptr;
+	}
 
 	return std::make_shared<CallbackVisitor>((PyObject*)m_data[m_argIndex - 1]);
 }
 int Meta::PythonRegisterer::ArgsVisitor::getResult() const { return m_result; }
+StringView Meta::PythonRegisterer::ArgsVisitor::getError() const { return m_error; }
 
 Meta::PythonRegisterer::CallbackVisitor::CallbackVisitor(PyObject* callback) : m_callback(callback), m_argIndex(0) {
 	CHECK_F(PyCallable_Check(callback) == 1); Py_INCREF(m_callback); m_argFormat[0] = '\0'; memset(m_needsToDec, 0x00, sizeof(m_needsToDec));

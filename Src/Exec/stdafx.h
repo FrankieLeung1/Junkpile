@@ -21,6 +21,7 @@
 #include <tuple>
 #include <memory>
 #include <vector>
+#include <array>
 #include <set>
 #include <list>
 #include <forward_list>
