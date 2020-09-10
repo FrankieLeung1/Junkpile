@@ -81,8 +81,6 @@ namespace Meta
 			{
 				std::string m_name;
 				int m_type;
-				Any m_default;
-
 				std::shared_ptr<FunctionObjectData> m_funcObjData;
 			};
 			std::vector<Arg> m_args;
@@ -203,6 +201,8 @@ namespace Meta
 			Any m_ptr; // should this be a void* instead?
 			PythonRegisterer* m_class;
 			bool m_owns;
+
+			~InstanceData() { LOG_F(INFO, "~InstanceData\n"); }
 		};
 
 		PyTypeObject m_typeDef;

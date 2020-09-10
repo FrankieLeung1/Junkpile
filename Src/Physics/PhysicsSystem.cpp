@@ -20,6 +20,9 @@ struct PhysicsDebugDraw : public btIDebugDraw
 
 	int m_debugMode{ 0 };
 	ImDrawList* m_drawList{ nullptr };
+	glm::vec2 m_viewportPos;
+	glm::vec2 m_viewportSize;
+	glm::mat4x4 m_projection;
 };
 
 PhysicsSystem::PhysicsSystem():
@@ -41,17 +44,20 @@ m_world(nullptr)
 	m_debugDrawer = decltype(m_debugDrawer)(new PhysicsDebugDraw());
 	m_debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawAabb);
 	m_world->setDebugDrawer(m_debugDrawer.get());
-	m_world->setGravity(btVector3(0, 10, 0));
+	m_world->setGravity(btVector3(0, -9.81f, 0));
 
 	m_world->setInternalTickCallback([](btDynamicsWorld* world, btScalar timeStep) { ((PhysicsSystem*)world->getWorldUserInfo())->tickCallback(world, timeStep); }, this);
 
+	gContactDestroyedCallback = [](void* ud) { ((CollisionEvent*)ud)->m_eventDeath = 0; return true; };
+
 	ResourcePtr<EventManager> events;
 	events->addListener<UpdateEvent>([this](UpdateEvent*) { processWorld(0.16f); process(0.16f); }, 10);
+	events->addListener<RenderEvent>([this](RenderEvent* e) { render(e); });
 }
 
 PhysicsSystem::~PhysicsSystem()
 {
-	EntityIterator<PhysicsComponent> p(m_components, false);
+	EntityIterator<PhysicsComponent> p(m_components, true);
 	while (p.next())
 	{
 		auto* pc = p.get<PhysicsComponent>();
@@ -59,15 +65,17 @@ PhysicsSystem::~PhysicsSystem()
 		delete pc->m_body->getMotionState();
 		delete pc->m_shape;
 		delete pc->m_body;
+		pc->m_shape = nullptr;
+		pc->m_body = nullptr;
 	}
 }
 
-void PhysicsSystem::setGravity(const glm::vec3& v)
+void PhysicsSystem::setGlobalGravity(const glm::vec3& v)
 {
 	m_world->setGravity(toBt(v));
 }
 
-glm::vec3 PhysicsSystem::getGravity() const
+glm::vec3 PhysicsSystem::getGlobalGravity() const
 {
 	btVector3 gravity = m_world->getGravity();
 	return glm::vec3(gravity[0], gravity[1], gravity[2]);
@@ -105,6 +113,23 @@ PhysicsComponent* PhysicsSystem::createPlane(Entity entity, const glm::vec3& siz
 	return nullptr;
 }
 
+void PhysicsSystem::impulse(Entity e, const glm::vec3& v)
+{
+	auto c = m_components->findEntity<PhysicsComponent>(e).get<PhysicsComponent>();
+	if (c)
+	{
+		c->m_body->activate();
+		c->m_body->applyImpulse(toBt(v), btVector3(0.0f, 0.0f, 0.0f));
+	}
+}
+
+void PhysicsSystem::setGravity(Entity e, const glm::vec3& gravity)
+{
+	auto c = m_components->findEntity<PhysicsComponent>(e).get<PhysicsComponent>();
+	if (c)
+		c->m_body->setGravity(toBt(gravity));
+}
+
 void PhysicsSystem::processWorld(float delta)
 {
 	m_world->stepSimulation(delta, 10);
@@ -131,10 +156,6 @@ void PhysicsSystem::process(float delta)
 			}
 		}
 	}
-
-	m_components->cleanupComponents<PhysicsComponent>([&](PhysicsComponent& comp) {
-		
-	});
 }
 
 void PhysicsSystem::tickCallback(btDynamicsWorld* world, btScalar timeStep)
@@ -158,10 +179,11 @@ void PhysicsSystem::tickCallback(btDynamicsWorld* world, btScalar timeStep)
 			if (event)
 				break;
 		}
-		if (!event)
+		if (!event || event->m_eventDeath == 0.0f)
 			event = m_events->addPersistentEvent<CollisionEvent>();
 
-		CHECK_F(countof(event->m_pointOn1) <= numContacts);
+		auto count = countof(event->m_pointOn1);
+		CHECK_F(countof(event->m_pointOn1) >= numContacts);
 		event->m_entity[0].m_value = obA->getUserIndex();
 		event->m_entity[1].m_value = obB->getUserIndex();
 		event->m_eventDeath = std::numeric_limits<float>::infinity();
@@ -238,29 +260,111 @@ void PhysicsSystem::imgui()
 	int flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground;
 	if (ImGui::Begin("PhysicsDebugDraw", nullptr, flags))
 	{
-		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-		m_debugDrawer->m_drawList = drawList;
+		m_doDebugDraw = true;
+		m_debugDrawer->m_drawList = ImGui::GetBackgroundDrawList();
+		ImGuiViewport* viewport = ImGui::GetWindowViewport();
+		m_debugDrawer->m_viewportPos = { viewport->Pos.x, viewport->Pos.y };
+		m_debugDrawer->m_viewportSize = { viewport->Size.x, viewport->Size.y };
 		m_world->debugDrawWorld();
+	}
+	else
+	{
+		m_doDebugDraw = false;
 	}
 	ImGui::End();
 }
 
+void PhysicsSystem::render(RenderEvent* e)
+{
+	if (m_doDebugDraw)
+	{
+		m_debugDrawer->m_projection = e->m_projection;
+		//DEBUG_VAR("projection", m_debugDrawer->m_projection);
+	}
+}
+
+void PhysicsComponent::reset()
+{
+	if (m_body)
+	{
+		ResourcePtr<PhysicsSystem> p;
+		delete m_body->getMotionState();
+		p->m_world->removeCollisionObject(m_body);
+		delete m_body;
+		delete m_shape;
+
+		m_body = nullptr;
+		m_shape = nullptr;
+	}
+}
+
 PhysicsComponent::~PhysicsComponent()
 {
-	ResourcePtr<PhysicsSystem> p;
-	p->m_world->removeCollisionObject(m_body);
-	delete m_body->getMotionState();
-	delete m_shape;
-	delete m_body;
+	reset();
 }
 
 void PhysicsDebugDraw::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
 {
-	ImGuiViewport* viewport = ImGui::GetWindowViewport();
-	ImVec2 vpPos = viewport->Pos;
+	glm::vec4 camPos = m_projection[3];
+	glm::vec4 camScale(m_projection[0][0], m_projection[1][1], m_projection[2][2], m_projection[3][3]);
+	glm::vec4 vpPos(m_viewportPos, 1.0f, 1.0f);
+	glm::vec4 vpSize(m_viewportSize, 1.0f, 1.0f);
+
+	glm::vec4 vFrom(from.x(), from.y(), from.z(), 1.0f), vTo(to.x(), to.y(), to.z(), 1.0f);
+	//glm::vec4 vFrom(-0.25f, 0.25f, 1.0f, 1.0f), vTo(0.25f, -0.25f, 1.0f, 1.0f);
+	//vFrom *= camScale;
+	//vTo *= camScale;
+	
+	/*vFrom *= vpSize;
+	vTo *= vpSize;
+	vFrom += vpSize * 0.5f;
+	vTo += vpSize * 0.5f;*/
+
+	//vFrom += vpPos;
+	//vTo += vpPos;
+
+	//if (from.x() > 0.0f || from.y() > 0.0f || from.z() > 0.0f || to.x() > 0.0f /*|| to.y() > 0.0f || to.z() > 0.0f*/)
+		//return;
+
+	if (color.y() > 0.0f)
+	{
+		//vFrom -= glm::vec4(0.02f, 0.02f, 0.02f, 0.0f);
+		//vTo -= glm::vec4(0.02f, 0.02f, -0.02f, 0.0f);
+
+		//vTo *= glm::vec4(1.0f, -1.0f, -1.0f, 1.0f);
+
+		//DEBUG_VAR("fromGreen", vFrom);
+		//DEBUG_VAR("toGreen", vTo);
+		//HERE;
+	}
+	else
+	{
+		//DEBUG_VAR("fromRed", vFrom);
+		//DEBUG_VAR("toRed", vTo);
+		//HERE;
+	}
+
+	vFrom = (vFrom * m_projection);
+	vTo = (vTo * m_projection);
+
+	vFrom.x /= vFrom.w;
+	vFrom.y /= vFrom.w;
+	vTo.x /= vTo.w;
+	vTo.y /= vTo.w;
+
+	vFrom *= vpSize;
+	vTo *= vpSize;
+
+	vFrom += vpSize * 0.5f;
+	vTo += vpSize * 0.5f;
+
+	vFrom += vpPos;
+	vTo += vpPos;
+
 	ImColor imColor((float)color.x(), (float)color.y(), (float)color.z());
-	m_drawList->AddLine(ImVec2((float)from.x(), (float)from.y()) + vpPos, ImVec2((float)to.x(), (float)to.y()) + vpPos, imColor);
-	//LOG_F(INFO, "%f %f %f %f %f %f\n", from.x(), from.y(), from.z(), to.x(), to.y(), to.z());
+	//m_drawList->AddLine(ImVec2(vFrom.w / vFrom.x, vFrom.w / vFrom.y), ImVec2(vTo.w / vTo.x, vTo.w / vTo.y), imColor);
+	//m_drawList->AddLine(ImVec2(vFrom.x, vFrom.y), ImVec2(vTo.x, vTo.y), imColor);
+
 }
 
 void PhysicsDebugDraw::drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)

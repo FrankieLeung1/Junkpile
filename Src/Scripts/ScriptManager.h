@@ -66,7 +66,10 @@ public:
 	Environment::Script getRunningScript() const;
 	StringView getScriptPath(Environment::Script) const;
 
+	void showEditor();
+	void hideEditor();
 	void setEditorContent(const char* content, const char* pathToSave);
+
 	lua_State* getLua() const;
 	void imgui();
 

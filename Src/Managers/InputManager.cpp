@@ -21,6 +21,7 @@ void InputManager::update()
 {
 	for (auto& key : m_keys)
 	{
+		if (key >= 0) m_needsEmitHeld = true;
 		if (key >= 0) key++;
 		else if (key < 0) key--;
 	}
@@ -29,9 +30,15 @@ void InputManager::update()
 void InputManager::setIsDown(int k, bool b)
 {
 	if (b && m_keys[k] < 0)
+	{
 		m_keys[k] = 0;
+		m_needsEmitChanged = true;
+	}
 	else if (!b && m_keys[k] >= 0)
+	{
 		m_keys[k] = -1;
+		m_needsEmitChanged = true;
+	}
 }
 
 void InputManager::setHasFocus(bool b)
@@ -99,4 +106,18 @@ void InputManager::setMouseWheel(float f)
 float InputManager::getMouseWheel() const
 {
 	return m_mouseWheel;
+}
+
+void InputManager::emitEvents()
+{
+	if (m_needsEmitChanged || m_needsEmitHeld)
+	{
+		ResourcePtr<EventManager> e;
+		if (m_needsEmitChanged)
+			e->addOneFrameEvent<InputChanged>();
+		if (m_needsEmitHeld)
+			e->addOneFrameEvent<InputHeld>();
+
+		m_needsEmitChanged = m_needsEmitHeld = false;
+	}
 }

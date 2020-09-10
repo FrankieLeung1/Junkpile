@@ -58,7 +58,7 @@ bool FileManager::exists(const char* path) const
 	return type(path) != Type::NotFound;
 }
 
-FileManager::Type FileManager::type(const char* path) const
+FileManager::Type FileManager::type(StringView path) const
 {
 	return type(GetFileAttributesA(path));
 }

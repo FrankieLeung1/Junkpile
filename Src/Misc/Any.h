@@ -22,7 +22,7 @@ public:
 
 	void reset();
 
-	template<typename T, bool = std::is_copy_assignable<T>::value, bool = IsAssignablePointer<T>::value> bool isType() const;
+	template<typename T, bool = std::is_copy_assignable<std::remove_pointer<T>::type>::value, bool = IsAssignablePointer<T>::value> bool isType() const;
 	template<typename T> T& get();
 	template<typename T> const T& get() const;
 	template<typename T> T* getPtr();
@@ -176,7 +176,7 @@ AnyWithSize<BufferSize>& AnyWithSize<BufferSize>::assignT(T t)
 	using plainT = std::remove_reference<T>::type;
 
 	destruct();
-	m_impl = &Impl<plainT, std::is_copy_assignable<plainT>::value, IsAssignablePointer<plainT>::value>::Instance;
+	m_impl = &Impl<plainT, std::is_copy_assignable<std::remove_pointer<plainT>::type>::value, IsAssignablePointer<plainT>::value>::Instance;
 	if (BufferSize >= sizeof(plainT))
 	{
 		new(m_buffer) plainT(std::forward<T&&>(t));

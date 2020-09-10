@@ -60,11 +60,13 @@ namespace Meta
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...), const std::array<const char*, sizeof...(Args)>& names);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...));
+		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...) const, const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
+		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...) const, const std::array<const char*, sizeof...(Args)>& names);
+		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...) const);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(*)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(*)(Args...), const std::array<const char*, sizeof...(Args)>& names);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(*)(Args...));
 		Object& hook(const BasicFunction<int, Visitor*, void*>&);
-		Object& factory(BasicFunction<void*> constructor, BasicFunction<void, void*> destructor);
 		template<typename T> Object& defaultFactory();
 		template<typename T, typename... Args> Object& constructor();
 		template<typename T, typename... Args> Object& constructor(const std::array<const char*, sizeof...(Args)>& names);
@@ -76,8 +78,8 @@ namespace Meta
 		template<typename T, typename R, typename std::enable_if<std::is_void<R>::value, int>::type = 0, typename... Args> void call(const char* name, Args...);
 		template<typename T, typename R, typename std::enable_if<!std::is_void<R>::value, int>::type = 0, typename... Args> R call(const char* name, T* instance, Args...);
 		template<typename T, typename R, typename std::enable_if<std::is_void<R>::value, int>::type = 0, typename... Args> void call(const char* name, T* instance, Args...);
-		Any callWithVisitor(const char* name, void* instance, Visitor* v);
-		Any callWithVisitor(const char* name, Visitor* v);
+		Any callWithVisitor(const char* name, void* instance, Visitor* v, int argCount);
+		Any callWithVisitor(const char* name, Visitor* v, int argCount);
 
 		void* construct();
 		void destruct(void*);
@@ -88,6 +90,7 @@ namespace Meta
 		std::string m_name;
 		std::size_t m_size;
 		std::shared_ptr<std::vector<Any>> m_members;
+		BasicFunction<void, void*> m_destructor;
 		void (*m_copyOperator)(void*, void*);
 	};
 
@@ -126,8 +129,8 @@ namespace Meta
 	{
 	public:
 		virtual ~Function() = 0 { };
-		virtual Any callWithVisitor(void* instance, Visitor* v);
-		virtual Any callWithVisitor(Visitor* v);
+		virtual Any callWithVisitor(void* instance, Visitor* v, int argCount);
+		virtual Any callWithVisitor(Visitor* v, int argCount);
 		virtual int visit(Visitor*) =0;
 		virtual void* getTypeInstance() const =0;
 
@@ -137,39 +140,42 @@ namespace Meta
 		bool m_isConstructor;
 	};
 
-	template<typename T, typename R, typename... Args>
+	template<typename T, bool isConst, typename R, typename... Args>
 	class Method : public Function
 	{
 	public:
 		int visit(Visitor*);
 		void* getTypeInstance() const;
 
-		R(T::*m_ptr)(Args...);
+		union {
+			R(T::* m_ptrConst)(Args...)const;
+			R(T::* m_ptr)(Args...);
+		};
 	};
 
-	template<typename T, typename R, typename... Args> 
-	class MethodCallable : public Method<T, R, Args...>
+	template<typename T, bool isConst, typename R, typename... Args>
+	class MethodCallable : public Method<T, isConst, R, Args...>
 	{
 	public:
-		Any callWithVisitor(void* instance, Visitor* v);
+		Any callWithVisitor(void* instance, Visitor* v, int argCount);
 	};
 
-	template<typename T, typename... Args>
-	class MethodCallable<T, void, Args...> : public Method<T, void, Args...>
+	template<typename T, bool isConst, typename... Args>
+	class MethodCallable<T, isConst, void, Args...> : public Method<T, isConst, void, Args...>
 	{
 	public:
-		Any callWithVisitor(void* instance, Visitor* v);
+		Any callWithVisitor(void* instance, Visitor* v, int argCount);
 	};
 
 	template<typename T, typename R, typename... Args>
 	class StaticFunction : public Function
 	{
 	public:
-		Any callWithVisitor(Visitor* v);
+		Any callWithVisitor(Visitor* v, int argCount);
 		int visit(Visitor*);
 		void* getTypeInstance() const;
 
-		R(*m_ptr);
+		R(*m_ptr)(Args...);
 	};
 
 	class Hook
@@ -204,7 +210,7 @@ namespace Meta
 
 	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::*f)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults)
 	{
-		auto impl = new MethodCallable<T, R, Args...>();
+		auto impl = new MethodCallable<T, false, R, Args...>();
 		impl->m_name = name;
 		impl->m_ptr = f;
 		impl->m_names.insert(impl->m_names.end(), names.begin(), names.end());
@@ -219,6 +225,27 @@ namespace Meta
 	}
 
 	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::* f)(Args...))
+	{
+		return func(name, f, {}, {});
+	}
+
+	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::* f)(Args...) const, const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults)
+	{
+		auto impl = new MethodCallable<T, true, R, Args...>();
+		impl->m_name = name;
+		impl->m_ptrConst = f;
+		impl->m_names.insert(impl->m_names.end(), names.begin(), names.end());
+		impl->m_defaults = defaults;
+		m_members->emplace_back(static_cast<Function*>(impl));
+		return *this;
+	}
+
+	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::* f) (Args...) const, const std::array<const char*, sizeof...(Args)>& names)
+	{
+		return func(name, f, names, {});
+	}
+
+	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(T::* f) (Args...) const)
 	{
 		return func(name, f, {}, {});
 	}
@@ -247,7 +274,9 @@ namespace Meta
 
 	template<typename T> Object& Object::defaultFactory()
 	{
-		return factory([](void*) -> void* { return new T; }, [](void* ud, void* v) { delete* (T**)v; });
+		constructor<T>({});
+		m_destructor = [](void* ud, void* v) { delete* (T**)v; };
+		return *this;
 	}
 
 	template<typename T, typename... Args> Object& Object::constructor()
@@ -262,9 +291,9 @@ namespace Meta
 
 	template<typename T, typename... Args> Object& Object::constructor(const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults)
 	{
-		T* (*f)(Args&&...) = [](Args&&... args) { return new T(std::forward<Args>(args)...); };
+		T* (*f)(Args...) = [](Args... args) { return new T(std::forward<Args>(args)...); };
 
-		auto impl = new StaticFunction<T, void, Args...>();
+		auto impl = new StaticFunction<T, T*, Args...>();
 		impl->m_name = "";
 		impl->m_ptr = f;
 		impl->m_names.insert(impl->m_names.end(), names.begin(), names.end());
@@ -396,22 +425,30 @@ namespace Meta
 		return Meta::getMetaIfAvailable<V>();
 	}
 
-	template<typename T, typename R, typename... Args>
-	Any MethodCallable<T, R, Args...>::callWithVisitor(void* instance, Visitor* v)
+	template<typename T, bool isConst, typename R, typename... Args>
+	Any MethodCallable<T, isConst, R, Args...>::callWithVisitor(void* instance, Visitor* v, int argCount)
 	{
+		if (argCount > sizeof...(Args) || argCount < sizeof...(Args) - m_defaults.size())
+			return CallFailure();
+
 		T* c = static_cast<T*>(instance);
 		std::tuple<typename std::decay<Args>::type...> args;
 		TypeVisitor<Args...>::visit(v, args, &m_defaults);
-		return callWithTuple(instance, m_ptr, args);
+		if(isConst) return callWithTuple(instance, m_ptrConst, args);
+		else		return callWithTuple(instance, m_ptr, args);
 	}
 
-	template<typename T, typename... Args>
-	Any MethodCallable<T, void, Args...>::callWithVisitor(void* instance, Visitor* v)
+	template<typename T, bool isConst, typename... Args>
+	Any MethodCallable<T, isConst, void, Args...>::callWithVisitor(void* instance, Visitor* v, int argCount)
 	{
+		if (argCount > sizeof...(Args) || argCount < sizeof...(Args) - m_defaults.size())
+			return CallFailure();
+
 		T* c = static_cast<T*>(instance);
 		std::tuple<typename std::decay<Args>::type...> args;
 		TypeVisitor<Args...>::visit(v, args, &m_defaults);
-		callWithTuple(instance, m_ptr, args);
+		if (isConst)	callWithTupleNoReturn(instance, m_ptrConst, args);
+		else			callWithTupleNoReturn(instance, m_ptr, args);
 		return nullptr;
 	}
 
@@ -510,8 +547,8 @@ namespace Meta
 		}
 	};
 
-	template<typename T, typename R, typename... Args>
-	int Method<T, R, Args...>::visit(Visitor* v)
+	template<typename T, bool isConst, typename R, typename... Args>
+	int Method<T, isConst, R, Args...>::visit(Visitor* v)
 	{
 		int r = v->startFunction(m_name.c_str(), std::is_void<R>::value, false);
 		if (r == 0)
@@ -529,22 +566,40 @@ namespace Meta
 		return r;
 	}
 
-	template<typename T, typename R, typename... Args>
-	void* Method<T, R, Args...>::getTypeInstance() const
+	template<typename T, bool isConst, typename R, typename... Args>
+	void* Method<T, isConst, R, Args...>::getTypeInstance() const
 	{
 		return &Type<R(Args...)>::s_instance;
 	}
 
 	template<typename T, typename R, typename... Args>
-	Any StaticFunction<T, R, Args...>::callWithVisitor(Visitor* v)
+	Any StaticFunction<T, R, Args...>::callWithVisitor(Visitor* v, int argCount)
 	{
-		return nullptr;
+		if (argCount > sizeof...(Args) || argCount < sizeof...(Args) - m_defaults.size())
+			return CallFailure();
+
+		std::tuple<typename std::decay<Args>::type...> args;
+		TypeVisitor<Args...>::visit(v, args, &m_defaults);
+		return callWithTuple(m_ptr, args);
 	}
 
 	template<typename T, typename R, typename... Args>
-	int StaticFunction<T, R, Args...>::visit(Visitor*)
+	int StaticFunction<T, R, Args...>::visit(Visitor* v)
 	{
-		return 0;
+		int r = v->startFunction(m_name.c_str(), std::is_void<R>::value, m_isConstructor);
+		if (r == 0)
+		{
+			if (!std::is_void<R>::value)
+			{
+				const char* name = "return";
+				TypeVisitor<R>::visit(v, &name, nullptr, 0);
+			}
+
+			TypeVisitor<Args...>::visit(v, sizeof...(Args) == 0 ? nullptr : &m_names[0], nullptr, 0);
+			v->endFunction();
+		}
+
+		return r;
 	}
 
 	template<typename T, typename R, typename... Args>

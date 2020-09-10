@@ -30,7 +30,7 @@ public:
 	bool exists(const char*) const;
 	
 	enum Type {NotFound, File, Directory, Other};
-	Type type(const char*) const;
+	Type type(StringView) const;
 
 	struct FileInfo
 	{

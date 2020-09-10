@@ -42,9 +42,14 @@ Entity ComponentManager::newEntity()
 	}
 }
 
-void ComponentManager::removeEntity(Entity)
+void ComponentManager::removeEntity(Entity entity)
 {
-	LOG_F(FATAL, "TODO");
+	for(auto it = m_pools.begin(); it != m_pools.end(); ++it)
+	{
+		ResizeableMemoryPool& buffer = it->second.m_buffer;
+		it->second.m_accessor->clearEntity(buffer, entity);
+	}
+
 	m_entityCount--;
 }
 
@@ -87,8 +92,15 @@ void ComponentManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 			if (unloadedPath == path)
 			{
 				it.second.m_nextEntityIndex--;
+				for (Entity& entity : it.second.m_entities)
+				{
+					removeEntity(entity);
+				}
+
 				if (!e->m_reloading)
+				{
 					it.second.m_entities.pop_back();
+				}
 
 				CHECK_F(it.second.m_nextEntityIndex >= 0);
 			}

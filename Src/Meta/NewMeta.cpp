@@ -83,11 +83,6 @@ Object& Object::hook(const BasicFunction<int, Visitor*, void*>&)
 	return *this;
 }
 
-Object& Object::factory(BasicFunction<void*> constructor, BasicFunction<void, void*> destructor)
-{
-	return *this;
-}
-
 template<typename T> bool visitHelper(Visitor* v, void* object, MemberVariable* var, int* result)
 {
 	if (var->getTypeInstance() == &Type<T>::s_instance)
@@ -138,7 +133,7 @@ int Object::visit(Visitor* v, void* object) const
 	return 0;
 }
 
-Any Object::callWithVisitor(const char* name, void* instance, Visitor* v)
+Any Object::callWithVisitor(const char* name, void* instance, Visitor* v, int argCount)
 {
 	for (const Any& any : *m_members)
 	{
@@ -146,7 +141,9 @@ Any Object::callWithVisitor(const char* name, void* instance, Visitor* v)
 		{
 			if ((*m)->m_name == name)
 			{
-				return (*m)->callWithVisitor(instance, v);
+				auto& r = (*m)->callWithVisitor(instance, v, argCount);
+				if (!r.isType<CallFailure>())
+					return r;
 			}
 		}
 	}
@@ -154,18 +151,32 @@ Any Object::callWithVisitor(const char* name, void* instance, Visitor* v)
 	return nullptr;
 }
 
-Any Object::callWithVisitor(const char* name, Visitor* v)
+Any Object::callWithVisitor(const char* name, Visitor* v, int argCount)
+{
+	for (const Any& any : *m_members)
+	{
+		if (Function* const* m = any.getPtr<Function*>())
+		{
+			if ((*m)->m_name == name)
+			{
+				auto& r = (*m)->callWithVisitor(v, argCount);
+				if (!r.isType<CallFailure>())
+					return r;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+Any Meta::Function::callWithVisitor(void* instance, Visitor* v, int argCount)
 {
 	return nullptr;
 }
 
-Any Meta::Function::callWithVisitor(void* instance, Visitor* v) 
+Any Meta::Function::callWithVisitor(Visitor* v, int argCount)
 {
-	return nullptr; 
-}
-
-Any Meta::Function::callWithVisitor(Visitor* v)
-{
+	CHECK_F(false);
 	return nullptr; 
 }
 
@@ -174,9 +185,9 @@ void* Object::construct()
 	return nullptr;
 }
 
-void Object::destruct(void*)
+void Object::destruct(void* v)
 {
-
+	m_destructor(v);
 }
 
 void Object::copyTo(void* dest, void* src) const

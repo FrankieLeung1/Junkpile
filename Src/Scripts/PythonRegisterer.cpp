@@ -63,7 +63,6 @@ bool Meta::PythonRegisterer::visitArg(const char* name, T& d)
 		if (name && strcmp(name, "return") == 0)
 		{
 			m_visitingFunctionObject->m_return.m_name = name;
-			m_visitingFunctionObject->m_return.m_default = d;
 			m_visitingFunctionObject->m_return.m_type = getType<T>();
 		}
 		else
@@ -71,14 +70,12 @@ bool Meta::PythonRegisterer::visitArg(const char* name, T& d)
 			m_visitingFunctionObject->m_args.emplace_back();
 			Callable::Arg& arg = m_visitingFunctionObject->m_args.back();
 			if (name) arg.m_name = name;
-			arg.m_default = d;
 			arg.m_type = getType<T>();
 		}
 	}
 	else if (name && strcmp(name, "return") == 0)
 	{
 		m_visitingFunction->m_return.m_name = name;
-		m_visitingFunction->m_return.m_default = d;
 		m_visitingFunction->m_return.m_type = getType<T>();
 	}
 	else
@@ -86,7 +83,6 @@ bool Meta::PythonRegisterer::visitArg(const char* name, T& d)
 		m_visitingFunction->m_args.emplace_back();
 		Callable::Arg& arg = m_visitingFunction->m_args.back();
 		if (name) arg.m_name = name;
-		arg.m_default = d;
 		arg.m_type = getType<T>();
 	}
 	return true;
@@ -404,7 +400,7 @@ int Meta::PythonRegisterer::pyInit(InstanceData* self, PyObject* args, PyObject*
 		Meta::PythonRegisterer::ArgsVisitor visitor(&callable, args, kwds);
 		if (visitor.getResult() == 1)
 		{
-			Any r = self->m_class->m_metaObject.callWithVisitor(callable.m_name.c_str(), &visitor);
+			Any r = self->m_class->m_metaObject.callWithVisitor(callable.m_name.c_str(), &visitor, (int)PyTuple_Size(args));
 			if (r.isType<Meta::CallFailure>())
 				continue;
 
@@ -480,6 +476,8 @@ int Meta::PythonRegisterer::pySet(PyObject* self, PyObject* attr, PyObject* valu
 
 PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args, PyObject* kwargs)
 {
+	auto incAndReturn = [](PyObject* o) { Py_INCREF(o); return o; };
+
 	// TODO: implement call overloading here (don't use pyCallable->m_callable, lookup by function name)
 	PyCallable* pyCallable = ((PyCallable*)self);
 	Callable* callable = pyCallable->m_callable;
@@ -491,7 +489,7 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	}
 
 	InstanceData* instance = pyCallable->m_instance;
-	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr.isType<void*>() ? instance->m_ptr.get<void*>() : nullptr, &visitor);
+	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr.isType<void*>() ? instance->m_ptr.get<void*>() : nullptr, &visitor, (int)PyTuple_Size(args));
 	if (r.isType<Meta::CallFailure>())
 	{
 		PyErr_SetString(PyExc_ValueError, stringf("callWithVisitor failed: %s", visitor.getError().c_str()).c_str());
@@ -501,7 +499,7 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	if (r.isType<int>()) return PyLong_FromLong(r.get<int>());
 	else if(r.isType<float>()) return PyFloat_FromDouble(r.get<float>());
 	else if (r.isType<std::string>()) return PyUnicode_FromString(r.get<std::string>().c_str());
-	else if (r.isType<bool>()) return r.get<bool>() ? Py_True : Py_False;
+	else if (r.isType<bool>()) return incAndReturn(r.get<bool>() ? Py_True : Py_False);
 	else if (Meta::Object* m = r.getMeta())
 	{
 		Meta::PythonRegisterer* registerer = PythonEnvironment::getThis()->findRegisterer(*m);
@@ -516,7 +514,7 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	}
 	else
 	{
-		return Py_None;
+		return incAndReturn(Py_None);
 	}
 }
 
@@ -532,8 +530,17 @@ m_argIndex(0),
 m_result(1)
 {
 	CHECK_F(m_data.size() >= callable->m_args.size());
-	//memset(m_data.front(), invalidData, sizeof(m_data));
 	std::fill(m_data.begin(), m_data.end(), (void*)invalidData);
+
+	Py_ssize_t count = PyTuple_Size(args);
+	if ((int)count > callable->m_args.size())
+	{
+		m_result = -1;
+		return;
+	}
+
+	if (count == 0)
+		return;
 
 	const std::size_t ts = std::tuple_size<decltype(m_data)>() + 2;
 	char format[ts] = { '|' };
@@ -632,7 +639,7 @@ int Meta::PythonRegisterer::CallbackVisitor::visit(const char* name, float* v) {
 int Meta::PythonRegisterer::CallbackVisitor::visit(const char* name, std::string* v) { return visit(name, *v); }
 int Meta::PythonRegisterer::CallbackVisitor::visit(const char* name, void* object, const Object& o) {
 	Meta::PythonRegisterer* r = PythonEnvironment::findRegisterer(o);
-	LOG_IF_F(FATAL, r == nullptr, "Object not registered with Python %s", o.getName());
+	LOG_IF_F(FATAL, r == nullptr, "Object not registered with Python \"%s\"\n", o.getName());
 	PyObject* ptr = r->instancePointer(object);
 	add('O', *ptr);
 	m_needsToDec[m_argIndex] = ptr;

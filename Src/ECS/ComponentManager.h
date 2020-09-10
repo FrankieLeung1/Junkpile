@@ -51,7 +51,7 @@ protected:
 
 class ComponentManager : public SingletonResource<ComponentManager>
 {
-private:
+public:
 	typedef AnyWithSize<sizeof(std::vector<void*>)> ResizeableMemoryPool;
 	struct ComponentPool
 	{
@@ -63,6 +63,7 @@ private:
 			virtual std::size_t elementSize() =0;
 			virtual bool empty(const ResizeableMemoryPool&) = 0;
 			virtual void clear(ResizeableMemoryPool&) = 0;
+			virtual void clearEntity(ResizeableMemoryPool&, Entity) =0;
 		};
 
 		template<typename T>
@@ -71,15 +72,25 @@ private:
 		public:
 			static BufferAccessorInstance<T> s_instance;
 			const void* front(const ResizeableMemoryPool& pool) { return &pool.get<std::vector<T>>().front(); }
-			std::size_t size(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().size(); }
+			std::size_t size(const ResizeableMemoryPool& pool) { 
+				auto& v = pool.get<std::vector<T>>(); 
+				return v.size();
+			}
 			std::size_t elementSize() { return sizeof(T); };
 			bool empty(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().empty(); }
 			void clear(ResizeableMemoryPool& pool) { pool.get<std::vector<T>>().clear(); }
+			void clearEntity(ResizeableMemoryPool& pool, Entity e) {
+				auto& v = pool.get<std::vector<T>>();
+				for (auto it = v.begin(); it != v.end();)
+				{
+					if (it->m_entity == e) it = v.erase(it);
+					else ++it;
+				}
+			};
 		};
 
 		BufferAccessor* m_accessor;
 		ResizeableMemoryPool m_buffer;
-		std::set<Entity> m_pendingDead;
 
 		template<typename Component> Component* findComponent(Entity);
 	};
@@ -106,8 +117,7 @@ public:
 
 	template<typename Component> ComponentPool* getPool();
 
-	template<typename Component, typename Deleter> void cleanupComponents(Deleter);
-
+	template<typename Component> void clearComponents();
 	void clearAllComponents();
 
 	void imgui();
@@ -234,7 +244,7 @@ EntityIterator<Components...> ComponentManager::addEntity()
 
 	return std::move(result);
 }
-
+struct PhysicsComponent;
 template<typename Component, typename... Components>
 EntityIterator<Component, Components...> ComponentManager::addComponents(Entity eid)
 {
@@ -479,21 +489,12 @@ Component* ComponentManager::ComponentPool::findComponent(Entity entity)
 	return nullptr;
 }
 
-template<typename Component, typename Deleter>
-void ComponentManager::cleanupComponents(Deleter deleter)
+template<typename Component>
+void ComponentManager::clearComponents()
 {
-	CHECK_F(hasComponentType<Component>());
-	ComponentPool& pool = m_pools[Component::componentId()];
-	if (pool.m_pendingDead.empty())
-		return;
-
-	std::vector<Component>& vector = pool.m_buffer.get<std::vector<Component>>();
-	auto pred = [&](Component& comp) {
-		bool remove = pool.m_pendingDead.find(comp.m_entity) != pool.m_pendingDead.end();
-		if(remove) deleter(comp);
-		return remove;
-	};
-	vector.erase(std::remove_if(vector.begin(), vector.end(), pred), vector.end());
+	auto pool = m_pools.find(Component::componentId());
+	if (pool != m_pools.end())
+		pool->second.m_accessor->clear(pool->second.m_buffer);
 }
 
 // EntityIterator

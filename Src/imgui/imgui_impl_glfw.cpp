@@ -37,6 +37,8 @@
 #include "stdafx.h"
 #include "imgui/imgui.h"
 #include "imgui_impl_glfw.h"
+#include "../Scripts/ScriptManager.h"
+#include "../Files/FileManager.h"
 
 // GLFW
 #include <GLFW/glfw3.h>
@@ -81,6 +83,7 @@ static GLFWkeyfun           g_PrevUserCallbackKey = NULL;
 static GLFWcharfun          g_PrevUserCallbackChar = NULL;
 static GLFWwindowfocusfun   g_PrevUserCallbackFocus = NULL;
 static GLFWwindowiconifyfun g_PrevUserCallbackIconify = NULL;
+static GLFWdropfun          g_PrevUserCallbackDrop = NULL;
 
 // Forward Declarations
 static void ImGui_ImplGlfw_InitPlatformInterface();
@@ -176,6 +179,27 @@ void ImGui_ImplGlfw_IconifyCallback(GLFWwindow* window, int f)
     framework->onIconify(window, f != 0);
 }
 
+void ImGui_ImplGlfw_DropCallback(GLFWwindow* window, int count, const char** paths)
+{
+    if (g_PrevUserCallbackDrop != NULL)
+        g_PrevUserCallbackDrop(window, count, paths);
+
+    ResourcePtr<ScriptManager> scripts;
+    ResourcePtr<FileManager> files;
+    std::stringstream ss;
+    for (int i = 0; i < count; i++)
+    {
+        std::string ext = files->extension(paths[i]);
+        if (ext == "py")
+        {
+            ResourcePtr<File> f(NewPtr, paths[i]);
+            scripts->setEditorContent(f->getContents().str().c_str(), paths[i]);
+            scripts->showEditor();
+            break;
+        }       
+    }
+}
+
 static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, GlfwClientApi client_api)
 {
     g_Window = window;
@@ -240,6 +264,7 @@ static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, Glfw
         g_PrevUserCallbackChar = glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
 		g_PrevUserCallbackFocus = glfwSetWindowFocusCallback(window, ImGui_ImplGlfw_FocusCallback);
         g_PrevUserCallbackIconify = glfwSetWindowIconifyCallback(window, ImGui_ImplGlfw_IconifyCallback);
+        g_PrevUserCallbackDrop = glfwSetDropCallback(window, ImGui_ImplGlfw_DropCallback);
     }
 
     // Our mouse update function expect PlatformHandle to be filled for the main viewport

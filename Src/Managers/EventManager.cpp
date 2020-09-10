@@ -136,13 +136,13 @@ void EventManager::adjustListenerData(EventBase::Id id, int priority, std::size_
 		{
 			if (dataIt->m_index > index) // if we're after the deleted listener
 			{
-				LOG_F(INFO, "Adjusting %d %d from %d to %d\n", id, priority, dataIt->m_index, dataIt->m_index - 1);
+				//LOG_F(INFO, "Adjusting %d %d from %d to %d\n", id, priority, dataIt->m_index, dataIt->m_index - 1);
 				dataIt->m_index--;
 				++dataIt;
 			}
 			else if (dataIt->m_index == index) // if we are the deleted listener
 			{
-				LOG_F(INFO, "removing %d %d %d\n", id, priority, index);
+				//LOG_F(INFO, "removing %d %d %d\n", id, priority, index);
 				dataIt = m_listenerData.erase(dataIt);
 			}
 			else
@@ -306,12 +306,16 @@ void EventBase::discardEvent()
 	m_discardEvent = true;
 }
 
+#include "../Managers/InputManager.h"
+
 template<>
 Meta::Object Meta::instanceMeta<EventManager>()
 {
 	//template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...));
 	return Meta::Object("EventManager").
-		func<EventManager, void, std::function<void(UpdateEvent*)>>("addListener_UpdateEvent", &EventManager::addListener<UpdateEvent>);
+		func<EventManager, void, std::function<void(UpdateEvent*)>>("addListener_UpdateEvent", &EventManager::addListener<UpdateEvent>).
+		func<EventManager, void, std::function<void(InputChanged*)>>("addListener_InputChanged", &EventManager::addListener<InputChanged>).
+		func<EventManager, void, std::function<void(InputHeld*)>>("addListener_InputHeld", &EventManager::addListener<InputHeld>);
 }
 
 template<>

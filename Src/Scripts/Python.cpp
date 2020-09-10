@@ -12,8 +12,6 @@ PythonEnvironment::~PythonEnvironment()
 {
 	if (m_pythonInited)
 	{
-		//Py_DECREF(m_global);
-		PyDict_Clear(m_global);
 		int r = Py_FinalizeEx();
 		LOG_IF_F(ERROR, r != 0, "Python exited with %d\n", r);
 	}

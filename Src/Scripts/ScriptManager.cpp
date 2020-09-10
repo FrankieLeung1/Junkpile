@@ -169,6 +169,18 @@ void ScriptManager::setEditorContent(const char* content, const char* pathToSave
 	}
 }
 
+void ScriptManager::showEditor()
+{
+	ResourcePtr<ImGuiManager> imgui;
+	*imgui->win("Script Editor") = true;
+}
+
+void ScriptManager::hideEditor()
+{
+	ResourcePtr<ImGuiManager> imgui;
+	*imgui->win("Script Editor") = false;
+}
+
 void ScriptManager::initEditor()
 {
 	if (!m_editor)
@@ -462,6 +474,8 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 #include "../Scene/TransformSystem.h"
 #include "../Sprites/SpriteSystem.h"
 #include "../Managers/EventManager.h"
+#include "../Managers/InputManager.h"
+#include "../Physics/PhysicsSystem.h"
 #include "../Scene/CameraSystem.h"
 #include "../Scripts/Python.h"
 void ScriptManager::registerObjects()
@@ -469,20 +483,25 @@ void ScriptManager::registerObjects()
 	if (!m_objectsRegistered)
 	{
 		m_objectsRegistered = true;
-
+		
 		addEnvironment<PythonEnvironment>();
 		registerObject<TextureGenerator>("TextureGenerator");
 		registerObject<glm::vec2>("vec2");
 		registerObject<glm::vec3>("vec3");
 		registerObject<glm::vec4>("vec4");
 		registerObject<UpdateEvent>("UpdateEvent");
+		registerObject<InputChanged>("InputChanged");
+		registerObject<InputHeld>("InputHeld");
 		registerObject<Entity>("Entity");
 		registerObject<TransformComponent>("TransformComponent");
 		registerObject<SpriteComponent>("SpriteComponent");
 		registerObject<CameraComponent>("CameraComponent");
+		registerObject<PhysicsComponent>("PhysicsComponent");
 		registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "eventManager"));
+		registerObject<InputManager>("InputManager", nullptr, std::make_tuple(ResourcePtr<InputManager>(NewPtr).get(), "inputManager"));
 		registerObject<ComponentManager>("ComponentManager", nullptr, std::make_tuple(ResourcePtr<ComponentManager>(NewPtr).get(), "componentManager"));
 		registerObject<TransformSystem>("TransformSystem", nullptr, std::make_tuple(ResourcePtr<TransformSystem>(NewPtr).get(), "transformSystem"));
+		registerObject<PhysicsSystem>("PhysicsSystem", nullptr, std::make_tuple(ResourcePtr<PhysicsSystem>(NewPtr).get(), "physicsSystem"));
 		registerObject<SpriteSystem>("SpriteSystem", nullptr, std::make_tuple(ResourcePtr<SpriteSystem>(NewPtr).get(), "spriteSystem"));
 		registerObject<CameraSystem>("CameraSystem", nullptr, std::make_tuple(ResourcePtr<CameraSystem>(NewPtr).get(), "cameraSystem"));
 	}

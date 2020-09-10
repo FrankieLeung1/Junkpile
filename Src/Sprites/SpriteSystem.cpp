@@ -47,7 +47,7 @@ m_fragmentShader(EmptyPtr)
 		"layout(location = 0) out vec2 UV;\n"
 		"void main()\n"
 		"{\n"
-		"	gl_Position = pushConsts.vp * vec4(aPos.xy, 0.0, 1.0);\n"
+		"	gl_Position = pushConsts.vp * vec4(aPos.xy, 1.0, 1.0);\n"
 		"	UV = aUV;\n"
 		"}";
 
@@ -99,10 +99,10 @@ void SpriteSystem::process(float delta)
 		float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale;
 		float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale;
 
-		map[0] = Vertex{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv1.y } };
-		map[1] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv1.y } };
-		map[2] = Vertex{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv2.y } };
-		map[3] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv2.y } };
+		map[0] = Vertex{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv2.y } };
+		map[1] = Vertex{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv1.y } };
+		map[2] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv2.y } };
+		map[3] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv1.y } };
 		map += 4;
 	}
 

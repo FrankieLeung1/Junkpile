@@ -93,7 +93,13 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
                 vf->uploadTexture(&(*texture));
             }
 
-            ImGui::ImageButton(texture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1);
+            if (ImGui::ImageButton(texture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1))
+            {
+                const char* res = "../Res";
+                CHECK_F(m_current.m_path.rfind(res, 0) == 0);
+                glfwSetClipboardString(nullptr, stringf("\"%s/%s\"", m_current.m_path.substr(sizeof(res)).c_str(), current.m_name.c_str()).c_str());
+            }
+
             if (ImGui::IsItemHovered())
             {
                 ImVec2 size;

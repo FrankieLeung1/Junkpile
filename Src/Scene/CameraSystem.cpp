@@ -21,7 +21,7 @@ CameraComponent* CameraSystem::addComponentPerspective(Entity e, float fov)
 {
 	ResourcePtr<ComponentManager> components;
 	CameraComponent* component = components->addComponents<CameraComponent>(e).get<CameraComponent>();
-	component->m_controlType = CameraComponent::WASD;
+	//component->m_controlType = CameraComponent::WASD;
 	component->m_flags = CameraComponent::Perspective;
 	component->m_aspect = 16.0f / 9.0f;
 	component->m_near = 0.1f;
@@ -170,6 +170,7 @@ void CameraSystem::getMatrices(Entity e, glm::mat4* view, glm::mat4* projection)
 	*view = glm::mat4(1.0f);
 	if (t)
 	{
+		(*view)[1][1] = -1.0f; // flip the y axis
 		(*view)[2][2] = -1.0f; // flip the z axis
 		(*view) = glm::mat4_cast(t->m_rotation) * glm::translate(*view, t->m_position);
 	}

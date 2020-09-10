@@ -67,6 +67,20 @@ void callWithTupleNoReturn(void* instance, void(T::*f)(Args...), Tuple& args)
 	callFunc<void>([&](Args... args) { ((T*)instance->*f)(std::forward<Args>(args)...); } , args, typename gens<sizeof...(Args)>::type(), std::false_type{});
 }
 
+template<typename R, typename T, typename Tuple, typename... Args>
+R callWithTuple(void* instance, R(T::* f)(Args...) const, Tuple& args)
+{
+	using namespace MiscInternal;
+	return callFunc<R>([&](Args... args) { return ((T*)instance->*f)(std::forward<Args>(args)...); }, args, typename gens<sizeof...(Args)>::type(), std::is_void<R>::type{});
+}
+
+template<typename T, typename Tuple, typename... Args>
+void callWithTupleNoReturn(void* instance, void(T::* f)(Args...) const, Tuple& args)
+{
+	using namespace MiscInternal;
+	callFunc<void>([&](Args... args) { ((T*)instance->*f)(std::forward<Args>(args)...); }, args, typename gens<sizeof...(Args)>::type(), std::false_type{});
+}
+
 bool endsWith(const std::string& s, const char* ending, std::size_t endingSize = 0);
 std::string toUtf8(const std::wstring&);
 std::wstring toWideString(const std::string&);

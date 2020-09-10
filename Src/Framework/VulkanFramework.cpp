@@ -503,6 +503,7 @@ void VulkanFramework::update()
 	{
 		inputs->setIsDown(i, (keyboardState[i] & 0xF0) != 0);
 	}
+	inputs->emitEvents();
 
 	int focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED) && !ImGui::GetIO().WantTextInput;
 	inputs->setHasFocus(focused != 0);

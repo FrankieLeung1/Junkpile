@@ -3,19 +3,18 @@
 #include "../Managers/EventManager.h"
 #include "../ECS/ComponentManager.h"
 #include "../ECS/System.h"
+#include "../Meta/Meta.h"
 struct PhysicsComponent : public Component<PhysicsComponent>
 {
-	static constexpr const char* m_cid = "Physics";
-
 	btCollisionShape* m_shape;
 	btRigidBody* m_body;
 
-	PhysicsComponent() : m_shape(nullptr), m_body(nullptr) {}
-	PhysicsComponent(const PhysicsComponent&) { CHECK_F(false); }
-	PhysicsComponent(PhysicsComponent&& p) : m_shape(p.m_shape), m_body(p.m_body) { m_shape = nullptr; m_body = nullptr; }
-	PhysicsComponent& operator=(const PhysicsComponent&) { CHECK_F(false); return *this; }
-	PhysicsComponent& operator=(PhysicsComponent&& p) { m_shape = p.m_shape; m_body = p.m_body;  p.m_shape = nullptr; p.m_body = nullptr; return *this; }
+	PhysicsComponent() : m_shape(nullptr), m_body(nullptr) { }
+	PhysicsComponent(const PhysicsComponent& p) : m_shape(p.m_shape), m_body(p.m_body) { }
+	PhysicsComponent& operator=(const PhysicsComponent& p) {  reset(); m_shape = p.m_shape; m_body = p.m_body; return *this; }
+	PhysicsComponent& operator=(PhysicsComponent&& p) { reset(); m_shape = p.m_shape; m_body = p.m_body; p.m_body = nullptr; p.m_shape = nullptr; return *this; }
 	~PhysicsComponent();
+	void reset();
 };
 
 struct CollisionEvent : public PersistentEvent<CollisionEvent>
@@ -32,14 +31,18 @@ public:
 	PhysicsSystem();
 	~PhysicsSystem();
 
-	void setGravity(const glm::vec3&);
-	glm::vec3 getGravity() const;
+	void setGlobalGravity(const glm::vec3&);
+	glm::vec3 getGlobalGravity() const;
 
 	PhysicsComponent* createBox(Entity, const glm::vec3& size, float mass = 1.0f);
 	PhysicsComponent* createPlane(Entity, const glm::vec3& size, float mass = 1.0f);
 
+	void impulse(Entity, const glm::vec3&);
+	void setGravity(Entity, const glm::vec3&);
+
 	void processWorld(float delta);
 	void process(float delta);
+	void render(RenderEvent* e);
 
 	void imgui();
 
@@ -59,5 +62,35 @@ protected:
 	std::unique_ptr<btDynamicsWorld> m_world{ nullptr };
 	std::unique_ptr<PhysicsDebugDraw> m_debugDrawer{ nullptr };
 
+	bool m_doDebugDraw{ false };
+
 	friend struct PhysicsComponent;
 };
+
+namespace Meta
+{
+	template<>
+	inline Object instanceMeta<PhysicsComponent>()
+	{
+		return Object("PhysicsComponent");
+	}
+
+	template<>
+	inline Object instanceMeta<CollisionEvent>()
+	{
+		return Object("CollisionEvent");
+	}
+
+	template<>
+	inline Object instanceMeta<PhysicsSystem>()
+	{
+		return Object("PhysicsSystem").
+			func<PhysicsSystem, void, const glm::vec3&>("setGlobalGravity", &PhysicsSystem::setGlobalGravity, { "gravity" }, { {0.0f, 0.0f, 0.0f} }).
+			func("getGlobalGravity", &PhysicsSystem::getGlobalGravity).
+			func("setGlobalGravity", &PhysicsSystem::setGlobalGravity).
+			func("setGravity", &PhysicsSystem::setGravity).
+			func("createBox", &PhysicsSystem::createBox, { "entity", "size", "mass" }, { 1.0f }).
+			func("createPlane", &PhysicsSystem::createPlane, { "entity", "size", "mass" }, { 1.0f }).
+			func("impulse", &PhysicsSystem::impulse);
+	}
+}
