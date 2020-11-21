@@ -2,6 +2,9 @@
 
 #include "../Resources/ResourceManager.h"
 #include "../Misc/Any.h"
+
+struct RenderEvent;
+namespace Rendering { class Shader; class Buffer; struct ColouredVert; }
 class DebugManager : public SingletonResource<DebugManager>
 {
 public:
@@ -23,11 +26,26 @@ public:
 	void debug(const glm::vec3&, const char* name, const char* file);
 	void debug(const glm::vec4&, const char* name, const char* file);
 	void debug(const glm::mat4&, const char* name, const char* file);
-
 	void setIncrement(float);
+
+	void addLine3D(const glm::vec4&, const glm::vec4&, const glm::vec4&);
 
 protected:
 	void imgui();
+	void render(RenderEvent*);
+	void ensureBufferSizes(std::size_t vSize, std::size_t iSize);
+
+protected:
+	ResourcePtr<Rendering::Shader> m_vertexShader, m_fragmentShader;
+	std::shared_ptr<Rendering::Buffer> m_vertexBuffer, m_indexBuffer;
+
+	typedef Rendering::ColouredVert Vertex;
+	struct Line
+	{
+		glm::vec3 m_positions[2];
+		glm::vec4 m_colour;
+	};
+	std::vector<Line> m_lines;
 
 protected:
 	struct Var

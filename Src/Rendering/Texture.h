@@ -48,6 +48,8 @@ namespace Rendering
 		void setSampler(std::size_t index, const Unit&);
 		Unit& getSampler(std::size_t index);
 
+		static Texture* loadPng(const File&);
+
 	//protected:
 		void createDeviceObjects(Device*);
 

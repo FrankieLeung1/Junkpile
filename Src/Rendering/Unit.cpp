@@ -8,6 +8,8 @@
 #include "RenderingDevice.h"
 #include "Shader.h"
 #include "../Resources/ResourceManager.h"
+#include "../Framework/Framework.h"
+#include "../Misc/CallStack.h"
 
 using namespace Rendering;
 Unit::Unit() :
@@ -16,6 +18,8 @@ m_submitted(false)
 {
 	ResourcePtr<Device> device;
 	m_data->m_root = &device->getRootUnit();
+
+	m_stack = CallStack().str();
 }
 
 Unit::Unit(RootUnit& root):
@@ -23,12 +27,14 @@ m_data(std::make_shared<Data>()),
 m_submitted(false)
 {
 	m_data->m_root = &root;
+	m_stack = CallStack().str();
 }
 
 Unit::Unit(const Unit& unit):
 m_data(unit.m_data),
 m_submitted(false)
 {
+	m_stack = CallStack().str();
 }
 
 Unit::~Unit()

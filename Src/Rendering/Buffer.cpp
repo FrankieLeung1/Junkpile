@@ -10,6 +10,22 @@ m_usage(usage),
 m_size(size),
 m_buffer()
 {
+	recreate(type, usage, size);
+}
+
+Buffer::~Buffer()
+{
+	recreate(m_type, m_usage, 0);
+}
+
+void Buffer::recreate(Type type, Usage usage, std::size_t size)
+{
+	if(m_buffer)
+		vmaDestroyBuffer(m_device->getVMA(), m_buffer, m_allocation);
+
+	if (size <= 0)
+		return;
+
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	switch (type)
 	{
@@ -29,12 +45,8 @@ m_buffer()
 	VkBuffer buffer;
 	auto r = vmaCreateBuffer(m_device->getVMA(), &bufferInfo, &allocInfo, &buffer, &m_allocation, nullptr);
 	checkVkResult(r);
-	m_buffer = buffer;
-}
 
-Buffer::~Buffer()
-{
-	vmaDestroyBuffer(m_device->getVMA(), m_buffer, m_allocation);
+	m_buffer = buffer;
 }
 
 Buffer::Type Buffer::getType() const
@@ -58,6 +70,14 @@ void* Buffer::map()
 void Buffer::unmap()
 {
 	vmaUnmapMemory(m_device->getVMA(), m_allocation);
+}
+
+void Buffer::grow(std::size_t minSize)
+{
+	if (m_size >= minSize || minSize < 0)
+		return;
+
+	recreate(m_type, m_usage, m_size == 0 ? 64 : m_size * 2);
 }
 
 void Buffer::setFormat(std::vector<Format>&& format, std::size_t stride)

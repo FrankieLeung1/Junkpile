@@ -134,7 +134,18 @@ void FileManager::reducePath(std::string& path) const
 	}
 }
 
-std::string FileManager::extension(StringView path) const
+/* TODO
+std::string FileManager::filename(StringView path)
+{
+	const char* begin = path.c_str(), * end = begin + path.size();
+	while (--end != begin)
+		if (*end == '/' || *end == '\\')
+			return std::string(end + 1, begin + path.size() - 1);
+
+	return std::string();
+}*/
+
+std::string FileManager::extension(StringView path)
 {
 	const char* begin = path.c_str(), *end = begin + path.size();
 	while (--end != begin)

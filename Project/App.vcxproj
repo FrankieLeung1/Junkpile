@@ -72,7 +72,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;Dbghelp.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <AddModuleNamesToAssembly>
@@ -98,7 +98,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;Dbghelp.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -442,6 +442,7 @@
     <ClCompile Include="..\Src\Meta\Meta.cpp" />
     <ClCompile Include="..\Src\Meta\NewMeta.cpp" />
     <ClCompile Include="..\Src\Meta\Serializer.cpp" />
+    <ClCompile Include="..\Src\Misc\Callstack.cpp" />
     <ClCompile Include="..\Src\Misc\GrindstoneEditor.cpp" />
     <ClCompile Include="..\Src\Misc\Misc.cpp" />
     <ClCompile Include="..\Src\Misc\ResizableMemoryPool.cpp" />
@@ -710,6 +711,7 @@
     <ClInclude Include="..\Src\Meta\Serializer.h" />
     <ClInclude Include="..\Src\Misc\Any.h" />
     <ClInclude Include="..\Src\Misc\Callbacks.h" />
+    <ClInclude Include="..\Src\Misc\CallStack.h" />
     <ClInclude Include="..\Src\Misc\ClassMask.h" />
     <ClInclude Include="..\Src\Misc\GrindstoneEditor.h" />
     <ClInclude Include="..\Src\Misc\Misc.h" />

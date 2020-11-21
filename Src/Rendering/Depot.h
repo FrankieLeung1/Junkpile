@@ -22,4 +22,29 @@ namespace Rendering {
 		ResourcePtr<Rendering::Shader> m_texVShader, m_texFShader;
 	};
 
+	template<ResourcePtr<Rendering::Shader>(Depot::*VertexShaderFunc)(), ResourcePtr<Rendering::Shader>(Depot::* FragmentShaderFunc)()>
+	struct BaseVertex
+	{
+		static ResourcePtr<Rendering::Shader> getVertexShader();
+		static ResourcePtr<Rendering::Shader> getFragmentShader();
+	};
+
+	struct ColouredVert : public BaseVertex<&Depot::getPassthroughVertexShader, &Depot::getPassthroughFragmentShader>
+	{
+		glm::vec3 m_position, m_colour;
+	};
+
+	// ----------------------- IMPLEMENTATION ----------------------- 
+	template<ResourcePtr<Rendering::Shader>(Depot::* VertexShaderFunc)(), ResourcePtr<Rendering::Shader>(Depot::* FragmentShaderFunc)()>
+	ResourcePtr<Rendering::Shader> BaseVertex<VertexShaderFunc, FragmentShaderFunc>::getVertexShader()
+	{
+		return (ResourcePtr<Depot>()->*VertexShaderFunc)();
+	}
+
+	template<ResourcePtr<Rendering::Shader>(Depot::* VertexShaderFunc)(), ResourcePtr<Rendering::Shader>(Depot::* FragmentShaderFunc)()>
+	ResourcePtr<Rendering::Shader> BaseVertex<VertexShaderFunc, FragmentShaderFunc>::getFragmentShader()
+	{
+		return (ResourcePtr<Depot>()->*FragmentShaderFunc)();
+	}
+
 }

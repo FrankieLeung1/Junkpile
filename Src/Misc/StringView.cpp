@@ -5,7 +5,7 @@ StringView::StringView():m_begin(nullptr), m_end(nullptr) {}
 StringView::StringView(std::nullptr_t) : StringView() {}
 StringView::StringView(const char* begin, const char* end): m_begin(begin), m_end(end) {}
 StringView::StringView(const char* s, std::size_t size): m_begin(s), m_end(s + (size == std::string::npos ? strlen(s) : size) + 1){ }
-StringView::StringView(const std::string& s, std::size_t size):m_begin(s.c_str()), m_end(m_begin + (size == std::string::npos ? s.size() + 1 : size)) { }
+StringView::StringView(const std::string& s, std::size_t size):m_begin(s.c_str()), m_end(m_begin + (size == std::string::npos ? s.size() : size)) { }
 StringView::~StringView() { }
 bool StringView::operator==(const StringView& v) const { const char* c1 = m_begin, * c2 = v.m_begin; while (c1 != m_end && c2 != v.m_end) { if (*c1++ != *c2++) return false; } return true; }
 bool StringView::operator==(const char* c) const { int i = 0; const char* current = m_begin; while (current != m_end && c[i] != '\0') { if (*current != c[i]) return false; current++; i++; } return true; }

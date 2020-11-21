@@ -1,7 +1,10 @@
 #include "stdafx.h"
 #include "Framework.h"
 #include <Windows.h>
+#include "dbghelp.h"
 #include "Shlwapi.h"
+#include "../Misc/Misc.h"
+#include "../Misc/CallStack.h"
 
 using namespace Framework;
 struct Framework::ProcessHandle {

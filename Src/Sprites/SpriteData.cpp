@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SpriteData.h"
+#include "../Files/FileManager.h"
 #include "../Files/File.h"
 #include "../Rendering/Texture.h"
 #include "../Misc/Misc.h"
@@ -136,8 +137,19 @@ SpriteData* SpriteData::SpriteDataLoader::load(std::tuple<int, std::string>* err
 	SpriteData* data = new SpriteData;
 	std::size_t size = m_file->getSize();
 	const char* content = m_file->getContents();
-
-	GIF_Load(const_cast<char*>(content), (long)size, frame, nullptr, data, 0);
+	std::string ext = FileManager::extension(m_file->getPath());
+	if (ext == "png")
+	{
+		data->addFrame({ 0, 0, std::numeric_limits<float>::max(), std::shared_ptr<Rendering::Texture>(Rendering::Texture::loadPng(*m_file))});
+	}
+	else if(ext == "gif")
+	{
+		GIF_Load(const_cast<char*>(content), (long)size, frame, nullptr, data, 0);
+	}
+	else
+	{
+		LOG_F(WARNING, "Unable to load sprite \"%s\"", m_file->getPath().c_str());
+	}
 
 	return data;
 }

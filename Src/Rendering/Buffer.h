@@ -25,12 +25,17 @@ namespace Rendering
 		void* map();
 		void unmap();
 
+		void grow(std::size_t minSize);
+
 		void setFormat(std::vector<Format>&&, std::size_t stride);
 		const std::vector<Format>& getFormat() const;
 		
 		std::size_t getStride() const;
 		std::size_t getSize() const;
 		vk::Buffer getVkBuffer() const;
+
+	protected:
+		void recreate(Type, Usage, std::size_t size);
 
 	protected:
 		Type m_type;

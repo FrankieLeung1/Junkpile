@@ -149,6 +149,7 @@ namespace Rendering
 		};
 		std::shared_ptr<Data> m_data;
 		bool m_submitted;
+		std::string m_stack;
 
 		friend class Rendering::Device;
 	};

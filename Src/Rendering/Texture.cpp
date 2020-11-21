@@ -149,6 +149,7 @@ Texture::Mode Texture::getMode() const
 void Texture::setSoftware(int width, int height, int pixelSize)
 {
 	CHECK_F(m_mode == Mode::EMPTY);
+	CHECK_F(width > 0 && height > 0 && pixelSize > 0);
 
 	m_mode = Mode::SOFTWARE;
 	m_width = width;
@@ -514,6 +515,29 @@ Unit& Texture::getSampler(std::size_t index)
 	return *m_defaultSampler;
 }
 
+Texture* Texture::loadPng(const File& file)
+{
+	unsigned char* pixels;
+	unsigned int width, height;
+	int pngerror = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)file.getContents().c_str(), file.getSize());
+	if (pngerror == 0)
+	{
+		Rendering::Texture* texture = new Rendering::Texture();
+		texture->setSoftware(width, height, 4);
+		char* dest = (char*)texture->map();
+		memcpy(dest, pixels, width * height * 4);
+		texture->unmap();
+		free(pixels);
+
+		return texture;
+	}
+	else
+	{
+		LOG_F(WARNING, "loadpng failed \"%s\" (%d)", file.getPath().c_str(), pngerror);
+		return nullptr;
+	}
+}
+
 Texture::Loader::Loader():
 m_path(),
 m_file(EmptyPtr)
@@ -538,13 +562,14 @@ Resource* Texture::Loader::load(std::tuple<int, std::string>* error)
 	std::string ext = m_path.substr(m_path.find_last_of('.'));
 	if (ext == ".png")
 	{
+		// TODO: use Texture::loadPng() instead
 		unsigned char* pixels;
 		unsigned int width, height;
 		int pngerror = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)m_file->getContents().c_str(), m_file->getSize());
 		if (pngerror == 0)
 		{
 			Rendering::Texture* texture = new Rendering::Texture();
-			texture->setSoftware(width, height, 32);
+			texture->setSoftware(width, height, 4);
 			char* dest = (char*)texture->map();
 			memcpy(dest, pixels, width * height * 4);
 			texture->unmap();

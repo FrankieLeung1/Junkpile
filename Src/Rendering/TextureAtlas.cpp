@@ -44,7 +44,6 @@ void TextureAtlas::addSprite(SpriteData* sprite)
 
 void TextureAtlas::layoutAtlas()
 {
-	// TODO: add m_padding
 	LOG_IF_F(ERROR, m_mode != Texture::Mode::EMPTY, "Texture Atlas must be empty before laying out");
 
 	auto smallestArea = [](Texture* t1, Texture* t2) {
@@ -56,14 +55,14 @@ void TextureAtlas::layoutAtlas()
 	stbrp_rect* rects = (stbrp_rect*)alloca(m_textures.size() * sizeof(stbrp_rect));
 	// subtract one in case we're already a power of 2, we want to keep it
 	int width = nextPowerOf2((*maxElement)->getWidth() - 1), height = nextPowerOf2((*maxElement)->getHeight() - 1);
-	while (true)
+	while (true) // find the width/height of our final texture
 	{
 		memset(rects, 0x00, m_textures.size() * sizeof(stbrp_rect));
 		for (int i = 0; i < m_textures.size(); ++i)
 		{
 			rects[i].id = i;
-			rects[i].w = m_textures[i]->getWidth() + (m_padding);
-			rects[i].h = m_textures[i]->getHeight() + (m_padding);
+			rects[i].w = m_textures[i]->getWidth() + m_padding;
+			rects[i].h = m_textures[i]->getHeight() + m_padding;
 		}
 
 		stbrp_node nodes[512];

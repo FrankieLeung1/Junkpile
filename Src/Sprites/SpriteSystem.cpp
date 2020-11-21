@@ -119,22 +119,6 @@ void SpriteSystem::render(const RenderEvent& e)
 	EntityIterator<SpriteComponent> it(components, true);
 
 	ResourcePtr<Rendering::Device> device;
-	/*ResourcePtr<CameraSystem> cameras;
-	glm::mat4 view, proj;
-	cameras->getMatrices(cameraEntity, &view, &proj);
-
-	glm::mat4x4 cameraMatrix = proj * view;*/
-	std::vector<char> pushData(sizeof(glm::mat4));
-	memcpy(&pushData[0], &e.m_projection, sizeof(glm::mat4));
-
-	Rendering::Unit unit(device->getRootUnit());
-	unit.in(&(*m_vertexBuffer));
-	unit.in(&(*m_indexBuffer));
-	unit.in(m_vertexShader);
-	unit.in(m_fragmentShader);
-	unit.in(std::array<float, 4>{ m_clearColour.x, m_clearColour.y, m_clearColour.z, m_clearColour.w, });
-
-	unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
 
 	int i = 0;
 	while (it.next())
@@ -145,14 +129,21 @@ void SpriteSystem::render(const RenderEvent& e)
 		if (!std::get<1>(spriteData))
 			continue; // still loading
 
-		if (i == 0)
-			unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
+		Rendering::Unit unit(device->getRootUnit());
+		unit.in(&(*m_vertexBuffer));
+		unit.in(&(*m_indexBuffer));
+		unit.in(m_vertexShader);
+		unit.in(m_fragmentShader);
+		unit.in(std::array<float, 4>{ m_clearColour.x, m_clearColour.y, m_clearColour.z, m_clearColour.w, });
+
+		std::vector<char> pushData(sizeof(glm::mat4));
+		memcpy(&pushData[0], &e.m_projection, sizeof(glm::mat4));
+		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
+		unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
 
 		unit.in({ 4, 1, (uint32_t)i++ * 4, 0 });
-	}
-
-	if (i > 0)
 		unit.submit();
+	}
 }
 
 void SpriteSystem::imgui()
