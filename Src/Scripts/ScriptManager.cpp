@@ -98,7 +98,8 @@ bool ScriptManager::run(const char* path, Environment::Script script, Environmen
 				setEditorContent(content, path);
 
 				ResourcePtr<ImGuiManager> imgui;
-				imgui->imguiLoop([f]() { return f->checkChanged(); });
+				std::int64_t modTime = f->getModificationTime();
+				imgui->imguiLoop([f, modTime]() { return modTime != f->getModificationTime(); });
 			} while (1);
 
 			m_callstack.pop_back();
@@ -242,7 +243,6 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 	{
 		LOG_F(INFO, "unloading %s\n", script->m_path.c_str());
 		ResourcePtr<File> f(NewPtr, script->m_path.c_str());
-		f->checkChanged();
 		scriptUnloadedEvent->m_paths.push_back(script->m_path);
 	}
 	scriptUnloadedEvent->m_reloading = true;

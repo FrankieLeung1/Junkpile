@@ -16,16 +16,14 @@ public:
 	static const int CreateIfDoesNotExist = 1;
 
 public:
-	File(StringView path);
+	File(StringView path, HANDLE hFile, HANDLE hMapping, void* content);
 	~File();
 
+	std::int64_t getModificationTime() const;
 	std::size_t getSize() const;
 	StringView getContents() const;
 
 	const std::string& getPath() const;
-
-	// checks if the file has changed, reloads file if true
-	bool checkChanged();
 
 	class FileLoader : public Loader
 	{
@@ -45,6 +43,9 @@ public:
 
 protected:
 	std::string m_path;
-	std::vector<char> m_contents;
-	time_t m_modification;
+	std::int64_t m_modificationTime;
+	std::size_t m_size;
+	StringView m_content;
+	
+	HANDLE m_hFile, m_hMapping;
 };

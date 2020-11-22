@@ -43,6 +43,7 @@
 #include <locale>
 #include <utility>
 #include <codecvt>
+#include <sys/stat.h>
 
 #include "lua/src/lua.hpp"
 #include "loguru/loguru.hpp"

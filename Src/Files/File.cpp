@@ -4,54 +4,57 @@
 #include "FileManager.h"
 #include "../Misc/Misc.h"
 
-File::File(StringView path):
+File::File(StringView path, HANDLE hFile, HANDLE hMapping, void* content):
 m_path(path.str())
 {
-	struct stat s;
-	stat(path, &s);
-	m_modification = s.st_mtime;
+	CHECK_F(path.c_str() != nullptr && hFile != INVALID_HANDLE_VALUE && hMapping != INVALID_HANDLE_VALUE && content);
+
+	LARGE_INTEGER size;
+	if (!GetFileSizeEx(hFile, &size))
+		LOG_F(ERROR, "GetFileSizeEx failed \"%s\" (%X)\n", path.c_str(), GetLastError());
+
+	static_assert(sizeof(m_size) == sizeof(size), "");
+	m_size = size.QuadPart;
+
+	FILETIME fileTime;
+	if (!GetFileTime(hFile, nullptr, nullptr, &fileTime))
+		LOG_F(ERROR, "GetFileTime failed \"%s\" (%X)\n", path.c_str(), GetLastError());
+
+	static_assert(sizeof(fileTime) == sizeof(m_modificationTime), "");
+	memcpy_s(&m_modificationTime, sizeof(m_modificationTime), &fileTime, sizeof(fileTime));
+
+	m_hFile = hFile;
+	m_hMapping = hMapping;
+	m_content = { static_cast<char*>(content), static_cast<char*>(content) + m_size };
 }
 
 File::~File()
 {
+	if (!CloseHandle(m_hMapping))
+		LOG_F(ERROR, "CloseHandle failed \"%s\" %X", m_path.c_str(), GetLastError());
 
+	if (!CloseHandle(m_hFile))
+		LOG_F(ERROR, "CloseHandle failed \"%s\" %X", m_path.c_str(), GetLastError());
+}
+
+std::int64_t File::getModificationTime() const
+{
+	return m_modificationTime;
 }
 
 std::size_t File::getSize() const
 {
-	return m_contents.size();
+	return m_size;
 }
 
 StringView File::getContents() const
 {
-	return { &m_contents[0], m_contents.size() - 1};
+	return m_content;
 }
 
 const std::string& File::getPath() const
 {
 	return m_path;
-}
-
-bool File::checkChanged()
-{
-	struct stat s;
-	stat(m_path.c_str(), &s);
-	if (s.st_mtime > m_modification)
-	{
-		std::fstream fstream(m_path, std::ios::in | std::fstream::binary);
-		fstream.seekg(0, fstream.end);
-		std::size_t size = fstream.tellg();
-		fstream.seekg(0, fstream.beg);
-
-		m_contents.resize(size);
-		fstream.read(&m_contents[0], size);
-
-		m_modification = s.st_mtime;
-
-		return true;
-	}
-
-	return false;
 }
 
 File::FileLoader::FileLoader(StringView path, int flags) : m_path(path.str()), m_flags(flags) {}
@@ -64,22 +67,31 @@ Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 		return nullptr;
 	}
 
-	// TODO: m_flags & File::CreateIfDoesNotExist
-	std::fstream fstream(path, std::ios::in | std::fstream::binary);
-	if (!fstream.good())
+	DWORD flags = (m_flags & File::CreateIfDoesNotExist) ? CREATE_NEW : OPEN_EXISTING;
+	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, 0, nullptr, flags, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		*error = { FileNotFound, stringf("\"%s\" unaccessable", m_path.c_str()) };
+		*error = { SystemError, stringf("CreateFileA failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
 		return nullptr;
 	}
 
-	fstream.seekg(0, fstream.end);
-	std::size_t size = fstream.tellg();
-	fstream.seekg(0, fstream.beg);
+	HANDLE hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	if (hMapping == INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hFile);
+		*error = { SystemError, stringf("CreateFileMapping failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
+		return nullptr;
+	}
 
-	File* f = new File(path.c_str());
-	f->m_contents.resize(size);
-	fstream.read(&f->m_contents[0], size);
-	return f;
+	void* m = MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
+	if (!m)
+	{
+		CloseHandle(hMapping);
+		CloseHandle(hFile);
+		*error = { SystemError, stringf("MapViewOfFile failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
+		return nullptr;
+	}
+	return new File(path.c_str(), hFile, hMapping, m);
 }
 
 std::string File::FileLoader::getDebugName() const

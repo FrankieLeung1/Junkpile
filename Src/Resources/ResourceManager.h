@@ -7,21 +7,33 @@ class EventManager;
 class Resource
 {
 protected:
+	class Reloader;
 	class Loader
 	{
 	public:
 		enum Error {
-			FileNotFound = 1
+			FileNotFound = 1,
+			SystemError = 2
 		};
 
 	public:
 		virtual ~Loader() {}
 		virtual Resource* load(std::tuple<int, std::string>* error) = 0;
-		virtual Loader* createReloader() { return nullptr; }
+		virtual Reloader* createReloader() { return nullptr; }
 		virtual std::string getDebugName() const { return std::string("<") + (const char*)getTypeName() + ">"; }
 		virtual StringView getTypeName() const = 0;
 	};
 	friend class ResourceManager;
+
+	class Reloader
+	{
+	public:
+		virtual ~Reloader();
+		void setReloadNeeded();
+
+	private:
+		int m_reload{ 0 };
+	};
 
 	template<typename> static Loader* createLoader() { static_assert(false, "Override Me!"); }
 	static Resource* getSingleton() { return nullptr; } // prevent compile errors
@@ -31,6 +43,8 @@ protected:
 
 public:
 	virtual ~Resource() {}
+
+	friend struct ResourceData;
 };
 
 template<typename T>
@@ -64,6 +78,8 @@ struct ResourceData
 	State m_state{ State::WAITING };
 	std::size_t m_sharedHash{ 0 };
 	std::tuple<int, std::string> m_error{ 0, {} };
+
+	Resource::Reloader* m_reloader;
 	
 	std::mutex m_mutex;
 
@@ -91,7 +107,6 @@ public:
 	typedef ResourceData::State State;
 
 public:
-	
 	ResourcePtr(EmptyPtr_t);
 	ResourcePtr(NoOwnershipPtr_t, Resource*);
 	ResourcePtr(TakeOwnershipPtr_t, Resource*, const char* name = "", std::size_t hash = 0);
@@ -161,7 +176,7 @@ public:
 protected:
 	struct Task
 	{
-		Resource::Loader* m_loader;
+		std::shared_ptr<Resource::Loader> m_loader;
 		ResourceData* m_data;
 	};
 
@@ -170,6 +185,8 @@ protected:
 
 	template<typename Resource, typename... Args>
 	ResourceData* addRefSpecialized(std::false_type, std::size_t sharedHash, Args&&...);
+
+	void setReloadDirty();
 
 protected:
 	std::forward_list<ResourceData> m_resources;
@@ -185,6 +202,8 @@ protected:
 	bool m_autoStartTasks;
 
 	bool m_freeResources{ true };
+
+	bool m_needsReload{ false };
 
 	// imgui
 	int m_resourceCurrentItem{ 0 };
@@ -239,7 +258,7 @@ ResourceData* ResourceManager::addRefSpecialized(std::false_type, std::size_t sh
 		data = &m_resources.front();
 	}
 
-	Resource::Loader* loader = typename Resource::createLoader(std::forward<Args>(args)...);
+	std::shared_ptr<Resource::Loader> loader(typename Resource::createLoader(std::forward<Args>(args)...));
 
 	{
 		std::lock_guard<std::mutex> l(data->m_mutex);

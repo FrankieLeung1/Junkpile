@@ -81,7 +81,7 @@ namespace Rendering
 			Loader(StringView path);
 			~Loader() override;
 			Resource* load(std::tuple<int, std::string>* error) override;
-			Loader* createReloader() override;
+			Reloader* createReloader() override;
 			std::string getDebugName() const override;
 			StringView getTypeName() const override;
 

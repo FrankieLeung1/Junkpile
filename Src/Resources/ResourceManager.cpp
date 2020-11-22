@@ -30,7 +30,7 @@ ResourceManager::~ResourceManager()
 
 	while (!m_loadingTasks.empty())
 	{
-		delete m_loadingTasks.front().m_loader;
+		m_loadingTasks.front().m_loader = nullptr;
 		m_loadingTasks.pop();
 	}
 
@@ -85,7 +85,7 @@ void ResourceManager::startLoading()
 				std::lock_guard<std::mutex> l2(task.m_data->m_mutex);
 				task.m_data->m_state = ResourceData::State::LOADED;
 				task.m_data->m_resource = resource;
-				delete task.m_loader;
+				task.m_loader = nullptr;
 
 				rm->m_notificationQueue.emplace_back(task.m_data, task.m_data->m_state);
 			}
@@ -96,7 +96,7 @@ void ResourceManager::startLoading()
 				std::lock_guard<std::mutex> l2(task.m_data->m_mutex);
 				task.m_data->m_state = ResourceData::State::FAILED;
 				task.m_data->m_error = errors;
-				delete task.m_loader;
+				task.m_loader = nullptr;
 
 				rm->m_notificationQueue.emplace_back(task.m_data, task.m_data->m_state);
 			}
@@ -255,4 +255,18 @@ void ResourceManager::imgui()
 		Columns(1);
 	}
 	End();
+}
+
+void ResourceManager::setReloadDirty()
+{
+	m_needsReload = true;
+}
+
+Resource::Reloader::~Reloader()
+{
+}
+
+void Resource::Reloader::setReloadNeeded()
+{
+	m_reload++;
 }
