@@ -5,6 +5,7 @@
 #include "../Files/FileManager.h"
 #include "../Managers/TimeManager.h"
 #include "../Misc/Misc.h"
+#include "../Resources/ResourceManager.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
 
 bool ScriptManager::s_inited = false;
@@ -30,31 +31,37 @@ ScriptManager::~ScriptManager()
 		delete l;
 }
 
-void ScriptManager::runScriptsInFolder(StringView path, bool recursive, ScriptLoadedEvent* event)
+void ScriptManager::runScriptsInFolder(StringView path, bool recursive)
+{
+	std::vector<StringView> filesRan;
+	runScriptsInFolder(path, recursive, &filesRan);
+	if (!filesRan.empty())
+	{
+		ResourcePtr<EventManager> events;
+		ScriptLoadedEvent* event = events->addOneFrameEvent<ScriptLoadedEvent>();
+		event->m_paths = std::move(filesRan);
+		event->m_reloading = false;
+	}
+}
+
+void ScriptManager::runScriptsInFolder(StringView path, bool recursive, std::vector<StringView>* filesRan)
 {
 	ResourcePtr<FileManager> fileManagers;
 	std::vector<FileManager::FileInfo> files = fileManagers->files(path);
 	if (files.empty())
 		return;
 
-	if (!event)
-	{
-		ResourcePtr<EventManager> events;
-		event = events->addOneFrameEvent<ScriptLoadedEvent>();
-	}
-
 	for (const FileManager::FileInfo& current : files)
 	{
 		const std::string path = current.m_path;
 		if (recursive && current.m_type == FileManager::Type::Directory)
-			runScriptsInFolder(path.c_str(), true, event);
+			runScriptsInFolder(path.c_str(), true, filesRan);
 		else if (current.m_type == FileManager::Type::File)
 		{
-			if(run(path.c_str()))
-				event->m_paths.push_back(path);
+			if (run(path.c_str()))
+				filesRan->push_back(path);
 		}
 	}
-	event->m_reloading = false;
 }
 
 bool ScriptManager::run(const char* path, Environment::Script script, Environment::Script owner)
@@ -79,10 +86,11 @@ bool ScriptManager::run(const char* path, Environment::Script script, Environmen
 				data.m_script = script;
 			}
 
+			bool didError = false;
 			Environment::Error error;
-			ResourcePtr<File> f(NewPtr, path);
 			do
 			{
+				ResourcePtr<File> f(NewPtr, path);
 				data.m_markup.parseScript(f->getContents());
 				std::string marked = data.m_markup.markUp(f->getContents());
 				m_scriptStack.push(script);
@@ -90,16 +98,33 @@ bool ScriptManager::run(const char* path, Environment::Script script, Environmen
 				m_scriptStack.pop();
 				m_error = error;
 				if (!error)
-					break;
+				{
+					if(didError) // don't notify of a file change in response to an error correction because we're still loading the file for the first time
+						g_resourceManager->clearNotificationsFor(f.get());
 
+					break;
+				}
+
+				// handle script error
 				char* content = (char*)alloca(f->getSize() + 1);
 				memcpy(content, f->getContents(), f->getSize());
 				content[f->getSize()] = '\0';
 				setEditorContent(content, path);
 
-				ResourcePtr<ImGuiManager> imgui;
+				std::string filePath = f->getPath();
 				std::int64_t modTime = f->getModificationTime();
-				imgui->imguiLoop([f, modTime]() { return modTime != f->getModificationTime(); });
+				g_resourceManager->clearNotificationsFor(f.get());
+				f.release();
+
+				g_resourceManager->freeUnreferenced();
+
+				ResourcePtr<ImGuiManager> imgui;
+				imgui->imguiLoop([&filePath, modTime]() {
+					ResourcePtr<FileManager> f;
+					return modTime != f->getModificationTime(filePath.c_str());
+				});
+
+				didError = true;
 			} while (1);
 
 			m_callstack.pop_back();
@@ -248,14 +273,17 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 	scriptUnloadedEvent->m_reloading = true;
 
 	events->addListener<ScriptUnloadedEvent>([events, scriptsToReload, this](ScriptUnloadedEvent* e) {
-		ScriptLoadedEvent* scriptLoadedEvent = events->addOneFrameEvent<ScriptLoadedEvent>();
+		std::vector<StringView> paths;
 		for (ScriptData* script : scriptsToReload)
 		{
 			LOG_F(INFO, "reloading %s\n", script->m_path.c_str());
 
 			run(script->m_path.c_str(), script->m_script);
-			scriptLoadedEvent->m_paths.push_back(script->m_path);
+			paths.push_back(script->m_path);
 		}
+
+		ScriptLoadedEvent* scriptLoadedEvent = events->addOneFrameEvent<ScriptLoadedEvent>();
+		scriptLoadedEvent->m_paths = std::move(paths);
 		scriptLoadedEvent->m_reloading = true;
 		e->discardListener();
 	}, -10);
@@ -477,6 +505,8 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 #include "../Managers/InputManager.h"
 #include "../Physics/PhysicsSystem.h"
 #include "../Scene/CameraSystem.h"
+#include "../imgui/ImGuiManager.h"
+#include "../imgui/MetaBinding.h"
 #include "../Scripts/Python.h"
 void ScriptManager::registerObjects()
 {
@@ -498,6 +528,9 @@ void ScriptManager::registerObjects()
 		registerObject<CameraComponent>("CameraComponent");
 		registerObject<PhysicsComponent>("PhysicsComponent");
 		registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "eventManager"));
+		//registerObject<ImGuiManager>("ImGuiManager", nullptr, std::make_tuple(ResourcePtr<ImGuiManager>(NewPtr).get(), "imguiManager"));
+		static ImGuiMeta imgui;
+		registerObject<ImGuiMeta>("ImGui", nullptr, std::make_tuple(&imgui, "imgui"));
 		registerObject<InputManager>("InputManager", nullptr, std::make_tuple(ResourcePtr<InputManager>(NewPtr).get(), "inputManager"));
 		registerObject<ComponentManager>("ComponentManager", nullptr, std::make_tuple(ResourcePtr<ComponentManager>(NewPtr).get(), "componentManager"));
 		registerObject<TransformSystem>("TransformSystem", nullptr, std::make_tuple(ResourcePtr<TransformSystem>(NewPtr).get(), "transformSystem"));

@@ -3,6 +3,7 @@
 #include "Texture.h"
 #include "../Misc/Misc.h"
 #include "../Files/File.h"
+#include "../Files/FileManager.h"
 #include "../Managers/EventManager.h"
 #include "VulkanHelpers.h"
 #include "RenderingDevice.h"
@@ -593,25 +594,8 @@ Resource* Texture::Loader::load(std::tuple<int, std::string>* error)
 
 Texture::Reloader* Texture::Loader::createReloader()
 {
-	struct Reloader : public Texture::Reloader
-	{
-		Reloader()
-		{
-			ResourcePtr<EventManager> events;
-			events->addListener<ResourceStateChanged>([this](ResourceStateChanged* e){
-				if (m_deleted) {
-					e->discardListener();
-					return;
-				}
-
-				//if(e->)
-
-			});
-		}
-		~Reloader() { *m_deleted = true; }
-		std::shared_ptr<bool> m_deleted{ false };
-	};
-	return new Reloader();
+	std::string path = m_path;
+	return new ReloaderOnFileChange(path, [path]() { return new Loader(path); });
 }
 
 std::string Texture::Loader::getDebugName() const

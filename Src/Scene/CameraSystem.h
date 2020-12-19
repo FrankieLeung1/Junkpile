@@ -38,6 +38,8 @@ public:
 	CameraComponent* addComponentPerspective(Entity e, float fov = 90.0f);
 	CameraComponent* addComponentOrthographic(Entity e);
 	void setCameraActive(Entity);
+	void setWASDInput(Entity);
+	void setNoInput(Entity);
 
 	void update(const UpdateEvent*);
 
@@ -64,7 +66,9 @@ namespace Meta
 		return Object("CameraSystem").
 			func("addComponentPerspective", &CameraSystem::addComponentPerspective, { "entity", "fov" }, { 90.0f }).
 			func("addComponentOrthographic", &CameraSystem::addComponentOrthographic).
-			func("setCameraActive", &CameraSystem::setCameraActive);
+			func("setCameraActive", &CameraSystem::setCameraActive).
+			func("setWASDInput", &CameraSystem::setWASDInput).
+			func("setNoInput", &CameraSystem::setNoInput);
 		
 	}
 }

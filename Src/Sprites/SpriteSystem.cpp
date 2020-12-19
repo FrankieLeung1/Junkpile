@@ -77,6 +77,7 @@ SpriteSystem::~SpriteSystem()
 
 void SpriteSystem::process(float delta)
 {
+	ResourcePtr<DebugManager> debugManager;
 	ResourcePtr<SpriteManager> spriteManager;
 	ResourcePtr<ComponentManager> components;
 	EntityIterator<TransformComponent, SpriteComponent> it(components, true);
@@ -103,6 +104,12 @@ void SpriteSystem::process(float delta)
 		map[1] = Vertex{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv1.y } };
 		map[2] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv2.y } };
 		map[3] = Vertex{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv1.y } };
+
+		/*debugManager->addLine3D(glm::vec4(map[0].m_position, 1), glm::vec4(map[1].m_position, 1), glm::vec4(0, 0, 0, 1));
+		debugManager->addLine3D(glm::vec4(map[1].m_position, 1), glm::vec4(map[3].m_position, 1), glm::vec4(0, 0, 0, 1));
+		debugManager->addLine3D(glm::vec4(map[2].m_position, 1), glm::vec4(map[3].m_position, 1), glm::vec4(0, 0, 0, 1));
+		debugManager->addLine3D(glm::vec4(map[2].m_position, 1), glm::vec4(map[0].m_position, 1), glm::vec4(0, 0, 0, 1));*/
+
 		map += 4;
 	}
 
@@ -140,8 +147,7 @@ void SpriteSystem::render(const RenderEvent& e)
 		memcpy(&pushData[0], &e.m_projection, sizeof(glm::mat4));
 		unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
 		unit.in({ vk::ShaderStageFlagBits::eFragment, 0, texture });
-
-		unit.in({ 4, 1, (uint32_t)i++ * 4, 0 });
+		unit.in(Rendering::Unit::Draw{ 4, 1, (uint32_t)i++ * 4, 0 });
 		unit.submit();
 	}
 }

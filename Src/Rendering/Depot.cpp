@@ -23,11 +23,14 @@ ResourcePtr<Rendering::Shader> Depot::getPassthroughVertexShader()
 		char vertexCode[] =
 			"#version 450 core\n"
 			"layout(location = 0) in vec3 aPos;\n"
+			"layout(location = 1) in vec3 aColour;\n"
 			"layout(push_constant) uniform PushConsts{ mat4 vp; } pushConsts;\n"
-			"out gl_PerVertex{ vec4 gl_Position; };\n"
+			//"out gl_PerVertex{ vec4 gl_Position; vec3 gl_Colour; };\n"
+			"layout(location = 0) out vec3 outColour;\n"
 			"void main()\n"
 			"{\n"
 			"	gl_Position = pushConsts.vp * vec4(aPos.xyz, 1.0);\n"
+			"	outColour = aColour;\n"
 			"}";
 
 		m_passVShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Vertex, vertexCode);
@@ -42,10 +45,11 @@ ResourcePtr<Rendering::Shader> Depot::getPassthroughFragmentShader()
 	{
 		char pixelCode[] =
 			"#version 450 core\n"
+			"layout(location = 0) in vec3 fragColour;\n"
 			"layout(location = 0) out vec4 fColor; \n"
 			"void main()\n"
 			"{\n"
-			"	fColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+			"	fColor = vec4(fragColour, 1.0);\n"
 			"}";
 
 		m_passFShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);

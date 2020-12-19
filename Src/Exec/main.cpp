@@ -125,9 +125,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	r.startLoading();
 	r.setAutoStartTasks(true);
 
-	//sm->registerObject<Meta::MetaTest>("MetaTest");
-	//sm->runScriptsInFolder("Tray");
-
 	std::function<void(float)> testUpdate;
 	std::function<void()> testRender;
 	tests(testUpdate, testRender);
@@ -156,6 +153,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		}
 
 		em->process(update->m_delta);
+
+		r.freeUnreferenced(); // should call this less often
+		r.startReloading();
 	}
 
 	ResourcePtr<Rendering::Device> d;

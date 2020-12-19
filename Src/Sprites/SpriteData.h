@@ -42,8 +42,9 @@ public:
 	{
 	public:
 		ResourcePtr<File> m_file;
-		SpriteDataLoader(const char* filePath);
+		SpriteDataLoader(StringView filePath);
 		SpriteData* load(std::tuple<int, std::string>* error);
+		Reloader* createReloader();
 		StringView getTypeName() const;
 	};
 

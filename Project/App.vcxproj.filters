@@ -1373,9 +1373,6 @@
     <ClInclude Include="..\Src\imgui\FileTree.h">
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\imgui\AssetBrowser.h">
-      <Filter>Source Files\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\Scripts\Markup.h">
       <Filter>Header Files\Scripts</Filter>
     </ClInclude>
@@ -1387,6 +1384,12 @@
     </ClInclude>
     <ClInclude Include="..\Src\Misc\CallStack.h">
       <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\AssetBrowser.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\MetaBinding.h">
+      <Filter>Header Files\imgui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

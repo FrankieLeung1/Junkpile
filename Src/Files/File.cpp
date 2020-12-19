@@ -30,6 +30,9 @@ m_path(path.str())
 
 File::~File()
 {
+	if(!UnmapViewOfFile(m_content))
+		LOG_F(ERROR, "UnmapViewOfFile failed \"%s\" %X", m_path.c_str(), GetLastError());
+
 	if (!CloseHandle(m_hMapping))
 		LOG_F(ERROR, "CloseHandle failed \"%s\" %X", m_path.c_str(), GetLastError());
 
@@ -71,8 +74,16 @@ Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, 0, nullptr, flags, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		*error = { SystemError, stringf("CreateFileA failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
-		return nullptr;
+		if (GetLastError() == ERROR_FILE_EXISTS)
+			hFile = CreateFileA(path.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+		if (hFile == INVALID_HANDLE_VALUE)
+		{
+			auto error2 = GetLastError();
+
+			*error = { SystemError, stringf("CreateFileA failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
+			return nullptr;
+		}
 	}
 
 	HANDLE hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
@@ -91,8 +102,17 @@ Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 		*error = { SystemError, stringf("MapViewOfFile failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
 		return nullptr;
 	}
-	return new File(path.c_str(), hFile, hMapping, m);
+	return new File(m_path.c_str(), hFile, hMapping, m);
 }
+
+// Probably don't need this because files are locked
+/*File::Reloader* File::FileLoader::createReloader()
+{
+	std::string& path = m_path;
+	int flags = m_flags;
+	auto create = [path, flags]() { return new FileLoader(path, flags); };
+	return new ReloaderOnFileChange(path, create);
+}*/
 
 std::string File::FileLoader::getDebugName() const
 {

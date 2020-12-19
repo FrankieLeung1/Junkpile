@@ -12,13 +12,13 @@ struct ScriptUnloadedEvent : public Event<ScriptUnloadedEvent>
 {
 	// TODO: replace this with Script or something
 	std::vector<StringView> m_paths;
-	bool m_reloading;
+	bool m_reloading{ false };
 };
 struct ScriptLoadedEvent : public Event<ScriptLoadedEvent>
 {
 	// TODO: replace this with Script or something
 	std::vector<StringView> m_paths;
-	bool m_reloading;
+	bool m_reloading{ false };
 };
 struct ScriptRemarkEvent : public Event<ScriptRemarkEvent>
 {
@@ -56,7 +56,7 @@ public:
 	ScriptManager();
 	~ScriptManager();
 
-	void runScriptsInFolder(StringView path, bool recursive = false, ScriptLoadedEvent* event = nullptr);
+	void runScriptsInFolder(StringView path, bool recursive = false);
 	bool run(const char* path, Environment::Script script = Environment::Script(), Environment::Script owner = Environment::Script());
 	void remark(const char* path);
 
@@ -78,6 +78,8 @@ protected:
 	Environment* getEnvironment(const char* name) const;
 	void onFileChange(const FileChangeEvent&);
 	void addDependency(const char* name);
+
+	void runScriptsInFolder(StringView path, bool recursive, std::vector<StringView>* filesRan);
 
 	bool imguiColourPicker4(StringView name, ImGuiColorEditFlags flags, float colour[4], float prevColour[4]);
 	std::string getDefaultValue(const Markup&, int index, bool stripWhitespace) const;

@@ -313,9 +313,9 @@ Meta::Object Meta::instanceMeta<EventManager>()
 {
 	//template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...));
 	return Meta::Object("EventManager").
-		func<EventManager, void, std::function<void(UpdateEvent*)>>("addListener_UpdateEvent", &EventManager::addListener<UpdateEvent>).
-		func<EventManager, void, std::function<void(InputChanged*)>>("addListener_InputChanged", &EventManager::addListener<InputChanged>).
-		func<EventManager, void, std::function<void(InputHeld*)>>("addListener_InputHeld", &EventManager::addListener<InputHeld>);
+		func<EventManager, void, std::function<void(UpdateEvent*)>>("addListener_UpdateEvent", &EventManager::addListenerFromScript<UpdateEvent>).
+		func<EventManager, void, std::function<void(InputChanged*)>>("addListener_InputChanged", &EventManager::addListenerFromScript<InputChanged>).
+		func<EventManager, void, std::function<void(InputHeld*)>>("addListener_InputHeld", &EventManager::addListenerFromScript<InputHeld>);
 }
 
 template<>

@@ -12,17 +12,13 @@ glm::vec4 toGlm(const btVector4& v) { return glm::vec4(v[0], v[1], v[2], v[3]); 
 struct PhysicsDebugDraw : public btIDebugDraw
 {
 	void drawLine(const btVector3& from, const btVector3& to, const btVector3& color);
-	void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color);
+	void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override;
 	void reportErrorWarning(const char* warningString);
 	void draw3dText(const btVector3& location, const char* textString);
 	void setDebugMode(int debugMode);
 	int getDebugMode() const;
 
 	int m_debugMode{ 0 };
-	ImDrawList* m_drawList{ nullptr };
-	glm::vec2 m_viewportPos;
-	glm::vec2 m_viewportSize;
-	glm::mat4x4 m_projection;
 };
 
 PhysicsSystem::PhysicsSystem():
@@ -42,7 +38,7 @@ m_world(nullptr)
 	m_world = decltype(m_world)(new btDiscreteDynamicsWorld(m_dispatcher.get(), m_broadphase.get(), m_constraintSolver.get(), m_configuration.get()));
 
 	m_debugDrawer = decltype(m_debugDrawer)(new PhysicsDebugDraw());
-	m_debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawAabb);
+	m_debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawContactPoints /*+ btIDebugDraw::DBG_DrawAabb*/);
 	m_world->setDebugDrawer(m_debugDrawer.get());
 	m_world->setGravity(btVector3(0, -9.81f, 0));
 
@@ -253,6 +249,10 @@ void PhysicsSystem::imgui()
 		if (ImGui::Checkbox("AABB", &aabb))
 			drawFlags = aabb ? drawFlags | btIDebugDraw::DBG_DrawAabb : drawFlags & ~btIDebugDraw::DBG_DrawAabb;
 
+		bool contacts = (drawFlags & btIDebugDraw::DBG_DrawContactPoints) != 0;
+		if (ImGui::Checkbox("Contact Points", &contacts))
+			drawFlags = contacts ? drawFlags | btIDebugDraw::DBG_DrawContactPoints : drawFlags & ~btIDebugDraw::DBG_DrawContactPoints;
+
 		m_debugDrawer->setDebugMode(drawFlags);
 	}
 	ImGui::End();
@@ -261,10 +261,6 @@ void PhysicsSystem::imgui()
 	if (ImGui::Begin("PhysicsDebugDraw", nullptr, flags))
 	{
 		m_doDebugDraw = true;
-		m_debugDrawer->m_drawList = ImGui::GetBackgroundDrawList();
-		ImGuiViewport* viewport = ImGui::GetWindowViewport();
-		m_debugDrawer->m_viewportPos = { viewport->Pos.x, viewport->Pos.y };
-		m_debugDrawer->m_viewportSize = { viewport->Size.x, viewport->Size.y };
 		m_world->debugDrawWorld();
 	}
 	else
@@ -278,7 +274,6 @@ void PhysicsSystem::render(RenderEvent* e)
 {
 	if (m_doDebugDraw)
 	{
-		m_debugDrawer->m_projection = e->m_projection;
 		//DEBUG_VAR("projection", m_debugDrawer->m_projection);
 	}
 }
@@ -305,71 +300,14 @@ PhysicsComponent::~PhysicsComponent()
 
 void PhysicsDebugDraw::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
 {
-	glm::vec4 camPos = m_projection[3];
-	glm::vec4 camScale(m_projection[0][0], m_projection[1][1], m_projection[2][2], m_projection[3][3]);
-	glm::vec4 vpPos(m_viewportPos, 1.0f, 1.0f);
-	glm::vec4 vpSize(m_viewportSize, 1.0f, 1.0f);
-
-	glm::vec4 vFrom(from.x(), from.y(), from.z(), 1.0f), vTo(to.x(), to.y(), to.z(), 1.0f);
-	//glm::vec4 vFrom(-0.25f, 0.25f, 1.0f, 1.0f), vTo(0.25f, -0.25f, 1.0f, 1.0f);
-	//vFrom *= camScale;
-	//vTo *= camScale;
-	
-	/*vFrom *= vpSize;
-	vTo *= vpSize;
-	vFrom += vpSize * 0.5f;
-	vTo += vpSize * 0.5f;*/
-
-	//vFrom += vpPos;
-	//vTo += vpPos;
-
-	//if (from.x() > 0.0f || from.y() > 0.0f || from.z() > 0.0f || to.x() > 0.0f /*|| to.y() > 0.0f || to.z() > 0.0f*/)
-		//return;
-
-	if (color.y() > 0.0f)
-	{
-		//vFrom -= glm::vec4(0.02f, 0.02f, 0.02f, 0.0f);
-		//vTo -= glm::vec4(0.02f, 0.02f, -0.02f, 0.0f);
-
-		//vTo *= glm::vec4(1.0f, -1.0f, -1.0f, 1.0f);
-
-		//DEBUG_VAR("fromGreen", vFrom);
-		//DEBUG_VAR("toGreen", vTo);
-		//HERE;
-	}
-	else
-	{
-		//DEBUG_VAR("fromRed", vFrom);
-		//DEBUG_VAR("toRed", vTo);
-		//HERE;
-	}
-
-	vFrom = (vFrom * m_projection);
-	vTo = (vTo * m_projection);
-
-	vFrom.x /= vFrom.w;
-	vFrom.y /= vFrom.w;
-	vTo.x /= vTo.w;
-	vTo.y /= vTo.w;
-
-	vFrom *= vpSize;
-	vTo *= vpSize;
-
-	vFrom += vpSize * 0.5f;
-	vTo += vpSize * 0.5f;
-
-	vFrom += vpPos;
-	vTo += vpPos;
-
-	ImColor imColor((float)color.x(), (float)color.y(), (float)color.z());
-	//m_drawList->AddLine(ImVec2(vFrom.w / vFrom.x, vFrom.w / vFrom.y), ImVec2(vTo.w / vTo.x, vTo.w / vTo.y), imColor);
-	//m_drawList->AddLine(ImVec2(vFrom.x, vFrom.y), ImVec2(vTo.x, vTo.y), imColor);
-
+	ResourcePtr<DebugManager> debugManager;
+	debugManager->addLine3D(glm::vec4(toGlm(from), 1), glm::vec4(toGlm(to), 1), glm::vec4(toGlm(color), 1));
 }
 
 void PhysicsDebugDraw::drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
 {
-
+	ResourcePtr<DebugManager> debugManager;
+	debugManager->addLine3D(glm::vec4(toGlm(PointOnB), 1), glm::vec4(toGlm(PointOnB) + toGlm(normalOnB) * 50.0f, 1), glm::vec4(toGlm(color), 1));
 }
 
 void PhysicsDebugDraw::reportErrorWarning(const char* warningString)
@@ -379,7 +317,7 @@ void PhysicsDebugDraw::reportErrorWarning(const char* warningString)
 
 void PhysicsDebugDraw::draw3dText(const btVector3& location, const char* textString)
 {
-
+	//LOG_F(INFO, textString);
 }
 
 void PhysicsDebugDraw::setDebugMode(int debugMode)

@@ -37,11 +37,12 @@ SpriteId SpriteManager::getSprite(const char* path)
 		m_idSprites.insert(decltype(m_idSprites)::value_type(sprite, data));
 
 		ResourcePtr<EventManager> events;
-		events->addListener<ResourceStateChanged>([this, data](ResourceStateChanged* c) {
+		events->addListener<ResourceStateChanged>([this, data, normalizedPath](ResourceStateChanged* c) {
 			if (data == c->m_resourceData)
 			{
-				onSpriteLoaded(data);
-				c->discardListener();
+				onSpriteLoaded(data, normalizedPath);
+				// TODO: discardListener() when sprite gets deleted
+				//c->discardListener();
 			}
 		});
 	}
@@ -79,15 +80,26 @@ Rendering::TextureAtlas* SpriteManager::findTexture(const ResourcePtr<SpriteData
 	return nullptr;
 }
 
-void SpriteManager::onSpriteLoaded(const ResourcePtr<SpriteData>& sprite)
+void SpriteManager::onSpriteLoaded(const ResourcePtr<SpriteData>& sprite, StringView id)
 {
-	m_atlases.push_back(std::make_shared<AtlasData>(new Rendering::TextureAtlas));
-	auto& atlasData = m_atlases.back();
+	std::shared_ptr<AtlasData> atlasData = nullptr;
+	auto it = std::find_if(m_atlases.begin(), m_atlases.end(), [&](const std::shared_ptr<AtlasData>& a) { return a->m_id == id.str(); });
+	if (it == m_atlases.end())
+	{
+		m_atlases.push_back(std::make_shared<AtlasData>(new Rendering::TextureAtlas));
+		atlasData = m_atlases.back();
+	}
+	else
+	{
+		atlasData = *it;
+		atlasData->m_atlas = g_resourceManager->addLoadedResource(new Rendering::TextureAtlas, "Texture Atlas");
+	}
 	
 	atlasData->m_atlas->addSprite(sprite);
 	atlasData->m_atlas->setPadding(2);
 	atlasData->m_atlas->layoutAtlas();
 	atlasData->m_sprites.push_back(sprite);
+	atlasData->m_id = id.str();
 
 	ResourcePtr<Rendering::Device> device;
 	Rendering::Unit upload = device->createUnit();
@@ -102,7 +114,7 @@ void SpriteManager::imgui()
 }
 
 SpriteManager::AtlasData::AtlasData(Rendering::TextureAtlas* atlas):
-m_atlas(g_resourceManager->addLoadedResource(atlas, "Texture Atlas"))
+m_atlas(g_resourceManager->addLoadedResource(atlas, "Sprite Atlas"))
 {
 	
 }

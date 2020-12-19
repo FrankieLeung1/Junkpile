@@ -93,11 +93,31 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
                 vf->uploadTexture(&(*texture));
             }
 
+            ImGui::PushID(i);
             if (ImGui::ImageButton(texture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1))
             {
-                const char* res = "../Res";
-                CHECK_F(m_current.m_path.rfind(res, 0) == 0);
-                glfwSetClipboardString(nullptr, stringf("\"%s/%s\"", m_current.m_path.substr(sizeof(res)).c_str(), current.m_name.c_str()).c_str());
+                
+            }
+
+            if (ImGui::BeginPopupContextItem("texture context"))
+            {
+                if (ImGui::Selectable("Edit"))
+                {
+                    char workingDirectory[MAX_PATH + 1] = "";
+                    GetCurrentDirectoryA(MAX_PATH, workingDirectory);
+
+                    std::string p = stringf("%s/%s/%s", workingDirectory, m_current.m_path.c_str(), current.m_name.c_str());
+                    std::wstring wpath = toWideString(p);
+                    ShellExecute(NULL, L"edit", wpath.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                }
+
+                if (ImGui::Selectable("Copy"))
+                {
+                    const char* res = "../Res";
+                    CHECK_F(m_current.m_path.rfind(res, 0) == 0);
+                    glfwSetClipboardString(nullptr, stringf("\"%s/%s\"", m_current.m_path.substr(sizeof(res) - 1).c_str(), current.m_name.c_str()).c_str());
+                }
+                ImGui::EndPopup();
             }
 
             if (ImGui::IsItemHovered())
@@ -123,6 +143,7 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
             if (i % itemsPerRow != itemsPerRow - 1)
                 ImGui::SameLine();
 
+            ImGui::PopID();
             hasScript = (hasScript || current.m_type == CurrentInfo::File::Script);
         }
         ImGui::EndChild();

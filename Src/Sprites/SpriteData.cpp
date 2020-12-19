@@ -123,7 +123,7 @@ glm::vec2 SpriteData::getDimensions() const
 	return d;
 }
 
-SpriteData::SpriteDataLoader::SpriteDataLoader(const char* filePath) :
+SpriteData::SpriteDataLoader::SpriteDataLoader(StringView filePath) :
 	m_file(NewPtr, filePath)
 {
 
@@ -152,6 +152,13 @@ SpriteData* SpriteData::SpriteDataLoader::load(std::tuple<int, std::string>* err
 	}
 
 	return data;
+}
+
+SpriteData::Reloader* SpriteData::SpriteDataLoader::createReloader()
+{
+	std::string path = m_file->getPath();
+	auto create = [path]() { return new SpriteDataLoader(path); };
+	return new ReloaderOnFileChange(path, create);
 }
 
 StringView SpriteData::SpriteDataLoader::getTypeName() const

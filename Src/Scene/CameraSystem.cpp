@@ -36,7 +36,7 @@ CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
 {
 	ResourcePtr<ComponentManager> components;
 	CameraComponent* component = components->addComponents<CameraComponent>(e).get<CameraComponent>();
-	component->m_controlType = CameraComponent::WASD;
+	//component->m_controlType = CameraComponent::WASD;
 	component->m_flags = CameraComponent::Orthographic;
 	component->m_left = 0.0f;
 	component->m_right = 0.0f;
@@ -50,13 +50,35 @@ CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
 void CameraSystem::setCameraActive(Entity e)
 {
 	ResourcePtr<ComponentManager> components;
-	EntityIterator<TransformComponent, CameraComponent> it(components, true);
+	EntityIterator<CameraComponent> it(components, true);
 	while (it.next())
 	{
 		if (it.getEntity() == e)
 			it.get<CameraComponent>()->m_flags |= CameraComponent::ActiveCamera;
 		else
 			it.get<CameraComponent>()->m_flags &= ~CameraComponent::ActiveCamera;
+	}
+}
+
+void CameraSystem::setWASDInput(Entity e)
+{
+	ResourcePtr<ComponentManager> components;
+	EntityIterator<CameraComponent> it(components, true);
+	while (it.next())
+	{
+		if (it.getEntity() == e)
+			it.get<CameraComponent>()->m_controlType = CameraComponent::ControlType::WASD;
+	}
+}
+
+void CameraSystem::setNoInput(Entity e)
+{
+	ResourcePtr<ComponentManager> components;
+	EntityIterator<CameraComponent> it(components, true);
+	while (it.next())
+	{
+		if (it.getEntity() == e)
+			it.get<CameraComponent>()->m_controlType = CameraComponent::ControlType::None;
 	}
 }
 

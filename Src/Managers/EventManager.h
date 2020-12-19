@@ -61,7 +61,8 @@ struct ResourceStateChanged : public Event<ResourceStateChanged>
 {
 	ResourceData* m_resourceData;
 	ResourceData::State m_newState;
-	ResourceStateChanged(ResourceData* data = nullptr, ResourceData::State state = ResourceData::State::WAITING) :m_resourceData(data), m_newState(state) {}
+	bool m_reload; // change is in response to a resource reload
+	ResourceStateChanged(ResourceData* data = nullptr, ResourceData::State state = ResourceData::State::WAITING, bool reload = false) :m_resourceData(data), m_newState(state), m_reload(reload) {}
 };
 
 class ScriptManager;
@@ -78,6 +79,7 @@ public:
 	typedef FunctionBase<void, EventBase*> EventCallback;
 	template<typename Event, typename FunctionType> void addListener(FunctionType, int priority = 0);
 	template<typename Event> void addListener(std::function<void(Event*)>, int priority);
+	template<typename Event> void addListenerFromScript(std::function<void(Event*)>, int priority);
 
 	void process(float delta);
 	void imgui();
@@ -150,11 +152,6 @@ template<typename EventType, typename FunctionType> void EventManager::addListen
 	// TODO: static_assert the arg types
 	auto& eventListeners = m_queuedListeners[EventType::id()];
 	auto& priortyListeners = eventListeners[priority];
-
-	// find the index we're gonna be when we get added to m_listeners
-	std::size_t queuedIndex = priortyListeners.size(), listenerIndex = m_listeners[EventType::id()][priority].size();
-	onNewListener(EventType::id(), priority, queuedIndex + listenerIndex);
-
 	priortyListeners.push_back(makeFunction(fn));
 }
 
@@ -162,6 +159,18 @@ template<typename Event> void EventManager::addListener(std::function<void(Event
 {
 	addListener<Event>([=](EventBase* b) { fn((Event*)b); }, priority);
 }
+
+template<typename Event> void EventManager::addListenerFromScript(std::function<void(Event*)> fn, int priority)
+{
+	auto& priortyListeners = m_queuedListeners[Event::id()][priority];
+
+	// find the index we're gonna be when we get added to m_listeners
+	std::size_t queuedIndex = priortyListeners.size(), listenerIndex = m_listeners[Event::id()][priority].size();
+	onNewListener(Event::id(), priority, queuedIndex + listenerIndex);
+
+	addListener<Event>([=](EventBase* b) { fn((Event*)b); }, priority);
+}
+
 
 template<> Meta::Object Meta::instanceMeta<EventManager>();
 template<> Meta::Object Meta::instanceMeta<UpdateEvent>();

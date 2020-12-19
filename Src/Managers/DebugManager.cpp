@@ -18,7 +18,7 @@ m_fragmentShader(Vertex::getFragmentShader()),
 m_vertexBuffer(nullptr),
 m_indexBuffer(nullptr)
 {
-	ResourcePtr<ImGuiManager>()->registerCallback({ [](void* v) { static_cast<DebugManager*>(v)->imgui(); }, (void*)nullptr });
+	ResourcePtr<ImGuiManager>()->registerCallback({ [](void* v) { static_cast<DebugManager*>(v)->imgui(); }, (void*)this });
 
 	ResourcePtr<EventManager> events;
 	events->addListener<RenderEvent>([this](RenderEvent* e) { render(e); });
@@ -129,7 +129,6 @@ void DebugManager::render(RenderEvent* e)
 	}
 	m_vertexBuffer->unmap();
 	m_indexBuffer->unmap();
-	m_lines.clear();
 
 	std::vector<char> pushData(sizeof(glm::mat4));
 	memcpy(&pushData[0], &e->m_projection, sizeof(glm::mat4));
@@ -138,21 +137,34 @@ void DebugManager::render(RenderEvent* e)
 	unit.in(m_vertexShader);
 	unit.in(m_fragmentShader);
 	unit.in(&(*m_vertexBuffer));
-	unit.in(&(*m_indexBuffer));
+	//unit.in(&(*m_indexBuffer));
 	unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
-	// unit.in({ 4, 1, (uint32_t)i++ * 4, 0 });
+	unit.in(vk::PrimitiveTopology::eLineList);
+	unit.in(Rendering::Unit::Draw{ (unsigned int)(m_lines.size() * 2), (unsigned int)m_lines.size(), 0, 0});
 	unit.submit();
+
+	m_lines.clear();
 }
 
 void DebugManager::ensureBufferSizes(std::size_t vSize, std::size_t iSize)
 {
 	if (!m_vertexBuffer || !m_indexBuffer|| m_vertexBuffer->getSize() < vSize || m_indexBuffer->getSize() < iSize)
 	{
+		// TODO: set formats
 		if (!m_vertexBuffer)
+		{
 			m_vertexBuffer = std::make_shared<Rendering::Buffer>(Rendering::Buffer::Vertex, Rendering::Buffer::Mapped, sizeof(Vertex) * 1024);
+			m_vertexBuffer->setFormat({
+				{vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)},
+				{vk::Format::eR32G32B32Sfloat, sizeof(glm::vec3)}
+			}, sizeof(Vertex));
+		}
 
-		if (m_indexBuffer)
+		if (!m_indexBuffer)
+		{
 			m_indexBuffer = std::make_shared<Rendering::Buffer>(Rendering::Buffer::Index, Rendering::Buffer::Mapped, sizeof(short) * 1024);
+			m_indexBuffer->setFormat({ {vk::Format::eR16Sint, sizeof(short)} }, sizeof(short));
+		}
 
 		m_vertexBuffer->grow(vSize);
 		m_indexBuffer->grow(iSize);

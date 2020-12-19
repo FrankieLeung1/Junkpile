@@ -28,6 +28,8 @@ public:
 	void update();
 
 	bool exists(const char*) const;
+
+	std::int64_t getModificationTime(StringView) const;
 	
 	enum Type {NotFound, File, Directory, Other};
 	Type type(StringView) const;
@@ -40,7 +42,6 @@ public:
 	std::vector<FileInfo> files(const char* dir) const;
 	void reducePath(std::string&) const;
 
-	static std::string filename(StringView); // no extension
 	static std::string extension(StringView);
 	
 	void save(const char* path, std::vector<char>&&);

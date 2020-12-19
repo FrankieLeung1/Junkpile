@@ -141,7 +141,7 @@ namespace Meta
 			int m_argIndex;
 			char m_argFormat[s_argCount + 1];
 			void* m_args[s_argCount];
-			PyObject* m_needsToDec[s_argCount];
+			PyObject* m_needsToDec[s_argCount]; // objects that need to be deferenced
 		};
 
 		class ArgsVisitor : public Visitor

@@ -30,6 +30,7 @@ public:
 	public:
 		FileLoader(StringView path, int flags = 0);
 		Resource* load(std::tuple<int, std::string>* error);
+		//Reloader* createReloader() override;
 		std::string getDebugName() const;
 		StringView getTypeName() const;
 

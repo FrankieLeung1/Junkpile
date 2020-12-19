@@ -20,7 +20,7 @@ public:
 	void imgui();
 
 protected:
-	void onSpriteLoaded(const ResourcePtr<SpriteData>&);
+	void onSpriteLoaded(const ResourcePtr<SpriteData>&, StringView id);
 	Rendering::TextureAtlas* findTexture(const ResourcePtr<SpriteData>&);
 
 protected:
@@ -29,6 +29,7 @@ protected:
 	
 	struct AtlasData
 	{
+		std::string m_id;
 		ResourcePtr<Rendering::TextureAtlas> m_atlas;
 		std::vector<ResourcePtr<SpriteData>> m_sprites;
 		AtlasData(Rendering::TextureAtlas*);

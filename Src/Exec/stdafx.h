@@ -77,5 +77,6 @@
 
 #include "../Framework/VulkanFramework.h"
 #include "../Managers/DebugManager.h"
+#include "../Misc/CallStack.h"
 
 typedef VulkanFramework FrameworkClass;

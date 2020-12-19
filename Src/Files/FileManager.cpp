@@ -58,6 +58,27 @@ bool FileManager::exists(const char* path) const
 	return type(path) != Type::NotFound;
 }
 
+std::int64_t FileManager::getModificationTime(StringView path) const
+{
+	HANDLE hFile = CreateFileA(path.c_str(), 0, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		LOG_F(ERROR, stringf("CreateFile failed \"%s\"\n", path.c_str()).c_str());
+		return -1;
+	}
+
+	FILETIME fileTime;
+	if (!GetFileTime(hFile, nullptr, nullptr, &fileTime))
+	{
+		LOG_F(ERROR, stringf("GetFileTime failed \"%s\"\n", path.c_str()).c_str());
+		CloseHandle(hFile);
+		return -1;
+	}
+
+	CloseHandle(hFile);
+	return ULARGE_INTEGER{ fileTime.dwLowDateTime, fileTime.dwHighDateTime }.QuadPart;
+}
+
 FileManager::Type FileManager::type(StringView path) const
 {
 	return type(GetFileAttributesA(path));
@@ -150,7 +171,7 @@ std::string FileManager::extension(StringView path)
 	const char* begin = path.c_str(), *end = begin + path.size();
 	while (--end != begin)
 		if (*end == '.')
-			return std::string(end + 1, begin + path.size() - 1);
+			return std::string(end + 1, begin + path.size());
 
 	return std::string();
 }
@@ -161,7 +182,7 @@ void FileManager::save(const char* path, std::vector<char>&& buffer)
 	auto save = [contents, path](){
 		std::fstream f(path, std::fstream::binary | std::fstream::out | std::fstream::trunc);
 		f.write(&contents->front(), contents->size());
-		LOG_IF_F(WARNING, !f.good(), "Failed to write to \"%s\"", path);
+		LOG_IF_F(WARNING, !f.good(), "Failed to write to \"%s\"\n", path);
 		delete contents;
 	};
 	m_threadPool->enqueue(save);

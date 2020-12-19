@@ -63,9 +63,9 @@ namespace Meta
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...) const, const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...) const, const std::array<const char*, sizeof...(Args)>& names);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...) const);
-		template<typename T, typename R, typename... Args> Object& func(const char* name, R(*)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
-		template<typename T, typename R, typename... Args> Object& func(const char* name, R(*)(Args...), const std::array<const char*, sizeof...(Args)>& names);
-		template<typename T, typename R, typename... Args> Object& func(const char* name, R(*)(Args...));
+		template<typename R, typename... Args> Object& func(const char* name, R(*)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
+		template<typename R, typename... Args> Object& func(const char* name, R(*)(Args...), const std::array<const char*, sizeof...(Args)>& names);
+		template<typename R, typename... Args> Object& func(const char* name, R(*)(Args...));
 		Object& hook(const BasicFunction<int, Visitor*, void*>&);
 		template<typename T> Object& defaultFactory();
 		template<typename T, typename... Args> Object& constructor();
@@ -167,7 +167,7 @@ namespace Meta
 		Any callWithVisitor(void* instance, Visitor* v, int argCount);
 	};
 
-	template<typename T, typename R, typename... Args>
+	template<typename R, typename... Args>
 	class StaticFunction : public Function
 	{
 	public:
@@ -250,24 +250,25 @@ namespace Meta
 		return func(name, f, {}, {});
 	}
 
-	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(*f)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults)
+	template<typename R, typename... Args> Object& Object::func(const char* name, R(*f)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults)
 	{
-		auto impl = new StaticFunction<T, R, Args...>();
+		auto impl = new StaticFunction<R, Args...>();
 		impl->m_name = name;
 		impl->m_ptr = f;
-		impl->m_names = names;
+		impl->m_names.insert(impl->m_names.end(), names.begin(), names.end());
+		//impl->m_names = names; // TODO
 		impl->m_defaults = defaults;
 		impl->m_isConstructor = false;
-		m_members.emplace_back(static_cast<Function*>(impl));
+		m_members->emplace_back(static_cast<Function*>(impl));
 		return *this;
 	}
 
-	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(*f)(Args...), const std::array<const char*, sizeof...(Args)>& names)
+	template<typename R, typename... Args> Object& Object::func(const char* name, R(*f)(Args...), const std::array<const char*, sizeof...(Args)>& names)
 	{
 		return func(name, f, names, {});
 	}
 
-	template<typename T, typename R, typename... Args> Object& Object::func(const char* name, R(*f)(Args...))
+	template<typename R, typename... Args> Object& Object::func(const char* name, R(*f)(Args...))
 	{
 		return func(name, f, {}, {});
 	}
@@ -293,7 +294,7 @@ namespace Meta
 	{
 		T* (*f)(Args...) = [](Args... args) { return new T(std::forward<Args>(args)...); };
 
-		auto impl = new StaticFunction<T, T*, Args...>();
+		auto impl = new StaticFunction<T*, Args...>();
 		impl->m_name = "";
 		impl->m_ptr = f;
 		impl->m_names.insert(impl->m_names.end(), names.begin(), names.end());
@@ -323,7 +324,7 @@ namespace Meta
 			Function* f = any.get<Function*>();
 			if (strcmp(f->getName(), name) == 0)
 			{
-				if (f->getTypeInstance() == StaticFunction<T, R, Args...>::s_typeInstance)
+				if (f->getTypeInstance() == StaticFunction<R, Args...>::s_typeInstance)
 				{
 					HERE;
 					return R{};
@@ -345,7 +346,7 @@ namespace Meta
 			Function* f = any.get<Function*>();
 			if (strcmp(f->getName(), name) == 0)
 			{
-				if (f->getTypeInstance() == StaticFunction<T, R, Args...>::s_typeInstance)
+				if (f->getTypeInstance() == StaticFunction< R, Args...>::s_typeInstance)
 				{
 					std::tuple<Args...> t(args...);
 					HERE;
@@ -366,7 +367,7 @@ namespace Meta
 			Function* f = any.get<Function*>();
 			if (strcmp(f->getName(), name) == 0)
 			{
-				if (f->getTypeInstance() == StaticFunction<T, R, Args...>::s_typeInstance)
+				if (f->getTypeInstance() == StaticFunction< R, Args...>::s_typeInstance)
 				{
 					HERE;
 					return R{};
@@ -572,8 +573,8 @@ namespace Meta
 		return &Type<R(Args...)>::s_instance;
 	}
 
-	template<typename T, typename R, typename... Args>
-	Any StaticFunction<T, R, Args...>::callWithVisitor(Visitor* v, int argCount)
+	template<typename R, typename... Args>
+	Any StaticFunction<R, Args...>::callWithVisitor(Visitor* v, int argCount)
 	{
 		if (argCount > sizeof...(Args) || argCount < sizeof...(Args) - m_defaults.size())
 			return CallFailure();
@@ -583,8 +584,8 @@ namespace Meta
 		return callWithTuple(m_ptr, args);
 	}
 
-	template<typename T, typename R, typename... Args>
-	int StaticFunction<T, R, Args...>::visit(Visitor* v)
+	template<typename R, typename... Args>
+	int StaticFunction<R, Args...>::visit(Visitor* v)
 	{
 		int r = v->startFunction(m_name.c_str(), std::is_void<R>::value, m_isConstructor);
 		if (r == 0)
@@ -602,10 +603,10 @@ namespace Meta
 		return r;
 	}
 
-	template<typename T, typename R, typename... Args>
-	void* StaticFunction<T, R, Args...>::getTypeInstance() const
+	template<typename R, typename... Args>
+	void* StaticFunction<R, Args...>::getTypeInstance() const
 	{
-		return &Type<R(T::*)(Args...)>::s_instance;
+		return &Type<R(*)(Args...)>::s_instance;
 	}
 
 	template<typename T>

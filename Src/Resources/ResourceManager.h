@@ -4,6 +4,7 @@ class ThreadPool;
 class EventManager;
 #include "../Misc/StringView.h"
 
+struct FileChangeEvent;
 class Resource
 {
 protected:
@@ -30,9 +31,38 @@ protected:
 	public:
 		virtual ~Reloader();
 		void setReloadNeeded();
+		virtual Loader* createLoader() const =0;
 
 	private:
 		int m_reload{ 0 };
+		friend class ResourceManager;
+	};
+
+	class ReloaderWithEvent : public Reloader
+	{
+	public:
+		template<typename Event> ReloaderWithEvent(const std::function<void(Event*, ReloaderWithEvent*)>&, const std::function<Loader*()>&, int priority = 0);
+		~ReloaderWithEvent();
+		Loader* createLoader() const;
+
+	protected:
+		ReloaderWithEvent();
+
+	private:
+		std::shared_ptr<bool> m_deleted;
+		std::function<Loader*()> m_creator;
+	};
+
+	class ReloaderOnFileChange : public Reloader
+	{
+	public:
+		ReloaderOnFileChange(StringView path, const std::function<Loader*()>&, int priority = 0);
+		~ReloaderOnFileChange();
+		Loader* createLoader() const;
+
+	private:
+		std::shared_ptr<bool> m_deleted;
+		std::function<Loader* ()> m_creator;
 	};
 
 	template<typename> static Loader* createLoader() { static_assert(false, "Override Me!"); }
@@ -67,6 +97,7 @@ struct ResourceData
 
 	bool m_owns{ true };
 	Resource* m_resource{ nullptr };
+	Resource* m_reloadedResource{ nullptr };
 
 	enum class State {
 		WAITING,
@@ -81,13 +112,18 @@ struct ResourceData
 
 	Resource::Reloader* m_reloader;
 	
-	std::mutex m_mutex;
+	std::recursive_mutex m_mutex; // recursive cuz loading a resource might try to get a singleton which locks the resource while searching for it
 
-	~ResourceData()
+	void deleteResource()
 	{
-		if(m_owns)
+		if (m_owns)
+		{
 			delete m_resource;
+			m_resource = nullptr;
+		}
 	}
+
+	~ResourceData() { deleteResource(); delete m_reloader; }
 };
 
 struct NewPtr_t {};
@@ -158,10 +194,12 @@ public:
 	void startLoading();
 	bool isLoading() const;
 
+	void startReloading();
+
 	void setAutoStartTasks(bool);
 
 	void update();
-
+	
 	void setFreeResources(bool);
 	void freeUnreferenced(bool freeSingleton = false);
 
@@ -187,6 +225,7 @@ protected:
 	ResourceData* addRefSpecialized(std::false_type, std::size_t sharedHash, Args&&...);
 
 	void setReloadDirty();
+	void clearNotificationsFor(const Resource* resource);
 
 protected:
 	std::forward_list<ResourceData> m_resources;
@@ -207,6 +246,9 @@ protected:
 
 	// imgui
 	int m_resourceCurrentItem{ 0 };
+
+	friend class Resource::Reloader;
+	friend class ScriptManager; // access for clearNotificationsFor()
 };
 
 extern ResourceManager* g_resourceManager;
@@ -221,7 +263,7 @@ ResourceData* ResourceManager::addRef(Args&&... args)
 		std::lock_guard<std::recursive_mutex> l(m_resourceMutex);
 		for (ResourceData& data : m_resources)
 		{
-			std::lock_guard<std::mutex> l(data.m_mutex);
+			std::lock_guard<std::recursive_mutex> l(data.m_mutex);
 			if (data.m_sharedHash == std::get<std::size_t>(shared))
 			{
 				data.m_refCount++;
@@ -243,7 +285,6 @@ ResourceData* ResourceManager::addRefSpecialized(std::true_type, std::size_t)
 
 	ResourcePtr<Resource> ptr = addSingletonResource(singleton, typeid(Resource).name(), true);
 	ResourceData* data = &m_resources.front();
-	CHECK_F(data->m_debugName == typeid(Resource).name());
 	data->m_refCount++; // don't free when ptr destructs
 	return data;
 }
@@ -261,7 +302,7 @@ ResourceData* ResourceManager::addRefSpecialized(std::false_type, std::size_t sh
 	std::shared_ptr<Resource::Loader> loader(typename Resource::createLoader(std::forward<Args>(args)...));
 
 	{
-		std::lock_guard<std::mutex> l(data->m_mutex);
+		std::lock_guard<std::recursive_mutex> l(data->m_mutex);
 		data->m_debugName = loader->getDebugName();
 		data->m_sharedHash = sharedHash;
 	}
@@ -355,7 +396,7 @@ m_data(copy.m_data)
 {
 	if (m_data)
 	{
-		std::lock_guard<std::mutex> l(m_data->m_mutex);
+		std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 		m_data->m_refCount++;
 	}
 }
@@ -377,7 +418,7 @@ ResourcePtr<Resource>::~ResourcePtr()
 template<typename Resource>
 bool ResourcePtr<Resource>::error(std::tuple<int, std::string>* error) const
 {
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
+	std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 	if(error)
 		*error = m_data->m_error;
 
@@ -387,7 +428,7 @@ bool ResourcePtr<Resource>::error(std::tuple<int, std::string>* error) const
 template<typename Resource>
 bool ResourcePtr<Resource>::ready(std::tuple<int, std::string>* error) const
 {
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
+	std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 	if(std::get<int>(m_data->m_error) != 0) *error = m_data->m_error;
 	return m_data->m_resource != nullptr;
 }
@@ -449,14 +490,14 @@ Resource* ResourcePtr<Resource>::get() const
 {
 	waitReady(nullptr);
 
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
+	std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 	return (Resource*)m_data->m_resource;
 }
 
 template<typename Resource>
 typename ResourcePtr<Resource>::State ResourcePtr<Resource>::getState() const
 {
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
+	std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 	return m_data->m_state;
 }
 
@@ -471,7 +512,7 @@ Resource* ResourcePtr<Resource>::operator->() const
 {
 	waitReady(nullptr);
 
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
+	std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 	return static_cast<Resource*>(m_data->m_resource);
 }
 
@@ -480,7 +521,7 @@ Resource& ResourcePtr<Resource>::operator*() const
 {
 	waitReady(nullptr);
 
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
+	std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 	return static_cast<Resource&>(*m_data->m_resource);
 }
 
@@ -489,7 +530,7 @@ ResourcePtr<Resource>::operator Resource*() const
 {
 	waitReady(nullptr);
 
-	std::lock_guard<std::mutex> l(m_data->m_mutex);
+	std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 	return static_cast<Resource*>(m_data->m_resource);
 }
 
@@ -501,7 +542,7 @@ ResourcePtr<Resource>& ResourcePtr<Resource>::operator=(const ResourcePtr<Resour
 	m_data = copy.m_data;
 	if(m_data)
 	{
-		std::lock_guard<std::mutex> l(m_data->m_mutex);
+		std::lock_guard<std::recursive_mutex> l(m_data->m_mutex);
 		m_data->m_refCount++;
 	}
 	return *this;
@@ -528,6 +569,24 @@ ResourcePtr<Resource> ResourcePtr<Resource>::fromResourceData(ResourceData* data
 	ResourcePtr<Resource> result(EmptyPtr);
 	result.m_data = data;
 	return result;
+}
+
+template<typename Event>
+Resource::ReloaderWithEvent::ReloaderWithEvent(const std::function<void(Event*, ReloaderWithEvent*)>& pred, const std::function<Loader*()>& creator, int priority):
+m_creator(creator)
+{
+	m_deleted = std::make_shared<bool>(false);
+	auto predPtr = std::make_shared<std::decay<decltype(pred)>::type>(pred);
+	std::shared_ptr<bool> deleted = m_deleted;
+	ResourcePtr<EventManager> events;
+	events->addListener<Event>([this, deleted, predPtr](Event* e) {
+		if (*deleted)
+		{
+			e->discardListener();
+			return;
+		}
+		(*predPtr)(e, this);
+	}, priority);
 }
 
 template<typename T>

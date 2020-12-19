@@ -7,7 +7,6 @@ t = transformSystem.addComponent(e)
 t.m_position.x = -450.0
 t.m_position.y = 250.0
 s = spriteSystem.addComponent(e, "Art/Background Elements/Flat/cloud1.png")
-#s = spriteSystem.addComponent(e, "Art/Donuts/donut_1.png")
 
 # character
 for i in range(1):
@@ -22,13 +21,14 @@ e = componentManager.newEntity()
 t = transformSystem.addComponent(e)
 t.m_position.x = 0.0
 t.m_position.y = -250.0
-p = physicsSystem.createBox(e, Junkpile.vec3(99999, 1, 99999), 0)
+p = physicsSystem.createBox(e, Junkpile.vec3(10000, 1, 100), 0)
 
 #camera
 e = componentManager.newEntity()
 t = transformSystem.addComponent(e)
 c = cameraSystem.addComponentPerspective(e)
 cameraSystem.setCameraActive(e)
+#cameraSystem.setWASDInput(e)
 t.m_position.z = -250.0
 
 def inputChanged(e):
@@ -41,3 +41,10 @@ def inputChanged(e):
 
 eventManager.addListener_InputChanged(inputChanged, 0)
 
+#imgui.Begin("Test")
+#imgui.End()
+
+def update(e):
+    ImGui.Begin("Test")
+    ImGui.End()
+#eventManager.addListener_UpdateEvent(update, 0)

@@ -111,7 +111,7 @@ std::string CallStack::str() const
 	{
 		std::string functionName = getFunctionName(i);
 		std::tuple<std::string, int> line = getLineNumber(i);
-		ss << std::get<0>(line) << '(' << std::get<1>(line) << ") " << functionName << std::endl;
+		ss << std::get<0>(line) << '(' << std::get<1>(line) << ") : " << functionName << std::endl;
 
 		if (functionName == "WinMain" || functionName == "main")
 			break;
