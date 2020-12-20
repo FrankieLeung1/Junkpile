@@ -216,6 +216,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\External\imgui\misc\cpp\imgui_stdlib.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\External\lodepng\lodepng.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -447,6 +451,7 @@
     <ClCompile Include="..\Src\Misc\Misc.cpp" />
     <ClCompile Include="..\Src\Misc\ResizableMemoryPool.cpp" />
     <ClCompile Include="..\Src\Misc\StringView.cpp" />
+    <ClCompile Include="..\Src\Misc\WebServer.cpp" />
     <ClCompile Include="..\Src\Misc\WindowRecorder.cpp" />
     <ClCompile Include="..\Src\Models\ModelManager.cpp" />
     <ClCompile Include="..\Src\Models\ModelSystem.cpp" />
@@ -509,6 +514,7 @@
     <ClInclude Include="..\External\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\External\imgui\imstb_textedit.h" />
     <ClInclude Include="..\External\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\External\imgui\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="..\External\lodepng\lodepng.h" />
     <ClInclude Include="..\External\lua\src\lapi.h" />
     <ClInclude Include="..\External\lua\src\lauxlib.h" />
@@ -720,6 +726,7 @@
     <ClInclude Include="..\Src\Misc\ResizableMemoryPool.h" />
     <ClInclude Include="..\Src\Misc\StringView.h" />
     <ClInclude Include="..\Src\Misc\Tests.h" />
+    <ClInclude Include="..\Src\Misc\WebServer.h" />
     <ClInclude Include="..\Src\Misc\WindowRecorder.h" />
     <ClInclude Include="..\Src\Models\ModelManager.h" />
     <ClInclude Include="..\Src\Models\ModelSystem.h" />

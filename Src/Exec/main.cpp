@@ -39,6 +39,7 @@
 #include "../Models/ModelSystem.h"
 #include "../Scene/TransformSystem.h"
 #include "../Managers/TestManager.h"
+#include "../Misc/WebServer.h"
 #include "../imgui/AssetBrowser.h"
 #include "../Scene/CameraSystem.h"
 #include "../Rendering/Unit.h"
@@ -63,12 +64,14 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//TextureGenerator::test();
 
 	tests->addTest("WindowRecorder", &WindowRecorder::test);
+	tests->addTest("WebServer", &WebServer::test);
 	tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
 
-	ResourcePtr<ScriptManager> scripts;
-	scripts->runScriptsInFolder("Levels/Tests");
+	WebServer::test();
+	//ResourcePtr<ScriptManager> scripts;
+	//scripts->runScriptsInFolder("Levels/Tests");
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)

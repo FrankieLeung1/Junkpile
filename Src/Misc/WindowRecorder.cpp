@@ -118,6 +118,7 @@ void WindowRecorder::Impl::capture(const SL::Screen_Capture::Image& img)
 	texture->flush();
 	texture->unmap();
 
+	// uncomment this to resize the img before storing them
 	//const int w = 1280, h = 720;
 	//cimg = cimg.resize(w, h, 1, 3, 1);
 

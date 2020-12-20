@@ -37,17 +37,19 @@
 #include <queue>
 #include <bitset>
 #include <random>
-#include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale>
 #include <utility>
 #include <codecvt>
 #include <sys/stat.h>
+#include <WinSock2.h>
+#include <Windows.h>
 
 #include "lua/src/lua.hpp"
 #include "loguru/loguru.hpp"
 #include "imgui/imgui.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 #include "FileWatcher/FileWatcher.h"
 #include "vk_mem_alloc.h"
 #include "Fossilize/fossilize.hpp"

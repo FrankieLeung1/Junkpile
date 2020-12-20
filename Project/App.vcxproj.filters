@@ -570,6 +570,12 @@
     <ClCompile Include="..\Src\Misc\Callstack.cpp">
       <Filter>Source Files\Misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Misc\WebServer.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\imgui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>External\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1390,6 +1396,12 @@
     </ClInclude>
     <ClInclude Include="..\Src\imgui\MetaBinding.h">
       <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Misc\WebServer.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\misc\cpp\imgui_stdlib.h">
+      <Filter>External\imgui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
