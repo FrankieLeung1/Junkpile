@@ -8,11 +8,12 @@ public:
 	WindowRecorder();
 	~WindowRecorder();
 
-	void imgui();
+	void startCaptureWindow();
+	void startCaptureMonitor();
 
 	static void test();
 
 protected:
 	struct Impl;
-	Impl* m_p;
+	std::shared_ptr<Impl> m_p;
 };
