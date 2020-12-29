@@ -5,9 +5,10 @@
 #include "../Rendering/Texture.h"
 #include "../Rendering/RenderingDevice.h"
 #include "../Framework/Framework.h"
+#include "../Scripts/ScriptManager.h"
 
 Game::Game():
-	m_currentLayer(0)
+m_currentLayer(0)
 {
 	m_layers.push_back(Layer{ "Layer 1" });
 	m_layers.push_back(Layer{ "Layer 2" });
@@ -86,5 +87,6 @@ void Game::imgui(SubLayer* sublayer)
 
 void Game::test()
 {
-
+	ResourcePtr<ScriptManager> scripts;
+	scripts->runScriptsInFolder("Levels/Tests");
 }

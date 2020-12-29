@@ -40,6 +40,8 @@ public:
 
 	bool getDefault(std::size_t index, std::string*) const;
 
+	bool empty() const;
+
 protected:
 	std::vector<Mark> m_marks;
 	std::vector< AnyWithSize<sizeof(std::string)> > m_values;

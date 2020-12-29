@@ -8,6 +8,13 @@ t.m_position.x = -450.0
 t.m_position.y = 250.0
 s = spriteSystem.addComponent(e, "Art/Background Elements/Flat/cloud1.png")
 
+#background
+e = componentManager.newEntity()
+t = transformSystem.addComponent(e)
+t.m_scale.x = 3.0
+t.m_scale.y = 3.0
+s = spriteSystem.addComponent(e, "ahhh.gif")
+
 # character
 for i in range(1):
     character = componentManager.newEntity()
@@ -21,7 +28,7 @@ e = componentManager.newEntity()
 t = transformSystem.addComponent(e)
 t.m_position.x = 0.0
 t.m_position.y = -250.0
-p = physicsSystem.createBox(e, Junkpile.vec3(10000, 1, 100), 0)
+p = physicsSystem.createBox(e, Junkpile.vec3(10000, 1, 10000), 0)
 
 #camera
 e = componentManager.newEntity()

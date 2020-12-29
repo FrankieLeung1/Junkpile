@@ -220,7 +220,6 @@ static PyMethodDef JunkpileMethods[] = {
 
 PyObject* meta_call(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-	LOG_F(INFO, "call\n");
 	return PyLong_FromLong(0);
 }
 

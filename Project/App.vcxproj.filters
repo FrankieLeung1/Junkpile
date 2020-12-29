@@ -163,6 +163,18 @@
     <Filter Include="Header Files\Game">
       <UniqueIdentifier>{414d8407-1256-46fc-a4e5-0598fe382dae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Tools">
+      <UniqueIdentifier>{bf2e7b2f-eebe-4301-86ca-befaa10c44e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Tools">
+      <UniqueIdentifier>{75286ecc-8caf-43b4-9163-5fecf32e09b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\implot">
+      <UniqueIdentifier>{41cd6f5c-ae9f-4206-9306-ed67ef2054b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\imguiaddons">
+      <UniqueIdentifier>{7be4425b-91d8-4011-8fff-4f1a12c3dd35}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Exec\stdafx.cpp">
@@ -528,9 +540,6 @@
     <ClCompile Include="..\Src\Generators\Generator.cpp">
       <Filter>Source Files\Generators</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Misc\GrindstoneEditor.cpp">
-      <Filter>Source Files\Misc</Filter>
-    </ClCompile>
     <ClCompile Include="..\External\lodepng\lodepng.cpp">
       <Filter>External\lodepng</Filter>
     </ClCompile>
@@ -575,6 +584,30 @@
     </ClCompile>
     <ClCompile Include="..\External\imgui\misc\cpp\imgui_stdlib.cpp">
       <Filter>External\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Tools\GrindstoneEditor.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Tools\Standalone.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Tools\Analytics.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\implot\implot.cpp">
+      <Filter>External\implot</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\implot\implot_demo.cpp">
+      <Filter>External\implot</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\implot\implot_items.cpp">
+      <Filter>External\implot</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\imgui\imgui_tables.cpp">
+      <Filter>External\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\imgui\addons\imguidatechooser\imguidatechooser.cpp">
+      <Filter>External\imguiaddons</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1340,9 +1373,6 @@
     <ClInclude Include="..\Src\Generators\Generator.h">
       <Filter>Header Files\Generators</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Misc\GrindstoneEditor.h">
-      <Filter>Header Files\Misc</Filter>
-    </ClInclude>
     <ClInclude Include="..\External\CImg.h">
       <Filter>External</Filter>
     </ClInclude>
@@ -1402,6 +1432,24 @@
     </ClInclude>
     <ClInclude Include="..\External\imgui\misc\cpp\imgui_stdlib.h">
       <Filter>External\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Tools\GrindstoneEditor.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Tools\Standalone.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Tools\Analytics.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\implot\implot.h">
+      <Filter>External\implot</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\implot\implot_internal.h">
+      <Filter>External\implot</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\addons\imguidatechooser\imguidatechooser.h">
+      <Filter>External\imguiaddons</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

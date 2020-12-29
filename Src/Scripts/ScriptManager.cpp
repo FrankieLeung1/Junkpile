@@ -185,8 +185,8 @@ void ScriptManager::setEditorContent(const char* content, const char* pathToSave
 	if (pathToSave)
 	{
 		m_editorSavePath = pathToSave;
-		auto it = std::find_if(m_scripts.begin(), m_scripts.end(), [=](const ScriptData& d) { return ("../Res/" + d.m_path) == pathToSave; });
-		m_editorScriptData = it != m_scripts.end() ? &(*it) : nullptr;
+		auto it = std::find_if(m_scripts.begin(), m_scripts.end(), [=](const ScriptData& d) { return d.m_path == pathToSave; });
+		m_editorScriptData = (it != m_scripts.end() && !it->m_markup.empty() ? &(*it) : nullptr);
 	}
 	else
 	{

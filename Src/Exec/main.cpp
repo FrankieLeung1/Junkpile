@@ -35,7 +35,7 @@
 #include "../Misc/ClassMask.h"
 #include "../Misc/WindowRecorder.h"
 #include "../Generators/TextureGenerator.h"
-#include "../Misc/GrindstoneEditor.h"
+#include "../Tools/GrindstoneEditor.h"
 #include "../Models/ModelSystem.h"
 #include "../Scene/TransformSystem.h"
 #include "../Managers/TestManager.h"
@@ -44,8 +44,9 @@
 #include "../Scene/CameraSystem.h"
 #include "../Rendering/Unit.h"
 #include "../Game/Game.h"
+#include "../Tools/Standalone.h"
 
-//#define GRINDSTONE_EDITOR
+#define STANDALONE_TOOLS
 
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
 {
@@ -69,9 +70,12 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
 
-	WebServer::test();
-	//ResourcePtr<ScriptManager> scripts;
-	//scripts->runScriptsInFolder("Levels/Tests");
+	//tests->startTest("TextureGenerator");
+}
+
+static void standaloneDemo(std::function<void(float)>& update, std::function<void()>& render)
+{
+	ResourcePtr<TestManager> tests;
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -81,7 +85,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	initLoggingForVisualStudio("App.log");
 
 	VulkanFramework::AppType type = VulkanFramework::AppType::MainWindow;
-#ifdef GRINDSTONE_EDITOR
+#ifdef STANDALONE_TOOLS
 	type = VulkanFramework::AppType::ImGuiOnly;
 #endif
 
@@ -117,11 +121,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->registerCallback({ [](AssetBrowser* ab) { ab->imgui(); }, ab.get() });
 	m->registerCallback([](void*) { Meta::Object::imgui(); });
 
-#ifdef GRINDSTONE_EDITOR
-	GrindstoneEditor ge;
-	m->registerCallback({ [](GrindstoneEditor* ge) { ge->imgui(); }, &ge });
-#endif
-
 	TileLevel level;
 	m->registerCallback({ [](TileLevel* level) { level->imgui(); }, &level });
 
@@ -130,7 +129,17 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	std::function<void(float)> testUpdate;
 	std::function<void()> testRender;
+
+#ifdef STANDALONE_TOOLS
+	Standalone sa;
+	m->registerCallback({ [](Standalone* sa) { sa->imgui(); }, &sa });
+	m->setPersistenceFilePath("imgui_tools.lua");
+	//m->setStandaloneStyle();
+	standaloneDemo(testUpdate, testRender);
+#else
 	tests(testUpdate, testRender);
+#endif
+	
 	em->addListener<UpdateEvent>([testUpdate, testRender](UpdateEvent* e) {
 		if (testUpdate)
 			testUpdate(e->m_delta);

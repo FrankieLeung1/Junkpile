@@ -96,9 +96,9 @@ void SpriteSystem::process(float delta)
 		std::tie(uv1, uv2) = std::get<1>(spriteData)->getUV(frame.m_id);
 
 		TransformComponent* transform = it.get<TransformComponent>();
-		float scale = 1.0f;
-		float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale;
-		float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale;
+		const glm::vec3& scale = transform->m_scale;
+		float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale.x;
+		float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale.y;
 
 		map[0] = Vertex{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv2.y } };
 		map[1] = Vertex{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv1.y } };
@@ -204,6 +204,5 @@ template<> Meta::Object Meta::instanceMeta<SpriteSystem>()
 template<> Meta::Object Meta::instanceMeta<SpriteComponent>()
 {
 	return Object("SpriteComponent").
-		var("m_sprite", &SpriteComponent::m_sprite).
-		var("m_time", &SpriteComponent::m_time);
+		var("m_sprite", &SpriteComponent::m_sprite);
 }

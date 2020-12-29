@@ -208,3 +208,8 @@ bool Markup::getDefault(std::size_t index, std::string* s) const
 	*s = m_marks[index].m_default;
 	return true;
 }
+
+bool Markup::empty() const
+{
+	return m_marks.empty();
+}

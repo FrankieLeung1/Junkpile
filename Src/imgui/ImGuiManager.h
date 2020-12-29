@@ -17,7 +17,11 @@ public:
 	ImGuiManager();
 	~ImGuiManager();
 
-	void setMicrosoftStyle();
+	void setDarkStyle();
+	void setLightStyle();
+	void setDefaultStyle();
+
+	void setPersistenceFilePath(const char* persistencePath = "imgui.lua");
 
 	void update();
 

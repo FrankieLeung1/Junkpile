@@ -16,6 +16,7 @@ struct SpriteComponent : public Component<SpriteComponent>
 {
 	SpriteId m_sprite;
 	float m_time;
+	glm::vec3 m_scale;
 };
 
 struct RenderEvent;

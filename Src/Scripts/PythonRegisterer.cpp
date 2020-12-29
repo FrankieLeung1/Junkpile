@@ -218,7 +218,7 @@ int Meta::PythonRegisterer::startObject(const char* name, void* v, const Meta::O
 {
 	if (visitArg(name, o)) return 0;
 	visitMember(name, v, &o);
-	return -1; // todo
+	return 0;
 
 	/*m_members.emplace_back();
 	Member& member = m_members.back();
@@ -489,7 +489,7 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	}
 
 	InstanceData* instance = pyCallable->m_instance;
-	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr.isType<void*>() ? instance->m_ptr.get<void*>() : nullptr, &visitor, (int)PyTuple_Size(args));
+	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr.isType<void*>() ? instance->m_ptr.get<void*>() : *(void**)(instance->m_ptr.toVoidPtr()), &visitor, (int)PyTuple_Size(args));
 	if (r.isType<Meta::CallFailure>())
 	{
 		PyErr_SetString(PyExc_ValueError, stringf("callWithVisitor failed: %s", visitor.getError().c_str()).c_str());

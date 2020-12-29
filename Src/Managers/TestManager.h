@@ -15,6 +15,7 @@ public:
 
 	void addTest(const char* name, void(*TestFn)());
 	void addTest(const char* name, void(*TestFn)(UpdateFn&, RenderFn&));
+	void startTest(const char*);
 
 protected:
 	void update(float);

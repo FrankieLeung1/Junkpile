@@ -26,6 +26,15 @@ void TestManager::addTest(const char* name, void(*testFn)(UpdateFn&, RenderFn&))
 	m_tests.emplace(name, testFn);
 }
 
+void TestManager::startTest(const char* name)
+{
+	ResourcePtr<ComponentManager> components;
+	components->clearAllComponents();
+
+	m_current.m_name = name;
+	m_tests[name](m_current.m_update, m_current.m_render);
+}
+
 void TestManager::update(float delta)
 {
 	if (m_current.m_update)
@@ -56,13 +65,8 @@ void TestManager::imgui()
 			NextColumn();
 			PushID(it.first);
 			if (Button(current ? "Reset" : "Start"))
-			{
-				ResourcePtr<ComponentManager> components;
-				components->clearAllComponents();
+				startTest(it.first);
 
-				m_current.m_name = it.first;
-				it.second(m_current.m_update, m_current.m_render);
-			}
 			PopID();
 			NextColumn();
 		}

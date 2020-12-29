@@ -146,7 +146,7 @@ void TextureGenerator::test()
 	generate(false);
 
 	ResourcePtr<ScriptManager> sm;
-	sm->setEditorContent(nullptr, "../Res/Scripts/Generators/TestGen.py");
+	sm->setEditorContent(nullptr, "Scripts/Generators/TestGen.py");
 
 	ResourcePtr<EventManager> events;
 	events->addListener<ScriptLoadedEvent>([=](ScriptLoadedEvent* e) {

@@ -50,6 +50,8 @@
 #include "loguru/loguru.hpp"
 #include "imgui/imgui.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
+#include "implot/implot.h"
+#include "imgui/addons/imguidatechooser/imguidatechooser.h"
 #include "FileWatcher/FileWatcher.h"
 #include "vk_mem_alloc.h"
 #include "Fossilize/fossilize.hpp"

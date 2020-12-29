@@ -64,7 +64,7 @@ File::FileLoader::FileLoader(StringView path, int flags) : m_path(path.str()), m
 Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 {
 	std::string path = m_fileManager->resolvePath(m_path.c_str());
-	if (path.empty())
+	if (path.empty() && (m_flags & File::CreateIfDoesNotExist) == 0)
 	{
 		*error = { FileNotFound, stringf("\"%s\" not found", m_path.c_str()) };
 		return nullptr;
@@ -81,6 +81,7 @@ Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 		{
 			auto error2 = GetLastError();
 
+			LOG_F(INFO, "%s %X\n", m_path.c_str(), error2);
 			*error = { SystemError, stringf("CreateFileA failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
 			return nullptr;
 		}

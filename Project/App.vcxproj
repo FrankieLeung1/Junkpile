@@ -61,7 +61,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;..\External\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -89,7 +89,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\External\;%VULKAN_SDK%\include;..\External\glfw\include;..\External\Visual Leak Detector\include;..\External\bullet\src;..\External\simplefilewatcher\include;..\External\VulkanMemoryAllocator\src;..\External\screen_capture_lite\include\;..\External\screen_capture_lite\include\windows;..\External\Python\include;..\External\rapidjson\include;..\External\dirent\include;..\External\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -200,6 +200,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\External\imgui\addons\imguidatechooser\imguidatechooser.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\External\imgui\imgui.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -212,11 +216,27 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\External\imgui\imgui_tables.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\External\imgui\imgui_widgets.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\External\imgui\misc\cpp\imgui_stdlib.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\implot\implot.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\implot\implot_demo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\External\implot\implot_items.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -447,7 +467,6 @@
     <ClCompile Include="..\Src\Meta\NewMeta.cpp" />
     <ClCompile Include="..\Src\Meta\Serializer.cpp" />
     <ClCompile Include="..\Src\Misc\Callstack.cpp" />
-    <ClCompile Include="..\Src\Misc\GrindstoneEditor.cpp" />
     <ClCompile Include="..\Src\Misc\Misc.cpp" />
     <ClCompile Include="..\Src\Misc\ResizableMemoryPool.cpp" />
     <ClCompile Include="..\Src\Misc\StringView.cpp" />
@@ -481,6 +500,9 @@
     <ClCompile Include="..\Src\Sprites\SpriteManager.cpp" />
     <ClCompile Include="..\Src\Sprites\SpriteSystem.cpp" />
     <ClCompile Include="..\Src\Threading\ThreadPool.cpp" />
+    <ClCompile Include="..\Src\Tools\Analytics.cpp" />
+    <ClCompile Include="..\Src\Tools\GrindstoneEditor.cpp" />
+    <ClCompile Include="..\Src\Tools\Standalone.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\External\CImg.h" />
@@ -508,6 +530,7 @@
     <ClInclude Include="..\External\glfw\src\win32_platform.h" />
     <ClInclude Include="..\External\glfw\src\xkb_unicode.h" />
     <ClInclude Include="..\External\ImGuiColorTextEdit\TextEditor.h" />
+    <ClInclude Include="..\External\imgui\addons\imguidatechooser\imguidatechooser.h" />
     <ClInclude Include="..\External\imgui\imconfig.h" />
     <ClInclude Include="..\External\imgui\imgui.h" />
     <ClInclude Include="..\External\imgui\imgui_internal.h" />
@@ -515,6 +538,8 @@
     <ClInclude Include="..\External\imgui\imstb_textedit.h" />
     <ClInclude Include="..\External\imgui\imstb_truetype.h" />
     <ClInclude Include="..\External\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="..\External\implot\implot.h" />
+    <ClInclude Include="..\External\implot\implot_internal.h" />
     <ClInclude Include="..\External\lodepng\lodepng.h" />
     <ClInclude Include="..\External\lua\src\lapi.h" />
     <ClInclude Include="..\External\lua\src\lauxlib.h" />
@@ -720,7 +745,6 @@
     <ClInclude Include="..\Src\Misc\Callbacks.h" />
     <ClInclude Include="..\Src\Misc\CallStack.h" />
     <ClInclude Include="..\Src\Misc\ClassMask.h" />
-    <ClInclude Include="..\Src\Misc\GrindstoneEditor.h" />
     <ClInclude Include="..\Src\Misc\Misc.h" />
     <ClInclude Include="..\Src\Misc\SparseStructures.h" />
     <ClInclude Include="..\Src\Misc\ResizableMemoryPool.h" />
@@ -758,6 +782,9 @@
     <ClInclude Include="..\Src\Sprites\SpriteManager.h" />
     <ClInclude Include="..\Src\Sprites\SpriteSystem.h" />
     <ClInclude Include="..\Src\Threading\ThreadPool.h" />
+    <ClInclude Include="..\Src\Tools\Analytics.h" />
+    <ClInclude Include="..\Src\Tools\GrindstoneEditor.h" />
+    <ClInclude Include="..\Src\Tools\Standalone.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
