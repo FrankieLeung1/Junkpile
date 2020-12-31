@@ -353,6 +353,8 @@ static void ImGui_ImplGlfw_UpdateMousePosAndButtons()
 			}
 			for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
 				io.MouseDown[i] |= (::GetKeyState(VK_LBUTTON + i) & 0x80) != 0;
+
+            io.MouseDown[ImGuiMouseButton_Middle] = io.MouseDown[ImGuiMouseButton_Middle + 1]; // My mouse (G604) uses (VK_LBUTTON + 1) as hold
 		}
 
         // (Optional) When using multiple viewports: set io.MouseHoveredViewport to the viewport the OS mouse cursor is hovering.

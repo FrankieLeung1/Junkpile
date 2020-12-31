@@ -9,5 +9,5 @@ public:
 	void imgui();
 
 protected:
-
+	tm m_startTime, m_endTime;
 };

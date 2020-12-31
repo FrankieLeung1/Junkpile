@@ -43,6 +43,7 @@
 #include <utility>
 #include <codecvt>
 #include <sys/stat.h>
+#include <time.h>
 #include <WinSock2.h>
 #include <Windows.h>
 
@@ -52,6 +53,7 @@
 #include "imgui/misc/cpp/imgui_stdlib.h"
 #include "implot/implot.h"
 #include "imgui/addons/imguidatechooser/imguidatechooser.h"
+#include "imgui/addons/imguinodegrapheditor/imguinodegrapheditor.h"
 #include "FileWatcher/FileWatcher.h"
 #include "vk_mem_alloc.h"
 #include "Fossilize/fossilize.hpp"

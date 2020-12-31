@@ -61,8 +61,10 @@ struct ResourceStateChanged : public Event<ResourceStateChanged>
 {
 	ResourceData* m_resourceData;
 	ResourceData::State m_newState;
+	std::shared_ptr<Resource::Loader> m_loader;
 	bool m_reload; // change is in response to a resource reload
-	ResourceStateChanged(ResourceData* data = nullptr, ResourceData::State state = ResourceData::State::WAITING, bool reload = false) :m_resourceData(data), m_newState(state), m_reload(reload) {}
+	ResourceStateChanged(ResourceData* data = nullptr, ResourceData::State state = ResourceData::State::WAITING, std::shared_ptr<Resource::Loader> loader = nullptr, bool reload = false):
+		m_resourceData(data), m_newState(state), m_loader(loader), m_reload(reload) {}
 };
 
 class ScriptManager;

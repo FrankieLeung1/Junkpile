@@ -10,6 +10,7 @@ m_currentStyle(0)
 	m_windows.emplace_back("Demo", []() { ImGui::ShowDemoWindow(); });
 	m_windows.emplace_back("Level", [this]() { m_ge.imgui(); });
 	m_windows.emplace_back("Analytics", [this]() { m_analytics.imgui(); });
+	m_windows.emplace_back("Narrative", [this]() { m_narrative.imgui(); });
 	// gif
 	// dynamic
 	// sprite editor

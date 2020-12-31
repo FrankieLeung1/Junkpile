@@ -1,9 +1,12 @@
 #include "stdafx.h"
 #include "Analytics.h"
 
-Analytics::Analytics()
+Analytics::Analytics():
+m_startTime(),
+m_endTime()
 {
-
+    ImGui::SetDateZero(&m_startTime);
+    ImGui::SetDateToday(&m_endTime);
 }
 
 Analytics::~Analytics()
@@ -14,9 +17,18 @@ Analytics::~Analytics()
 void Analytics::imgui()
 {
     ImPlot::ShowDemoWindow();
-    //ImGui::TestDateChooser();
 
 	ImGui::Begin("Analytics");
+
+    const float availableWidth = ImGui::GetWindowContentRegionWidth();
+    const float dateSpaceInBetween = 50.0f;
+    const float dateWidth = availableWidth * 0.5f - dateSpaceInBetween * 0.5f;
+    ImGui::SetNextItemWidth(dateWidth);
+    ImGui::DateChooser("##start", m_startTime, "%B %d, %Y"); ImGui::SameLine();
+    ImGui::SetNextItemWidth(dateSpaceInBetween);
+    ImGui::Text(" - "); ImGui::SameLine();
+    ImGui::SetNextItemWidth(dateWidth);
+    ImGui::DateChooser("##end", m_endTime, "%B %d, %Y");
 
     static float arr[] = { 0.6f, 0.1f, 1.0f, 0.5f, 0.92f, 0.1f, 0.2f, 0.6f, 0.1f, 1.0f, 0.5f, 0.92f, 0.1f, 0.2f, 0.6f, 0.1f, 1.0f, 0.5f, 0.92f, 0.1f, 0.2f };
     ImGui::PlotLines("Frame Times", arr, IM_ARRAYSIZE(arr));

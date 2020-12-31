@@ -25,6 +25,7 @@ protected:
 		virtual StringView getTypeName() const = 0;
 	};
 	friend class ResourceManager;
+	friend struct ResourceStateChanged;
 
 	class Reloader
 	{

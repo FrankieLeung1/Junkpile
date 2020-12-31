@@ -609,6 +609,12 @@
     <ClCompile Include="..\External\imgui\addons\imguidatechooser\imguidatechooser.cpp">
       <Filter>External\imguiaddons</Filter>
     </ClCompile>
+    <ClCompile Include="..\External\imgui\addons\imguinodegrapheditor\imguinodegrapheditor.cpp">
+      <Filter>External\imguiaddons</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Tools\Narrative.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1450,6 +1456,12 @@
     </ClInclude>
     <ClInclude Include="..\External\imgui\addons\imguidatechooser\imguidatechooser.h">
       <Filter>External\imguiaddons</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\imgui\addons\imguinodegrapheditor\imguinodegrapheditor.h">
+      <Filter>External\imguiaddons</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Tools\Narrative.h">
+      <Filter>Header Files\Tools</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

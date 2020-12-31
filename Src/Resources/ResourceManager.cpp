@@ -95,12 +95,7 @@ void ResourceManager::startLoading()
 					task.m_data->m_resource = resource;
 				}
 
-				if (!task.m_data->m_reloader)
-					task.m_data->m_reloader = task.m_loader->createReloader();
-
-				task.m_loader = nullptr;
-
-				rm->m_notificationQueue.emplace_back(task.m_data, task.m_data->m_state);
+				rm->m_notificationQueue.emplace_back(task.m_data, task.m_data->m_state, task.m_loader);
 			}
 			else if (std::get<int>(errors) != 0)
 			{
@@ -247,6 +242,9 @@ void ResourceManager::update()
 		dest->m_reload = (e.m_resourceData->m_reloadedResource != nullptr);
 		
 		ResourceData* data = dest->m_resourceData;
+		if (!data->m_reloader)
+			data->m_reloader = e.m_loader->createReloader();
+
 		if (data->m_reloadedResource)
 		{
 			data->deleteResource();
