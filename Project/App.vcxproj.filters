@@ -175,6 +175,9 @@
     <Filter Include="External\imguiaddons">
       <UniqueIdentifier>{7be4425b-91d8-4011-8fff-4f1a12c3dd35}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\QR-Code-generator">
+      <UniqueIdentifier>{bb366b4f-2697-4ba4-8ddc-22199f82e68d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Exec\stdafx.cpp">
@@ -614,6 +617,15 @@
     </ClCompile>
     <ClCompile Include="..\Src\Tools\Narrative.cpp">
       <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\imgui\Widgets.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Tools\SystemTray.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\QR-Code-generator\cpp\QrCode.cpp">
+      <Filter>External\QR-Code-generator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1462,6 +1474,15 @@
     </ClInclude>
     <ClInclude Include="..\Src\Tools\Narrative.h">
       <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\imgui\Widgets.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Tools\SystemTray.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\QR-Code-generator\cpp\QrCode.hpp">
+      <Filter>External\QR-Code-generator</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

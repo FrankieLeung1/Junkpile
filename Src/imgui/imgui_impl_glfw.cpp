@@ -152,22 +152,8 @@ void ImGui_ImplGlfw_FocusCallback(GLFWwindow* window, int f)
 	if (g_PrevUserCallbackFocus != NULL && window == g_Window)
 		g_PrevUserCallbackFocus(window, f);
 
-#ifdef _WIN32
-    // bring all viewports to the front
     if (f == GLFW_TRUE)
-    {
-        ImGuiPlatformIO& io = ImGui::GetPlatformIO();
-        for (int n = 0; n < io.Viewports.Size; n++)
-        {
-            ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)io.Viewports[n]->PlatformUserData;
-            if (data && data->Window != g_Window)
-            {
-                HWND hwnd = glfwGetWin32Window(data->Window);
-                ::SetWindowPos(hwnd, glfwGetWin32Window(g_Window), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-            }
-        }
-    }
-#endif
+        ImGui_ImplGlfw_BringAllToFront();
 }
 
 void ImGui_ImplGlfw_IconifyCallback(GLFWwindow* window, int f)
@@ -324,7 +310,7 @@ static void ImGui_ImplGlfw_UpdateMousePosAndButtons()
         const bool focused = true;
         IM_ASSERT(platform_io.Viewports.Size == 1);
 #else
-        const bool focused = glfwGetWindowAttrib(window, GLFW_FOCUSED) != 0;
+        const bool focused = (glfwGetWindowAttrib(window, GLFW_FOCUSED) != 0) || ResourcePtr<FrameworkClass>()->getAppType() == VulkanFramework::AppType::SystemTray;
 #endif
 		if (focused)
 		{
@@ -463,6 +449,31 @@ void ImGui_ImplGlfw_NewFrame()
     ImGui_ImplGlfw_UpdateGamepads();
 }
 
+void ImGui_ImplGlfw_BringAllToFront()
+{
+#ifdef WIN32
+    // bring all viewports to the front
+    bool visibleMainWindow = (glfwGetWindowAttrib(g_Window, GLFW_VISIBLE) == GLFW_TRUE);
+    ImGuiPlatformIO& io = ImGui::GetPlatformIO();
+    for (int n = 0; n < io.Viewports.Size; n++)
+    {
+        ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)io.Viewports[n]->PlatformUserData;
+        if (data && data->Window != g_Window)
+        {
+            if (visibleMainWindow)
+            {
+                HWND hwnd = glfwGetWin32Window(data->Window);
+                ::SetWindowPos(hwnd, glfwGetWin32Window(g_Window), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+            else
+            {
+                glfwFocusWindow(data->Window);
+            }
+        }
+    }
+#endif
+}
+
 //--------------------------------------------------------------------------------------------------------
 // MULTI-VIEWPORT / PLATFORM INTERFACE SUPPORT
 // This is an _advanced_ and _optional_ feature, allowing the back-end to create and handle multiple viewports simultaneously.
@@ -503,7 +514,9 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
     data->Window = glfwCreateWindow((int)viewport->Size.x, (int)viewport->Size.y, "No Title Yet", NULL, share_window);
     data->WindowOwned = true;
     viewport->PlatformHandle = (void*)data->Window;
-    glfwSetWindowPos(data->Window, (int)viewport->Pos.x, (int)viewport->Pos.y);
+    SetWindowPos(glfwGetWin32Window(data->Window), (viewport->Flags & ImGuiViewportFlags_TopMost) ? HWND_TOPMOST : HWND_NOTOPMOST, (int)viewport->Pos.x, (int)viewport->Pos.y, (int)viewport->Size.x, (int)viewport->Size.y, SWP_SHOWWINDOW);
+    //SetWindowPos(glfwGetWin32Window(data->Window), 0, (int)viewport->Pos.x, (int)viewport->Pos.y, 0, 0, SWP_SHOWWINDOW);
+    //glfwSetWindowPos(data->Window, (int)viewport->Pos.x, (int)viewport->Pos.y);
 
     // Install callbacks for secondary viewports
     glfwSetMouseButtonCallback(data->Window, ImGui_ImplGlfw_MouseButtonCallback);

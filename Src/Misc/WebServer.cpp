@@ -2,6 +2,8 @@
 #include "WebServer.h"
 #include "../Misc/Misc.h"
 #include "../imgui/ImGuiManager.h"
+#include "../External/QR-Code-generator/cpp/QRCode.hpp"
+#include "../Rendering/Texture.h"
 
 #pragma warning (push)
 #pragma warning( disable : 4267 )
@@ -19,13 +21,15 @@ namespace {
 WebServer::WebServer():
 m_thread(nullptr),
 m_port(80),
-m_body(defaultHTML)
+m_body(defaultHTML),
+m_texture(nullptr)
 {
 }
 
 WebServer::~WebServer()
 {
 	disable();
+    delete m_texture;
 }
 
 void WebServer::test()
@@ -33,29 +37,47 @@ void WebServer::test()
 	WebServer* server = createTestResource<WebServer>();
 	ResourcePtr<ImGuiManager> m;
 	m->registerCallback({ [](void* ud) {
-		WebServer* server = static_cast<WebServer*>(ud);
-
-		ImGui::Begin("WebServer");
-		ImGui::InputTextMultiline("HTML", &server->m_body, ImVec2(-1, -20.0f));
-		bool started = (server->m_thread != nullptr);
-		if (ImGui::Button(!started ? "Start" : "Stop"))
-		{
-			if (started) server->disable();
-			else server->enable();
-		}
-		ImGui::SameLine();
-
-		if (started)
-		{
-			if (ImGui::Button("Visit"))
-				ShellExecute(NULL, L"open", L"http://localhost/", NULL, NULL, SW_SHOWNORMAL);
-
-			ImGui::SameLine();
-		}
-		ImGui::InputInt("port", &server->m_port, 1, 100, started ? ImGuiInputTextFlags_ReadOnly : 0);
-		ImGui::End();
-
+        WebServer* server = static_cast<WebServer*>(ud);
+        server->imgui();
 	}, server });
+}
+
+void WebServer::imgui()
+{
+    ImGui::Begin("WebServer");
+    ImGui::InputTextMultiline("HTML", &m_body, ImVec2(-1, -20.0f));
+    bool started = (m_thread != nullptr);
+    if (ImGui::Button(!started ? "Start" : "Stop"))
+    {
+        if (started) disable();
+        else enable();
+    }
+    ImGui::SameLine();
+
+    if (started)
+    {
+        if (ImGui::Button("Visit"))
+            ShellExecute(NULL, L"open", L"http://localhost/", NULL, NULL, SW_SHOWNORMAL);
+
+        ImGui::SameLine();
+        ImGui::Button("QR");
+        if(ImGui::IsItemHovered())
+        {
+            if (!m_texture->getVkImage())
+            {
+                ResourcePtr<VulkanFramework> vf;
+                vf->uploadTexture(&(*m_texture));
+            }
+
+            ImGui::BeginTooltip();
+            ImGui::Image(m_texture, ImVec2(128, 128));
+            ImGui::EndTooltip();
+        }
+
+        ImGui::SameLine();
+    }
+    ImGui::InputInt("port", &m_port, 1, 100, started ? ImGuiInputTextFlags_ReadOnly : 0);
+    ImGui::End();
 }
 
 void WebServer::enable()
@@ -67,7 +89,24 @@ void WebServer::enable()
 
 	m_server = new Server{ 0 };
 	serverInit(m_server);
-	m_server->tag = this;
+    m_server->tag = this;
+
+	if(!m_texture)
+		m_texture = new Rendering::Texture();
+	
+	using namespace qrcodegen;
+	QrCode qr = QrCode::encodeText("http://localhost/", QrCode::Ecc::HIGH);
+	m_texture->setSoftware(qr.getSize(), qr.getSize(), 4);
+	char* mem = (char*)m_texture->map();
+	for (int y = 0; y < qr.getSize(); y++)
+	{
+		for (int x = 0; x < qr.getSize(); x++)
+		{
+            char c = qr.getModule(x, y) ? 0xFF : 0x00;
+            memset(mem, c, 4); mem += 4;
+		}
+	}
+    m_texture->unmap();
 }
 
 void WebServer::disable()

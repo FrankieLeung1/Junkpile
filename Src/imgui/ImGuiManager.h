@@ -33,6 +33,10 @@ public:
 
 	void setPipDisable(bool);
 
+	void newToast(const char* name, const std::function<void(bool* opened)>&, float lifetime = 5.0f, ImGuiWindowFlags flags = 0);
+
+	void bringToFront();
+
 	template<typename Pred>
 	void imguiLoop(Pred& pred);
 
@@ -50,6 +54,21 @@ protected:
 	std::map<std::string, bool> m_menuBarWindows;
 
 	std::vector< BasicFunction<void> > m_renderCallbacks;
+
+	struct ToastData
+	{
+		int m_id;
+		std::string m_title;
+		ImGuiWindowFlags m_flags;
+		std::function<void(bool*)> m_render;
+		float m_height, m_bottom;
+		float m_lifeTime, m_startTime;
+		ToastData(const char* title, int id, ImGuiWindowFlags flags, const std::function<void(bool*)>& render, float lifetime, float start):
+			m_title(title), m_id(id), m_flags(flags), m_render(render), m_height(-1.0f), m_bottom(-1.0f), m_lifeTime(lifetime), m_startTime(start){}
+	};
+	int m_nextToastId;
+	std::forward_list< ToastData > m_toasts;
+	float m_toastRight;
 
 	bool m_pipDisable;
 };

@@ -45,8 +45,10 @@
 #include "../Rendering/Unit.h"
 #include "../Game/Game.h"
 #include "../Tools/Standalone.h"
+#include "../Tools/SystemTray.h"
 
 #define STANDALONE_TOOLS
+//#define SYSTEMTRAY_TOOLS
 
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
 {
@@ -87,6 +89,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	VulkanFramework::AppType type = VulkanFramework::AppType::MainWindow;
 #ifdef STANDALONE_TOOLS
 	type = VulkanFramework::AppType::ImGuiOnly;
+#endif
+
+#ifdef SYSTEMTRAY_TOOLS
+	type = VulkanFramework::AppType::SystemTray;
 #endif
 
 	ResourceManager r; r.init();
@@ -136,8 +142,20 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->setPersistenceFilePath("imgui_tools.lua");
 	//m->setStandaloneStyle();
 	standaloneDemo(testUpdate, testRender);
-#else
-	tests(testUpdate, testRender);
+#endif
+
+#ifdef SYSTEMTRAY_TOOLS
+	SystemTray tray;
+	m->setPersistenceFilePath("imgui_tools.lua");
+	m->registerCallback({ [](SystemTray* tray) { tray->imgui(); }, &tray });
+#endif
+
+#if !defined(STANDALONE_TOOLS) && !defined(SYSTEMTRAY_TOOLS)
+	//tests(testUpdate, testRender);
+
+	SystemTray tray;
+	m->setPersistenceFilePath("imgui_tools.lua");
+	m->registerCallback({ [](SystemTray* tray) { tray->imgui(); }, &tray });
 #endif
 	
 	em->addListener<UpdateEvent>([testUpdate, testRender](UpdateEvent* e) {

@@ -73,9 +73,6 @@ ImGui::Node* Narrative::createNode(int type, const ImVec2& pos, const ImGui::Nod
 void Narrative::imgui()
 {
 	ImGui::Begin("Narrative");
-		//ImGui::TestNodeGraphEditor();
-
-	m_graph.render();
-
+		m_graph.render();
 	ImGui::End();
 }

@@ -241,6 +241,12 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	{
 		switch (LOWORD(lParam))
 		{
+		case WM_LBUTTONUP:
+			{
+				ResourcePtr<ImGuiManager> imgui;
+				imgui->bringToFront();
+			}
+			break;
 		case WM_CONTEXTMENU:
 			{
 				ResourcePtr<InputManager> input;
@@ -262,7 +268,7 @@ int VulkanFramework::initImGui(AppType type)
 
 	int width = 1280, height = 720;
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	if (type == AppType::ImGuiOnly)
+	if (type == AppType::ImGuiOnly || type == AppType::SystemTray)
 	{
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 		width = 1;
@@ -682,6 +688,14 @@ void VulkanFramework::onIconify(GLFWwindow* window, bool b)
 	glfwSetWindowPos(window, 100, 100);
 	glfwSetWindowSize(window, 320, 180);
 	*/
+}
+
+glm::vec4 VulkanFramework::getDesktopRect() const
+{
+	RECT rect;
+	LOG_IF_F(ERROR, !SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0), "SystemParametersInfo(SPI_GETWORKAREA) failed\n");
+
+	return { (float)rect.left, (float)rect.top, (float)rect.right, (float)rect.bottom };
 }
 
 void VulkanFramework::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)

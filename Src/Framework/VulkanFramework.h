@@ -49,6 +49,8 @@ public:
 
 	void onIconify(GLFWwindow* window, bool);
 
+	glm::vec4 getDesktopRect() const;
+
 protected:
 	int initImGui(AppType);
 
@@ -72,8 +74,7 @@ protected:
 	AppType m_appType;
 
 	int m_pip;
-	struct PrePIPData
-	{
+	struct PrePIPData {
 		int m_x, m_y, m_width, m_height;
 	};
 	PrePIPData m_prePIP;

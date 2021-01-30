@@ -8,18 +8,17 @@ m_current(-1),
 m_currentStyle(0)
 {
 	m_windows.emplace_back("Demo", []() { ImGui::ShowDemoWindow(); });
+	m_windows.emplace_back("Web", [this]() { m_server.imgui(); });
 	m_windows.emplace_back("Level", [this]() { m_ge.imgui(); });
 	m_windows.emplace_back("Analytics", [this]() { m_analytics.imgui(); });
 	m_windows.emplace_back("Narrative", [this]() { m_narrative.imgui(); });
 	// gif
-	// dynamic
+	// dynamic scripting
 	// sprite editor
 
 	// TRAY
 	// save select, debugging
 	// git/svn
-	// server
-
 }
 
 Standalone::~Standalone()

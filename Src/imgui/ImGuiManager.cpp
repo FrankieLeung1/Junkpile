@@ -1,11 +1,16 @@
 #include "stdafx.h"
 #include "ImGuiManager.h"
+#include "imgui_internal.h"
 #include "../Files/FileManager.h"
 #include "../LuaHelpers.h"
 #include "../Managers/InputManager.h"
+#include "../Managers/TimeManager.h"
+#include "imgui_impl_glfw.h"
 
 ImGuiManager::ImGuiManager() :
-m_persistence(NewPtr, "imgui.lua", File::CreateIfDoesNotExist)
+m_persistence(NewPtr, "imgui.lua", File::CreateIfDoesNotExist),
+m_nextToastId(0),
+m_toastRight(0)
 {
 	//setMicrosoftStyle();
 
@@ -29,6 +34,82 @@ void ImGuiManager::update()
 	{
 		for (BasicFunction<void>& fn : m_renderCallbacks)
 			fn.call();
+	}
+
+
+	const float toastSpacing = 10.0f;
+	std::vector<int> closed;
+	for (auto& it : m_toasts)
+	{
+		bool opened = true;
+		if (ImGui::Begin(stringf("%s##toast%d", it.m_title.c_str(), it.m_id).c_str(), &opened, it.m_flags))
+		{
+			bool focused = ImGui::IsWindowFocused();
+			it.m_render(&opened);
+
+			ImGuiContext* context = ImGui::GetCurrentContext();
+			ImGuiWindow* window = ImGui::GetCurrentWindowRead();
+			if (window)
+			{
+				ResourcePtr<FrameworkClass> framework;
+				if (it.m_bottom < 0.0f)
+				{
+					float top = std::numeric_limits<float>::max();
+					for (auto& it2 : m_toasts)
+						if(it2.m_bottom >= 0.0f)
+							top = std::min(top, it2.m_bottom - it2.m_height);
+
+					if (top == std::numeric_limits<float>::max())
+					{
+						// no other toasts exist, init some vars
+						glm::vec4 rect = framework->getDesktopRect();
+						it.m_bottom = rect.w - toastSpacing;
+						m_toastRight = rect.z - toastSpacing;
+					}
+					else if (top - toastSpacing - window->Size.y <= 0.0f)
+					{
+						// toast would be above the top of the screen, skip
+						goto windowEnd;
+					}
+					else
+					{
+						it.m_bottom = top - toastSpacing;
+					}
+				}
+
+				ImVec2 pos(m_toastRight - window->Size.x, it.m_bottom - window->Size.y);
+				ImGui::SetWindowPos(window, window->Appearing ? ImVec2(9999, 9999) : pos, 0);
+				it.m_height = window->Size.y;
+
+				if (focused && !it.m_title.empty())
+					it.m_lifeTime = -1.0f;
+
+				if (it.m_lifeTime > 0.0f)
+				{
+					ResourcePtr<TimeManager> time;
+					float alive = time->getTime() - it.m_startTime;
+					float fraction = alive / it.m_lifeTime;
+					ImGui::ProgressBar(1.0f - fraction, ImVec2(window->ContentSize.x - window->WindowPadding.x, 3.0f), "");
+					if (fraction >= 1.0f)
+						opened = false;
+				}
+				else
+				{
+					ImGui::Dummy(ImVec2(-FLT_MIN, 3.0f));
+				}
+			}
+		}
+
+	windowEnd:
+		ImGui::End();
+
+		if (!opened)
+			closed.push_back(it.m_id);
+	}
+
+	for (auto& id : closed)
+	{
+		m_toasts.remove_if([id](const ToastData& d) { return d.m_id == id; });
 	}
 
 	ImGui::EndFrame();
@@ -112,9 +193,23 @@ void ImGuiManager::setPipDisable(bool b)
 	m_pipDisable = b;
 }
 
+void ImGuiManager::newToast(const char* name, const std::function<void(bool*)>& r, float lifetime, ImGuiWindowFlags flags)
+{
+	if(!name || name[0] == '\0')
+		flags |= ImGuiWindowFlags_NoTitleBar;
+
+	flags |= ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing;
+	m_toasts.emplace_front(name ? name : "", m_nextToastId++, flags, r, lifetime, ResourcePtr<TimeManager>()->getTime());
+}
+
 void ImGuiManager::registerCallback(BasicFunction<void> f)
 {
 	m_renderCallbacks.push_back(f);
+}
+
+void ImGuiManager::bringToFront()
+{
+	ImGui_ImplGlfw_BringAllToFront();
 }
 
 void ImGuiManager::drawMainMenuBar()

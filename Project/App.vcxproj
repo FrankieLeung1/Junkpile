@@ -388,6 +388,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\External\QR-Code-generator\cpp\QrCode.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\External\screen_capture_lite\src\SCCommon.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -460,6 +464,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\Src\imgui\Widgets.cpp" />
     <ClCompile Include="..\Src\LuaHelpers.cpp" />
     <ClCompile Include="..\Src\Managers\DebugManager.cpp" />
     <ClCompile Include="..\Src\Managers\EventManager.cpp" />
@@ -508,6 +513,7 @@
     <ClCompile Include="..\Src\Tools\GrindstoneEditor.cpp" />
     <ClCompile Include="..\Src\Tools\Narrative.cpp" />
     <ClCompile Include="..\Src\Tools\Standalone.cpp" />
+    <ClCompile Include="..\Src\Tools\SystemTray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\External\CImg.h" />
@@ -708,6 +714,7 @@
     <ClInclude Include="..\External\Python\include\unicodeobject.h" />
     <ClInclude Include="..\External\Python\include\warnings.h" />
     <ClInclude Include="..\External\Python\include\weakrefobject.h" />
+    <ClInclude Include="..\External\QR-Code-generator\cpp\QrCode.hpp" />
     <ClInclude Include="..\External\screen_capture_lite\include\ScreenCapture.h" />
     <ClInclude Include="..\External\screen_capture_lite\include\windows\DXFrameProcessor.h" />
     <ClInclude Include="..\External\screen_capture_lite\include\windows\GDIFrameProcessor.h" />
@@ -737,6 +744,7 @@
     <ClInclude Include="..\Src\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="..\Src\imgui\imgui_impl_vulkan.h" />
     <ClInclude Include="..\Src\imgui\MetaBinding.h" />
+    <ClInclude Include="..\Src\imgui\Widgets.h" />
     <ClInclude Include="..\Src\LuaHelpers.h" />
     <ClInclude Include="..\Src\Managers\DebugManager.h" />
     <ClInclude Include="..\Src\Managers\EventManager.h" />
@@ -792,6 +800,7 @@
     <ClInclude Include="..\Src\Tools\GrindstoneEditor.h" />
     <ClInclude Include="..\Src\Tools\Narrative.h" />
     <ClInclude Include="..\Src\Tools\Standalone.h" />
+    <ClInclude Include="..\Src\Tools\SystemTray.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

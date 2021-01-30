@@ -8,6 +8,7 @@ public:
 	virtual ~WebServer();
 
 	static void test();
+	void imgui();
 
 	void enable();
 	void disable();
@@ -23,6 +24,8 @@ protected:
 
 	int m_port;
 	std::string m_body;
+
+	Rendering::Texture* m_texture;
 
 	friend struct Response* createResponseForRequest(const struct Request* request, struct Connection* connection);
 };
