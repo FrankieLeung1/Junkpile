@@ -175,8 +175,6 @@ void Analytics::imgui()
         ImPlot::EndPlot();
     }
 
-    // platform (iOS/tvOS/macOS/Switch)
-
     ImGui::EndChild();
 	ImGui::End();
 }

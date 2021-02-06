@@ -33,6 +33,7 @@ struct Event : public EventBase
 {
 private: static int m_;
 public:
+	Event() { EventBase::m_id = id(); EventBase::m_size = sizeof(T); }
 	static constexpr Id id() { return reinterpret_cast<unsigned long long>(&m_); }
 };
 template<typename T> int Event<T>::m_ = 0;
@@ -77,6 +78,7 @@ public:
 
 	template<typename EventType> EventType* addOneFrameEvent();
 	template<typename EventType> EventType* addPersistentEvent();
+	template<typename EventType> void processEventImmediately(EventType*);
 
 	typedef FunctionBase<void, EventBase*> EventCallback;
 	template<typename Event, typename FunctionType> void addListener(FunctionType, int priority = 0);
@@ -97,6 +99,8 @@ protected:
 	void onNewListener(EventBase::Id eventId, int priority, std::size_t index);
 	void clearEventBuffer(std::vector<char>&, std::vector<TypeHelper*>&);
 	void onScriptUnloaded(ScriptUnloadedEvent*);
+	void insertQueuedListeners();
+	void processEvent(EventBase*);
 
 protected:
 	typedef VariableSizedMemoryPool<EventCallback, EventCallback::PoolHelper> FunctionPool;
@@ -147,6 +151,12 @@ template<typename EventType> EventType* EventManager::addPersistentEvent()
 	event->m_size = sizeof(EventType);
 	m_persistentEvents.push_front(std::move(event));
 	return (EventType*)m_persistentEvents.front().get();
+}
+
+template<typename EventType> 
+void EventManager::processEventImmediately(EventType* e)
+{
+	processEvent(e);
 }
 
 template<typename EventType, typename FunctionType> void EventManager::addListener(FunctionType fn, int priority)

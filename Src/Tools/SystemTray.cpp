@@ -4,8 +4,12 @@
 #include "../imgui/Widgets.h"
 #include "../imgui/ImGuiManager.h"
 #include "../Managers/TimeManager.h"
+#include "../Managers/InputManager.h"
 
-SystemTray::SystemTray()
+SystemTray::SystemTray():
+m_currentStyle(0),
+m_fileProcessing(false),
+m_memoryStore(false)
 {
 	
 }
@@ -125,6 +129,115 @@ void SystemTray::imgui()
 		ImGui::Columns(1);
 	}
 	ImGui::End();
+
+	if (m_fileProcessing)
+	{
+		int noSelection = -1;
+		int selection = -1;
+		static char* in[] = {"C:/Res/"};
+		static char* scripts[] = { "Asset Optimizer", "Script Checker", "Crash Collector" };
+		static char* out[] = { "C:/Processed/" };
+		if (ImGui::Begin("File Processing", &m_fileProcessing))
+		{
+			ImGui::Text("File Processor");
+
+			float arrowWidth = 4.0f;
+			float availableWidth = ImGui::GetWindowContentRegionWidth() - (arrowWidth * 2);
+			float listWidth = availableWidth / 3;
+
+			if (ImGui::BeginPopup("AddRemoveMenu"))
+			{
+				ImGui::Selectable("Add Path");
+				ImGui::Selectable("Remove Path");
+				ImGui::EndPopup();
+			}
+
+			if (ImGui::BeginPopup("NewScriptMenu"))
+			{
+				ImGui::Selectable("New Script");
+				ImGui::Selectable("Remove Script");
+				ImGui::EndPopup();
+			}
+
+			ImGui::SetNextItemWidth(listWidth);
+			ImGui::ListBox("##in", &noSelection, in, IM_ARRAYSIZE(in));
+			ImGui::OpenPopupOnItemClick("AddRemoveMenu", ImGuiPopupFlags_MouseButtonRight);
+			
+			ImGui::SameLine();
+			ImGui::AlignTextToFramePadding();
+			ImGui::SetNextItemWidth(arrowWidth);
+			ImGui::Text("=>"); 
+			
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(listWidth);
+			ImGui::ListBox("##script", &selection, scripts, IM_ARRAYSIZE(scripts));
+			ImGui::OpenPopupOnItemClick("NewScriptMenu", ImGuiPopupFlags_MouseButtonRight);
+
+			ImGui::SameLine();
+			ImGui::AlignTextToFramePadding();
+			ImGui::SetNextItemWidth(arrowWidth);
+			ImGui::Text("=>");
+			
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(listWidth);
+			ImGui::ListBox("##out", &noSelection, out, IM_ARRAYSIZE(out)); ImGui::SameLine();
+			ImGui::OpenPopupOnItemClick("AddRemoveMenu", ImGuiPopupFlags_MouseButtonRight);
+		}
+		ImGui::End();
+	}
+
+	if (m_memoryStore)
+	{
+		if (ImGui::Begin("Memory Store", &m_memoryStore))
+		{
+			static float f[4] = { 34.1f, 1038.2f, 603.8f, 2.3f };
+			ImGui::Text("Buffers: %.1fmb", f[0]);
+			ImGui::Text("Textures: %.1fmb", f[1]);
+			ImGui::Text("Files: %.1fmb", f[2]);
+			ImGui::Separator();
+			ImGui::Text("Total %.1fgb", f[3]);
+			if (ImGui::Button("Clear"))
+				memset(f, 0x00, sizeof(f));
+		}
+		ImGui::End();
+	}
+
+	// Context Menu
+	ResourcePtr<InputManager> input;
+	if (input->wantsTrayContext())
+	{
+		ResourcePtr<FrameworkClass> f;
+		m_contextPos = ImGui::GetIO().MousePos;
+		m_contextPos.y = f->getDesktopRect().w;
+		ImGui::OpenPopup("context");
+
+		input->setWantsTrayContext(false);
+	}
+
+	if (ImGui::BeginPopup("context"))
+	{
+		ImVec2 size = ImGui::GetWindowSize();
+		ImGui::SetWindowPos({ m_contextPos.x, m_contextPos.y - size.y });
+
+		ImGui::Text("Junkpile");
+		ImGui::Text("Mouse x:%d y:%d", (int)ImGui::GetIO().MousePos.x, (int)ImGui::GetIO().MousePos.y);
+		ImGui::Separator();
+
+		if (ImGui::Selectable("File Processing"))
+			m_fileProcessing = true;
+
+		if (ImGui::Selectable("Memory Store"))
+			m_memoryStore = true;
+
+		ImGui::Separator();
+		if (ImGui::MenuItem("Quit"))
+		{
+			ResourcePtr<VulkanFramework>()->setShouldQuit(true);
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
 
 	if (!opened)
 		ResourcePtr<VulkanFramework>()->setShouldQuit(true);

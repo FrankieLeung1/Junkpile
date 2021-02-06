@@ -25,18 +25,7 @@ void EventManager::process(float delta)
 	std::vector<char> processingEvents = std::move(m_oneFrameBuffer);
 	std::vector<TypeHelper*> types = std::move(m_oneFrameBufferTypes);
 
-	// throw m_queuedListeners into m_listeners (uh, I should rename all these variables)
-	for (auto& queuedListeners : m_queuedListeners)
-	{
-		std::map<int, FunctionPool>& eventListeners = m_listeners[queuedListeners.first];
-		for (auto& eventListener : queuedListeners.second)
-		{
-			FunctionPool& pool = eventListeners[eventListener.first];
-			pool.move_back(eventListener.second);
-		}
-	}
-
-	m_queuedListeners.clear();
+	insertQueuedListeners();
 
 	// while we got events
 	while(!processingEvents.empty())
@@ -47,34 +36,7 @@ void EventManager::process(float delta)
 		while (current < end)
 		{
 			EventBase* event = (EventBase*)current;
-
-			std::map<int, FunctionPool>& listeners = m_listeners[event->m_id];
-			for (auto it = listeners.rbegin(); it != listeners.rend(); ++it)
-			{
-				int priority = it->first;
-				int listenerIndex = 0;
-				FunctionPool& listenersOfSamePriority = it->second;
-				for (auto it = listenersOfSamePriority.begin(); it != listenersOfSamePriority.end();)
-				{
-					event->m_discardEvent = event->m_discardListener = false;
-					(*it)(event);
-					if (event->m_discardEvent)
-						goto endOfEvent;
-
-					if (event->m_discardListener)
-					{
-						adjustListenerData(event->m_id, priority, listenerIndex);
-						it = listenersOfSamePriority.erase(it);
-					}
-					else
-					{
-						++listenerIndex;
-						++it;
-					}
-				}
-			}
-
-		endOfEvent:
+			processEvent(event);
 			current += event->m_size;
 		}
 
@@ -88,29 +50,11 @@ void EventManager::process(float delta)
 		std::map<int, FunctionPool>& map = m_listeners[event->m_id];
 		for (auto it = map.rbegin(); it != map.rend(); ++it)
 		{
-			int priority = it->first;
-			int listenerIndex = 0;
-			FunctionPool& listeners = it->second;
-			for (auto& listener = listeners.begin(); listener != listeners.end();)
+			processEvent(event);
+			if (event->m_discardEvent)
 			{
-				event->m_discardEvent = event->m_discardListener = false;
-				(*listener)(event);
-				if (event->m_discardEvent)
-				{
-					event->m_eventLife = event->m_eventDeath;
-					goto endOfPEvent;
-				}
-
-				if (event->m_discardListener)
-				{
-					adjustListenerData(event->id(), priority, listenerIndex);
-					listener = listeners.erase(listener);
-				}
-				else
-				{
-					++listener;
-					++listenerIndex;
-				}
+				event->m_eventLife = event->m_eventDeath;
+				goto endOfPEvent;
 			}
 		}
 
@@ -124,6 +68,35 @@ void EventManager::process(float delta)
 			event->m_eventLife += delta; // increment here so callbacks get at least one listen where life > death
 			prevIt = it;
 			++it;
+		}
+	}
+}
+
+void EventManager::processEvent(EventBase* event)
+{
+	std::map<int, FunctionPool>& listeners = m_listeners[event->m_id];
+	for (auto it = listeners.rbegin(); it != listeners.rend(); ++it)
+	{
+		int priority = it->first;
+		int listenerIndex = 0;
+		FunctionPool& listenersOfSamePriority = it->second;
+		for (auto it = listenersOfSamePriority.begin(); it != listenersOfSamePriority.end();)
+		{
+			event->m_discardEvent = event->m_discardListener = false;
+			(*it)(event);
+			if (event->m_discardEvent)
+				return;
+
+			if (event->m_discardListener)
+			{
+				adjustListenerData(event->m_id, priority, listenerIndex);
+				it = listenersOfSamePriority.erase(it);
+			}
+			else
+			{
+				++listenerIndex;
+				++it;
+			}
 		}
 	}
 }
@@ -250,6 +223,22 @@ void EventManager::clearEventBuffer(std::vector<char>& buffer, std::vector<TypeH
 	types.clear();
 }
 
+void EventManager::insertQueuedListeners()
+{
+	// throw m_queuedListeners into m_listeners (uh, I should rename all these variables)
+	for (auto& queuedListeners : m_queuedListeners)
+	{
+		std::map<int, FunctionPool>& eventListeners = m_listeners[queuedListeners.first];
+		for (auto& eventListener : queuedListeners.second)
+		{
+			FunctionPool& pool = eventListeners[eventListener.first];
+			pool.move_back(eventListener.second);
+		}
+	}
+
+	m_queuedListeners.clear();
+}
+
 void EventManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 {
 	ResourcePtr<ScriptManager> scripts;
@@ -315,7 +304,8 @@ Meta::Object Meta::instanceMeta<EventManager>()
 	return Meta::Object("EventManager").
 		func<EventManager, void, std::function<void(UpdateEvent*)>>("addListener_UpdateEvent", &EventManager::addListenerFromScript<UpdateEvent>).
 		func<EventManager, void, std::function<void(InputChanged*)>>("addListener_InputChanged", &EventManager::addListenerFromScript<InputChanged>).
-		func<EventManager, void, std::function<void(InputHeld*)>>("addListener_InputHeld", &EventManager::addListenerFromScript<InputHeld>);
+		func<EventManager, void, std::function<void(InputHeld*)>>("addListener_InputHeld", &EventManager::addListenerFromScript<InputHeld>).
+		func<EventManager, void, std::function<void(ImGuiRenderEvent*)>>("addListener_ImGuiRender", &EventManager::addListenerFromScript<ImGuiRenderEvent>);
 }
 
 template<>

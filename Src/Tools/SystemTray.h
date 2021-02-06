@@ -10,4 +10,9 @@ public:
 
 protected:
 	int m_currentStyle;
+	bool m_fileProcessing;
+	bool m_memoryStore;
+
+	ImVec2 m_contextPos;
+	
 };

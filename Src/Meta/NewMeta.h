@@ -168,14 +168,27 @@ namespace Meta
 	};
 
 	template<typename R, typename... Args>
-	class StaticFunction : public Function
+	class StaticFunctionBase : public Function
 	{
 	public:
-		Any callWithVisitor(Visitor* v, int argCount);
 		int visit(Visitor*);
 		void* getTypeInstance() const;
 
 		R(*m_ptr)(Args...);
+	};
+
+	template<typename R, typename... Args>
+	class StaticFunction : public StaticFunctionBase<R, Args...>
+	{
+		Any callWithVisitor(void* instance, Visitor* v, int argCount);
+		Any callWithVisitor(Visitor* v, int argCount);
+	};
+
+	template<typename... Args>
+	class StaticFunction<void, Args...> : public StaticFunctionBase<void, Args...>
+	{
+		Any callWithVisitor(void* instance, Visitor* v, int argCount);
+		Any callWithVisitor(Visitor* v, int argCount);
 	};
 
 	class Hook
@@ -503,7 +516,7 @@ namespace Meta
 			if (!defaults)
 				return r;
 
-			const std::size_t defaultsIndex = (std::tuple_size<Tuple>::value - 1) - tupleIndex;
+			const std::size_t defaultsIndex = (defaults->size() - std::tuple_size<Tuple>::value) + tupleIndex;
 			if (defaultsIndex < defaults->size())
 			{
 				CHECK_F(defaults->at(defaultsIndex).isType<std::decay<T>::type>());
@@ -574,6 +587,12 @@ namespace Meta
 	}
 
 	template<typename R, typename... Args>
+	Any StaticFunction<R, Args...>::callWithVisitor(void* instance, Visitor* v, int argCount)
+	{
+		return callWithVisitor(v, argCount);
+	}
+
+	template<typename R, typename... Args>
 	Any StaticFunction<R, Args...>::callWithVisitor(Visitor* v, int argCount)
 	{
 		if (argCount > sizeof...(Args) || argCount < sizeof...(Args) - m_defaults.size())
@@ -584,8 +603,26 @@ namespace Meta
 		return callWithTuple(m_ptr, args);
 	}
 
+	template<typename... Args>
+	Any StaticFunction<void, Args...>::callWithVisitor(void* instance, Visitor* v, int argCount)
+	{
+		return callWithVisitor(v, argCount);
+	}
+
+	template<typename... Args>
+	Any StaticFunction<void, Args...>::callWithVisitor(Visitor* v, int argCount)
+	{
+		if (argCount > sizeof...(Args) || argCount < sizeof...(Args) - m_defaults.size())
+			return CallFailure();
+
+		std::tuple<typename std::decay<Args>::type...> args;
+		TypeVisitor<Args...>::visit(v, args, &m_defaults);
+		callWithTupleNoReturn(m_ptr, args);
+		return nullptr;
+	}
+
 	template<typename R, typename... Args>
-	int StaticFunction<R, Args...>::visit(Visitor* v)
+	int StaticFunctionBase<R, Args...>::visit(Visitor* v)
 	{
 		int r = v->startFunction(m_name.c_str(), std::is_void<R>::value, m_isConstructor);
 		if (r == 0)
@@ -604,7 +641,7 @@ namespace Meta
 	}
 
 	template<typename R, typename... Args>
-	void* StaticFunction<R, Args...>::getTypeInstance() const
+	void* StaticFunctionBase<R, Args...>::getTypeInstance() const
 	{
 		return &Type<R(*)(Args...)>::s_instance;
 	}

@@ -50,7 +50,7 @@ template<typename Tuple, typename... Args>
 void callWithTupleNoReturn(void(*f)(Args...), Tuple& args)
 {
 	using namespace MiscInternal;
-	callFunc<void, void(*)(Args...)>(f, args, typename gens<sizeof...(Args)>::type(), false);
+	callFunc<void, void(*)(Args...)>(f, args, typename gens<sizeof...(Args)>::type(), std::false_type{});
 }
 
 template<typename R, typename T, typename Tuple, typename... Args>

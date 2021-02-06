@@ -2,12 +2,18 @@
 
 #include "../Misc/Callbacks.h"
 #include "../Resources/ResourceManager.h"
+#include "../Managers/EventManager.h"
 
 namespace Rendering
 {
 	class Texture;
 	class Device;
 }
+
+struct ImGuiRenderEvent : public Event<ImGuiRenderEvent>
+{
+};
+template<> inline Meta::Object Meta::instanceMeta<ImGuiRenderEvent>() { return Meta::Object("ImGuiRenderEvent"); }
 
 class FileManager;
 class LuaTableResource;

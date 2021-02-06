@@ -81,7 +81,7 @@ Resource* File::FileLoader::load(std::tuple<int, std::string>* error)
 		{
 			auto error2 = GetLastError();
 
-			LOG_F(INFO, "%s %X\n", m_path.c_str(), error2);
+			LOG_F(ERROR, "%s %X\n", m_path.c_str(), error2);
 			*error = { SystemError, stringf("CreateFileA failed \"%s\" (%X)", m_path.c_str(), GetLastError()) };
 			return nullptr;
 		}

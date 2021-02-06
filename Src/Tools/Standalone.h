@@ -17,6 +17,8 @@ protected:
 	Analytics m_analytics;
 	Narrative m_narrative;
 	WebServer m_server;
+	bool m_scriptingExample;
+	bool m_scriptLoaded;
 
 	std::vector<std::pair<const char*, std::function<void()>>> m_windows;
 	int m_current;

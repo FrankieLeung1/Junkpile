@@ -522,6 +522,7 @@ void ScriptManager::registerObjects()
 		registerObject<UpdateEvent>("UpdateEvent");
 		registerObject<InputChanged>("InputChanged");
 		registerObject<InputHeld>("InputHeld");
+		registerObject<ImGuiRenderEvent>("ImGuiRenderEvent");
 		registerObject<Entity>("Entity");
 		registerObject<TransformComponent>("TransformComponent");
 		registerObject<SpriteComponent>("SpriteComponent");
@@ -530,7 +531,7 @@ void ScriptManager::registerObjects()
 		registerObject<EventManager>("EventManager", nullptr, std::make_tuple(ResourcePtr<EventManager>(NewPtr).get(), "eventManager"));
 		//registerObject<ImGuiManager>("ImGuiManager", nullptr, std::make_tuple(ResourcePtr<ImGuiManager>(NewPtr).get(), "imguiManager"));
 		static ImGuiMeta imgui;
-		registerObject<ImGuiMeta>("ImGui", nullptr, std::make_tuple(&imgui, "imgui"));
+		registerObject<ImGuiMeta>("ImGui", nullptr, std::make_tuple(&imgui, "ImGui"));
 		registerObject<InputManager>("InputManager", nullptr, std::make_tuple(ResourcePtr<InputManager>(NewPtr).get(), "inputManager"));
 		registerObject<ComponentManager>("ComponentManager", nullptr, std::make_tuple(ResourcePtr<ComponentManager>(NewPtr).get(), "componentManager"));
 		registerObject<TransformSystem>("TransformSystem", nullptr, std::make_tuple(ResourcePtr<TransformSystem>(NewPtr).get(), "transformSystem"));

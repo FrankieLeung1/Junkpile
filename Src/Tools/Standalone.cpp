@@ -2,10 +2,13 @@
 #include "Standalone.h"
 #include "../imgui/ImGuiManager.h"
 #include "../Framework/VulkanFramework.h"
+#include "../Scripts/ScriptManager.h"
 
 Standalone::Standalone():
 m_current(-1),
-m_currentStyle(0)
+m_currentStyle(0),
+m_scriptingExample(false),
+m_scriptLoaded(false)
 {
 	m_windows.emplace_back("Demo", []() { ImGui::ShowDemoWindow(); });
 	m_windows.emplace_back("Web", [this]() { m_server.imgui(); });
@@ -13,7 +16,6 @@ m_currentStyle(0)
 	m_windows.emplace_back("Analytics", [this]() { m_analytics.imgui(); });
 	m_windows.emplace_back("Narrative", [this]() { m_narrative.imgui(); });
 	// gif
-	// dynamic scripting
 	// sprite editor
 
 	// TRAY
@@ -58,9 +60,27 @@ void Standalone::imgui()
 			ImGui::NextColumn();
 		}
 
+		ImGui::Text("Scripting");
+		ImGui::NextColumn();
+		if (ImGui::Button(m_scriptingExample ? "Stop##Scripting" : "Start##Scripting"))
+			m_scriptingExample = true;
+
+		ImGui::NextColumn();
 		ImGui::Columns(1);
 	}
 	ImGui::End();
+
+	if (m_scriptingExample)
+	{
+		if (!m_scriptLoaded)
+		{
+			ResourcePtr<ScriptManager> scripts;
+			scripts->run("../res/imguiscript.py");
+			scripts->setEditorContent(nullptr, "../res/imguiscript.py");
+			scripts->showEditor();
+			m_scriptLoaded = true;
+		}
+	}
 
 	if (!opened)
 		ResourcePtr<VulkanFramework>()->setShouldQuit(true);

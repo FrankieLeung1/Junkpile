@@ -151,7 +151,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 #endif
 
 #if !defined(STANDALONE_TOOLS) && !defined(SYSTEMTRAY_TOOLS)
-	//tests(testUpdate, testRender);
+	tests(testUpdate, testRender);
 
 	SystemTray tray;
 	m->setPersistenceFilePath("imgui_tools.lua");

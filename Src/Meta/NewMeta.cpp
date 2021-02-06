@@ -171,6 +171,7 @@ Any Object::callWithVisitor(const char* name, Visitor* v, int argCount)
 
 Any Meta::Function::callWithVisitor(void* instance, Visitor* v, int argCount)
 {
+	CHECK_F(false);
 	return nullptr;
 }
 

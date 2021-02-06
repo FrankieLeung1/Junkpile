@@ -34,6 +34,9 @@ void ImGuiManager::update()
 	{
 		for (BasicFunction<void>& fn : m_renderCallbacks)
 			fn.call();
+
+		ResourcePtr<EventManager> events;
+		events->processEventImmediately(&ImGuiRenderEvent{});
 	}
 
 
@@ -272,12 +275,15 @@ void ImGuiManager::drawFramerate()
 
 void ImGuiManager::drawTrayContext()
 {
+	return;
+
+	ImVec2 pos;
 	ResourcePtr<InputManager> input;
-	static bool testOpened = true;
 	if (input->wantsTrayContext())
 	{
-		testOpened = true;
-		ImGui::SetNextWindowPos(ImGui::GetIO().MousePos);
+		ResourcePtr<FrameworkClass> f;
+		pos = ImGui::GetIO().MousePos;
+		pos.y = f->getDesktopRect().w;
 		ImGui::OpenPopup("testWindow");
 
 		input->setWantsTrayContext(false);
@@ -285,6 +291,9 @@ void ImGuiManager::drawTrayContext()
 
 	if (ImGui::BeginPopup("testWindow"))
 	{
+		ImVec2 size = ImGui::GetWindowSize();
+		ImGui::SetWindowPos({ pos.x, pos.y - size.y });
+
 		ImGui::Text("Just a normal ImGui popup");
 		ImGui::Text("Mouse x:%d y:%d", (int)ImGui::GetIO().MousePos.x, (int)ImGui::GetIO().MousePos.y);
 		ImGui::Separator();
