@@ -42,56 +42,47 @@ void Shader::setCode(Type type, const char* code)
 	m_hash = generateHash(code, strlen(code));
 }
 
-bool Shader::compile(std::string* outError)
+bool Shader::compile(StringView path, std::string* outError)
 {
 	using namespace Framework;
-	ResourcePtr<Rendering::Device> device;
-	ResourcePtr<FileManager> files;
-
-	std::string cachePath = getCachePath();
-	if (!files->exists(cachePath.c_str()))
+	std::stringstream error;
+	std::stringstream cmd;
+	const char* type = (m_type == Type::Vertex ? "vert" : "frag");
+	cmd << getExternalPath() << "glslangValidator --stdin -S " << type << " -V -o \"" << path << '\"';
+	ProcessHandle* process = popen(cmd.str().c_str());
+	if (process)
 	{
-		std::stringstream error;
-		std::stringstream cmd;
-		const char* type = (m_type == Type::Vertex ? "vert" : "frag");
-		cmd << getExternalPath() << "glslangValidator --stdin -S " << type << " -V -o \"" << cachePath << '\"';
-		ProcessHandle* process = popen(cmd.str().c_str());
-		if (process)
+		write(process, m_code.c_str(), m_code.size());
+		closeWrite(process);
+
+		int errorCode;
+		while (!getExitCode(process, &errorCode))
+			;
+
+		if (errorCode != 0)
 		{
-			write(process, m_code.c_str(), m_code.size());
-			closeWrite(process);
-
-			int errorCode;
-			while (!getExitCode(process, &errorCode))
-				;
-
-			if (errorCode != 0)
-			{
-				char buffer[1024] = { '\0' };
-				read(process, buffer, sizeof(buffer) - 1);
-				if (buffer[0] != '\0' && strcmp(buffer, "stdin\r\n") != 0)
-					error << buffer;
-			}
-			pclose(process);
+			char buffer[1024] = { '\0' };
+			read(process, buffer, sizeof(buffer) - 1);
+			if (buffer[0] != '\0' && strcmp(buffer, "stdin\r\n") != 0)
+				error << buffer;
 		}
-
-		bool hasError = !error.str().empty();
-		if (hasError && outError) *outError = error.str();
-		if(hasError)
-			return false;
+		pclose(process);
 	}
 
-	// TODO: don't sync
-	ResourcePtr<File> cacheFile(NewPtr, cachePath.c_str());
+	bool hasError = !error.str().empty();
+	if (hasError && outError) *outError = error.str();
+	return hasError;
+}
+
+void Shader::setCompiled(uint32_t* bytes, int size)
+{
 	freeModule();
 
-	//LOG_IF_F(ERROR, !cacheFile, "failed to open shader cache %s\n", cachePath.c_str());
-
+	ResourcePtr<Rendering::Device> device;
 	vk::ShaderModuleCreateInfo info = {};
-	info.codeSize = cacheFile->getSize();
-	info.pCode = (uint32_t*)cacheFile->getContents().c_str();
+	info.codeSize = size;
+	info.pCode = bytes;
 	m_module = device->createObject(info);
-	return true;
 }
 
 Shader::Type Shader::getType() const
@@ -155,7 +146,8 @@ std::tuple<bool, std::size_t> Shader::getSharedHash(Type type, const char* code)
 
 Shader::ShaderLoader::ShaderLoader(Type type, const char* code):
 m_type(type),
-m_code(code)
+m_code(code),
+m_cacheFile(EmptyPtr)
 {
 
 }
@@ -167,16 +159,34 @@ Shader::ShaderLoader::~ShaderLoader()
 
 Shader* Shader::ShaderLoader::load(std::tuple<int, std::string>* error)
 {
-	Shader* shader = new Shader(m_type, m_code.c_str());
-	if (!shader->compile(&std::get<1>(*error)))
+	if(!m_shader)
+		m_shader = new Shader(m_type, m_code.c_str());
+
+	std::string cachePath = m_shader->getCachePath();
+
+	ResourcePtr<FileManager> files;
+	if (!m_cacheFile && !files->exists(cachePath.c_str()))
 	{
-		std::get<0>(*error) = -1;
-		LOG_F(ERROR, "Failed to compile shader \"%s\"\n%s\n", getDebugName().c_str(), std::get<1>(*error).c_str());
-		delete shader;
-		shader = nullptr;
+		if (!m_shader->compile(cachePath, &std::get<1>(*error)))
+		{
+			std::get<0>(*error) = -1;
+			LOG_F(ERROR, "Failed to compile shader \"%s\"\n%s\n", getDebugName().c_str(), std::get<1>(*error).c_str());
+			delete m_shader;
+			m_shader = nullptr;
+			return nullptr;
+		}
+
+		CHECK_F(files->exists(cachePath.c_str()));
 	}
 
-	return shader;
+	if(!m_cacheFile)
+		m_cacheFile = ResourcePtr<File>(NewPtr, cachePath);
+
+	if (!m_cacheFile.ready(error))
+		return nullptr; // wait for cache file
+
+	m_shader->setCompiled((uint32_t*)m_cacheFile->getContents().c_str(), (int)m_cacheFile->getSize());
+	return m_shader;
 }
 
 std::string Shader::ShaderLoader::getDebugName() const

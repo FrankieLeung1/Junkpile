@@ -57,7 +57,7 @@ public:
 	~ScriptManager();
 
 	void runScriptsInFolder(StringView path, bool recursive = false);
-	bool run(const char* path, Environment::Script script = Environment::Script(), Environment::Script owner = Environment::Script());
+	bool run(const char* path, bool ignoreReload = false, Environment::Script script = Environment::Script(), Environment::Script owner = Environment::Script());
 	void remark(const char* path);
 
 	template<typename T> void registerObject(const char* exposedName, const char* doc = nullptr, std::tuple<T*, const char*> instance = {});
@@ -101,9 +101,11 @@ protected:
 		std::set<std::string> m_dependencies;
 		std::string m_path;
 		Markup m_markup;
+		bool m_ignoreReloads;
 	};
 
 	ScriptData* m_editorScriptData;
+	bool m_showMarkup;
 	
 	std::list<Environment*> m_languages;
 	std::forward_list<ScriptData> m_scripts;

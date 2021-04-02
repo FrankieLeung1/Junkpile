@@ -13,7 +13,8 @@ ScriptManager::ScriptManager() :
 	m_state(luaL_newstate()),
 	m_editorScriptData(nullptr),
 	m_colourIndexOpened(-1),
-	m_objectsRegistered(false)
+	m_objectsRegistered(false),
+	m_showMarkup(false)
 {
 	LuaStackCheck::s_defaultState = m_state;
 	ResourcePtr<EventManager> e;
@@ -64,7 +65,7 @@ void ScriptManager::runScriptsInFolder(StringView path, bool recursive, std::vec
 	}
 }
 
-bool ScriptManager::run(const char* path, Environment::Script script, Environment::Script owner)
+bool ScriptManager::run(const char* path, bool ignoreReload, Environment::Script script, Environment::Script owner)
 {
 	registerObjects();
 
@@ -77,6 +78,7 @@ bool ScriptManager::run(const char* path, Environment::Script script, Environmen
 			data.m_script = script;
 			data.m_path = path;
 			data.m_env = language;
+			data.m_ignoreReloads = ignoreReload;
 
 			m_callstack.push_back(&data);
 
@@ -164,10 +166,16 @@ StringView ScriptManager::getScriptPath(Environment::Script script) const
 	return it == m_scripts.end() ? StringView() : StringView(it->m_path);
 }
 
-void ScriptManager::setEditorContent(const char* content, const char* pathToSave)
+void ScriptManager::setEditorContent(const char* content, const char* _pathToSave)
 {
 	initEditor();
-	if (!content && pathToSave)
+	std::string pathToSave = normalizePath(_pathToSave);
+
+	// HACK until I make a proper normalizePath
+	if (pathToSave.find("TestGen.py")) pathToSave = "Scripts/Generators/TestGen.py";
+	if (pathToSave.find("Floor.py")) pathToSave = "Scripts/Generators/Floor.py";
+
+	if (!content && !pathToSave.empty())
 	{
 		ResourcePtr<File> file(NewPtr, pathToSave);
 		m_editor->SetText(std::string(file->getContents().c_str(), file->getSize()));
@@ -182,7 +190,7 @@ void ScriptManager::setEditorContent(const char* content, const char* pathToSave
 	if(ext == "lua")		m_editor->SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
 	else if(ext == "py")	m_editor->SetLanguageDefinition(TextEditor::LanguageDefinition::Python());
 
-	if (pathToSave)
+	if (!pathToSave.empty())
 	{
 		m_editorSavePath = pathToSave;
 		auto it = std::find_if(m_scripts.begin(), m_scripts.end(), [=](const ScriptData& d) { return d.m_path == pathToSave; });
@@ -232,9 +240,9 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 	for (auto path : e.m_files)
 	{
 		// direct script
-		for (auto& script : m_scripts)
+		for (ScriptData& script : m_scripts)
 		{
-			if (endsWith(script.m_path, path.c_str(), path.length()))
+			if (!script.m_ignoreReloads && endsWith(script.m_path, path.c_str(), path.length()))
 			{
 				scriptsToReload.insert(&script);
 				break;
@@ -310,14 +318,32 @@ void ScriptManager::imgui()
 	ImGui::Begin("Script Editor", m_error ? nullptr : opened, ImGuiWindowFlags_HorizontalScrollbar);
 	ImGui::SetWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 
-	if (m_editorScriptData)
+	static bool setupColumnWidth = false;
+	if (m_showMarkup)
+	{
 		ImGui::Columns(2);
+		if (setupColumnWidth)
+		{
+			ImGui::SetColumnWidth(-1, 600);
+			setupColumnWidth = false;
+		}
+	}
 
 	//ImGui::Button("Open External"); ImGui::SameLine();
 	ImGui::Text("%6d/%-6d %6d lines | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, m_editor->GetTotalLines(),
 		m_editor->IsOverwrite() ? "Ovr" : "Ins",
 		m_editor->CanUndo() ? "*" : " ",
 		m_editor->GetLanguageDefinition().mName.c_str(), m_editorSavePath.c_str());
+
+	if (m_editorScriptData)
+	{
+		ImGui::SameLine(ImGui::GetContentRegionAvail().x - 5.0f);
+		if (ImGui::SmallButton(m_showMarkup ? ">" : "<"))
+		{
+			m_showMarkup = !m_showMarkup;
+			setupColumnWidth = true;
+		}
+	}
 
 	std::map<int, std::string> markers;
 	markers[m_error.m_line] = m_error.m_message;
@@ -334,7 +360,7 @@ void ScriptManager::imgui()
 
 	m_editor->Render("TextEditor");
 	
-	if (m_editorScriptData)
+	if (m_showMarkup && m_editorScriptData)
 	{
 		Markup& markup = m_editorScriptData->m_markup;
 		ImGui::NextColumn();

@@ -28,7 +28,7 @@ static void frame(void* ud, GIF_WHDR* whdr)
 	SpriteData* sprite = static_cast<SpriteData*>(ud);
 	SpriteData::FrameData data;
 	data.m_duration = (float)whdr->time / 100.0f;
-	data.m_texture = std::make_shared<Rendering::Texture>();
+	data.m_texture = ResourcePtr<Rendering::Texture>(NewPtr);
 
 	// build RGBA data
 	struct RGBA { unsigned char r, g, b, a; };
@@ -141,15 +141,19 @@ SpriteData* SpriteData::SpriteDataLoader::load(std::tuple<int, std::string>* err
 	std::string ext = FileManager::extension(m_file->getPath());
 	if (ext == "png")
 	{
-		data->addFrame({ 0, 0, std::numeric_limits<float>::max(), std::shared_ptr<Rendering::Texture>(Rendering::Texture::loadPng(*m_file))});
+		data->addFrame({ 0, 0, std::numeric_limits<float>::max(), Rendering::Texture::loadPng(*m_file) });
 	}
 	else if(ext == "gif")
 	{
 		GIF_Load(const_cast<char*>(content), (long)size, frame, nullptr, data, 0);
 	}
+	else if(ext == "py")
+	{
+		data->addFrame({ 0, 0, std::numeric_limits<float>::max(), Rendering::Texture::loadPy(*m_file) });
+	}
 	else
 	{
-		LOG_F(WARNING, "Unable to load sprite \"%s\"", m_file->getPath().c_str());
+		LOG_F(WARNING, "Unable to load sprite \"%s\"\n", m_file->getPath().c_str());
 	}
 
 	return data;

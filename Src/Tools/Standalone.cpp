@@ -20,7 +20,6 @@ m_scriptLoaded(false)
 
 	// TRAY
 	// save select, debugging
-	// git/svn
 }
 
 Standalone::~Standalone()

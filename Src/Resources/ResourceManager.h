@@ -3,6 +3,9 @@
 class ThreadPool;
 class EventManager;
 #include "../Misc/StringView.h"
+#include "../Misc/CallStack.h"
+
+#define JUNKPILE_RESOURCE_RECORD_STACK
 
 struct FileChangeEvent;
 class Resource
@@ -23,6 +26,12 @@ protected:
 		virtual Reloader* createReloader() { return nullptr; }
 		virtual std::string getDebugName() const { return std::string("<") + (const char*)getTypeName() + ">"; }
 		virtual StringView getTypeName() const = 0;
+
+	protected:
+#ifdef JUNKPILE_RESOURCE_RECORD_STACK 
+		Loader() { m_stack = CallStack().str(); }
+		std::string m_stack;
+#endif
 	};
 	friend class ResourceManager;
 	friend struct ResourceStateChanged;

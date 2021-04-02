@@ -47,7 +47,7 @@
 #include "../Tools/Standalone.h"
 #include "../Tools/SystemTray.h"
 
-#define STANDALONE_TOOLS
+//#define STANDALONE_TOOLS
 //#define SYSTEMTRAY_TOOLS
 
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
@@ -71,7 +71,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
-
+	tests->startTest("Game");
 	//tests->startTest("TextureGenerator");
 }
 
@@ -82,7 +82,7 @@ static void standaloneDemo(std::function<void(float)>& update, std::function<voi
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_EVERY_1024_DF);
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_EVERY_1024_DF);
 	loguru::init(__argc, __argv);
 	initLoggingForVisualStudio("App.log");
 
@@ -152,10 +152,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 #if !defined(STANDALONE_TOOLS) && !defined(SYSTEMTRAY_TOOLS)
 	tests(testUpdate, testRender);
-
-	SystemTray tray;
-	m->setPersistenceFilePath("imgui_tools.lua");
-	m->registerCallback({ [](SystemTray* tray) { tray->imgui(); }, &tray });
 #endif
 	
 	em->addListener<UpdateEvent>([testUpdate, testRender](UpdateEvent* e) {

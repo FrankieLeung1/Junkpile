@@ -14,6 +14,7 @@ struct TextureGenerator::Impl
 {
 	typedef FunctionBase<void, CImg<unsigned char>*> Operation;
 	VariableSizedMemoryPool<Operation, Operation::PoolHelper> m_operations;
+	int m_width{ 0 }, m_height{ 0 };
 };
 
 TextureGenerator* TextureGenerator::Instance = nullptr;
@@ -21,13 +22,12 @@ TextureGenerator* TextureGenerator::Instance = nullptr;
 TextureGenerator::TextureGenerator():
 p(new Impl)
 {
-	Instance = this;
-	LOG_F(INFO, "TextureGenerator %x\n", this);
+	Instance = this; // TODO: figure out how to get this out of python properly
 }
 
 TextureGenerator::~TextureGenerator()
 {
-	LOG_F(INFO, "~TextureGenerator %x\n", this);
+	
 }
 
 template<typename T> 
@@ -36,9 +36,14 @@ void TextureGenerator::push(T f)
 	p->m_operations.push_back(makeFunction(f));
 }
 
+void TextureGenerator::size(int width, int height)
+{
+	p->m_width = width;
+	p->m_height = height;
+}
+
 void TextureGenerator::clear(const glm::vec4& colour)
 {
-	LOG_F(INFO, "clear %x\n", this);
 	push([=](CImg<unsigned char>* img)
 	{
 		unsigned char c[] = { (unsigned char)(colour.x * 255), (unsigned char)(colour.y * 255), (unsigned char)(colour.z * 255), 255 };
@@ -74,7 +79,6 @@ void TextureGenerator::line(const glm::vec2& p1, const glm::vec2& p2, const glm:
 
 void TextureGenerator::text(const char* text, const glm::vec2& position, int size, const glm::vec4& colour)
 {
-	LOG_F(INFO, "text %x\n", this);
 	push([=](CImg<unsigned char>* img)
 	{
 		int x = (int)(position.x * img->width());
@@ -84,15 +88,13 @@ void TextureGenerator::text(const char* text, const glm::vec2& position, int siz
 	});
 }
 
-ResourcePtr<Rendering::Texture> TextureGenerator::generate(unsigned int width, unsigned int height) const
+Rendering::Texture* TextureGenerator::generate(unsigned int width, unsigned int height) const
 {
 	CImg<unsigned char> img(width, height, 1, 4, 255);
 	for (auto& op : p->m_operations)
-	{
 		op(&img);
-	}
 
-	ResourcePtr<Rendering::Texture> texture(TakeOwnershipPtr, new Rendering::Texture);
+	Rendering::Texture* texture = new Rendering::Texture;
 	texture->setSoftware((int)width, (int)height, sizeof(glm::u8vec4));
 	
 	glm::u8vec4* dest = (glm::u8vec4*)texture->map();
@@ -106,6 +108,11 @@ ResourcePtr<Rendering::Texture> TextureGenerator::generate(unsigned int width, u
 	texture->unmap();
 
 	return texture;
+}
+
+Rendering::Texture* TextureGenerator::generate() const
+{
+	return generate(p->m_width ? p->m_width : 256, p->m_height ? p->m_height : 256);
 }
 
 void TextureGenerator::test()
@@ -135,7 +142,7 @@ void TextureGenerator::test()
 		gen.line({ 0.25f, 0.0f }, { 0.25f, 1.0f }, { 1.0f, 1.0f, 1.0f, 0.25f });
 		gen.line({ 0.0f, 0.75f }, { 1.0f, 0.75f }, { 1.0f, 1.0f, 1.0f, 0.25f });*/
 
-		ResourcePtr<Rendering::Texture> texture = TextureGenerator::Instance->generate(256, 256);
+		ResourcePtr<Rendering::Texture> texture(TakeOwnershipPtr, TextureGenerator::Instance->generate(256, 256));
 
 		ResourcePtr<VulkanFramework> vf;
 		vf->uploadTexture(texture);
@@ -184,6 +191,7 @@ Meta::Object Meta::instanceMeta<TextureGenerator>()
 {
 	return Meta::Object("TextureGenerator")
 		.defaultFactory<TextureGenerator>()
+		.func("size", &TextureGenerator::size)
 		.func("clear", &TextureGenerator::clear)
 		.func("text", &TextureGenerator::text)
 		.func("line", &TextureGenerator::line);

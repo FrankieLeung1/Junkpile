@@ -5,7 +5,7 @@
 
 void logToOutput(void*, const loguru::Message& message)
 {
-	char buffer[4096] = { 0 };
+	char buffer[4096 * 2] = { 0 };
 	if (strstr(message.filename, "Python") != nullptr && message.message[0] == '\x1')
 		strcpy_s(buffer, message.message + 1);
 	else

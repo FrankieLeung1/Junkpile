@@ -5,6 +5,7 @@
 #include "../imgui/ImGuiManager.h"
 #include "../Managers/EventManager.h"
 #include "../Files/FileManager.h"
+#include "../Scripts/ScriptManager.h"
 
 NewPtr_t NewPtr;
 EmptyPtr_t EmptyPtr;
@@ -368,6 +369,24 @@ m_creator(creator)
 		}
 
 		std::vector<std::string> files = e->m_files; // BUG: why does it assert if I access e->m_files.begin() directly?
+		for (auto it = files.begin(); it != files.end(); ++it)
+		{
+			if (endsWith(pathStr, it->c_str(), it->size())) // need a better way to resolve paths
+			{
+				setReloadNeeded();
+				return;
+			}
+		}
+	}, priority);
+
+	events->addListener<ScriptRemarkEvent>([this, deleted, pathStr](ScriptRemarkEvent* e) {
+		if (*deleted)
+		{
+			e->discardListener();
+			return;
+		}
+
+		std::vector<StringView> files = e->m_paths; // BUG: why does it assert if I access e->m_files.begin() directly?
 		for (auto it = files.begin(); it != files.end(); ++it)
 		{
 			if (endsWith(pathStr, it->c_str(), it->size())) // need a better way to resolve paths

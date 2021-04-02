@@ -5,6 +5,8 @@
 #include "../Files/File.h"
 #include "../Files/FileManager.h"
 #include "../Managers/EventManager.h"
+#include "../Generators/TextureGenerator.h"
+#include "../Scripts/ScriptManager.h"
 #include "VulkanHelpers.h"
 #include "RenderingDevice.h"
 #include "Unit.h"
@@ -517,7 +519,17 @@ Unit& Texture::getSampler(std::size_t index)
 	return *m_defaultSampler;
 }
 
-Texture* Texture::loadPng(const File& file)
+ResourcePtr<Texture> Texture::loadPng(const File& file)
+{
+	return ResourcePtr<Rendering::Texture>(TakeOwnershipPtr, loadPngRaw(file));
+}
+
+ResourcePtr<Texture> Texture::loadPy(const File& file, const GeneratorArguments* args)
+{
+	return ResourcePtr<Rendering::Texture>(TakeOwnershipPtr, loadPyRaw(file, args));
+}
+
+Texture* Texture::loadPngRaw(const File& file)
 {
 	unsigned char* pixels;
 	unsigned int width, height;
@@ -540,16 +552,34 @@ Texture* Texture::loadPng(const File& file)
 	}
 }
 
+Texture* Texture::loadPyRaw(const File& file, const GeneratorArguments* args)
+{
+	ResourcePtr<ScriptManager> sm;
+	sm->run(file.getPath().c_str(), true);
+	sm->remark(file.getPath().c_str()); // this should be part of run()
+	return TextureGenerator::Instance->generate();
+}
+
 Texture::Loader::Loader():
 m_path(),
-m_file(EmptyPtr)
+m_file(EmptyPtr),
+m_genArgs()
 {
 }
 
 Texture::Loader::Loader(StringView path):
 m_path(path.c_str()),
-m_file(NewPtr, path)
+m_file(NewPtr, path),
+m_genArgs()
 {
+}
+
+Texture::Loader::Loader(StringView path, Texture::GeneratorArguments&& args):
+m_path(path.c_str()),
+m_file(NewPtr, path),
+m_genArgs(new Texture::GeneratorArguments(std::move(args)))
+{
+
 }
 
 Texture::Loader::~Loader()
@@ -558,31 +588,20 @@ Texture::Loader::~Loader()
 
 Resource* Texture::Loader::load(std::tuple<int, std::string>* error)
 {
+	if (m_path.empty())
+		return new Texture();
+
 	if (!ready(error, m_file))
 		return nullptr;
 
 	std::string ext = m_path.substr(m_path.find_last_of('.'));
 	if (ext == ".png")
 	{
-		// TODO: use Texture::loadPng() instead
-		unsigned char* pixels;
-		unsigned int width, height;
-		int pngerror = lodepng_decode32(&pixels, &width, &height, (const unsigned char*)m_file->getContents().c_str(), m_file->getSize());
-		if (pngerror == 0)
-		{
-			Rendering::Texture* texture = new Rendering::Texture();
-			texture->setSoftware(width, height, 4);
-			char* dest = (char*)texture->map();
-			memcpy(dest, pixels, width * height * 4);
-			texture->unmap();
-			free(pixels);
-
-			return texture;
-		}
-		else
-		{
-			*error = { -1, stringf("loadpng failed \"%s\" (%d)", m_path.c_str(), pngerror) };
-		}
+		return Texture::loadPngRaw(*m_file);
+	}
+	else if (ext == ".py")
+	{
+		return Texture::loadPyRaw(*m_file, m_genArgs.get());
 	}
 	else
 	{
@@ -608,9 +627,19 @@ StringView Texture::Loader::getTypeName() const
 	return "Texture";
 }
 
+Texture::Loader* Texture::createLoader()
+{
+	return new Loader();
+}
+
 Texture::Loader* Texture::createLoader(StringView path)
 {
 	return new Loader(path);
+}
+
+Texture::Loader* Texture::createLoader(StringView path, GeneratorArguments&& args)
+{
+	return new Loader(path, std::move(args));
 }
 
 std::tuple<bool, std::size_t> Texture::getSharedHash()
@@ -621,6 +650,11 @@ std::tuple<bool, std::size_t> Texture::getSharedHash()
 std::tuple<bool, std::size_t> Texture::getSharedHash(StringView path)
 {
 	return { true, std::hash<const char*>{}(path.c_str()) };
+}
+
+std::tuple<bool, std::size_t> Texture::getSharedHash(StringView path, GeneratorArguments&&)
+{
+	return { false, 0 };
 }
 
 Resource* Texture::getSingleton()

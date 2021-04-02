@@ -18,6 +18,12 @@ namespace Rendering
 			DEVICE_LOCAL
 		};
 
+		struct GeneratorArguments
+		{
+			int m_requestedWidth, m_requestedHeight;
+			std::map<std::string, Any> m_args;
+		};
+
 	public:
 		Texture();
 		~Texture();
@@ -48,10 +54,14 @@ namespace Rendering
 		void setSampler(std::size_t index, const Unit&);
 		Unit& getSampler(std::size_t index);
 
-		static Texture* loadPng(const File&);
+		static ResourcePtr<Texture> loadPng(const File&);
+		static ResourcePtr<Texture> loadPy(const File&, const GeneratorArguments* = nullptr);
 
-	//protected:
+	protected:
 		void createDeviceObjects(Device*);
+
+		static Texture* loadPngRaw(const File&);
+		static Texture* loadPyRaw(const File&, const GeneratorArguments* = nullptr);
 
 	protected:
 		Mode m_mode;
@@ -79,6 +89,7 @@ namespace Rendering
 		public:
 			Loader();
 			Loader(StringView path);
+			Loader(StringView path, GeneratorArguments&&);
 			~Loader() override;
 			Resource* load(std::tuple<int, std::string>* error) override;
 			Reloader* createReloader() override;
@@ -88,12 +99,16 @@ namespace Rendering
 		protected:
 			std::string m_path;
 			ResourcePtr<File> m_file;
+			std::shared_ptr<GeneratorArguments> m_genArgs;
 		};
 
+		static Loader* createLoader();
 		static Loader* createLoader(StringView path);
+		static Loader* createLoader(StringView path, GeneratorArguments&&);
 		static Resource* getSingleton();
 
 		static std::tuple<bool, std::size_t> getSharedHash();
 		static std::tuple<bool, std::size_t> getSharedHash(StringView path);
+		static std::tuple<bool, std::size_t> getSharedHash(StringView path, GeneratorArguments&&);
 	};
 }

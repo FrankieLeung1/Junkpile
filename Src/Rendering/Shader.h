@@ -3,6 +3,7 @@
 #include <tuple>
 #include <string>
 
+class File;
 namespace Rendering
 {
 	struct Binding
@@ -37,7 +38,8 @@ namespace Rendering
 		vk::ShaderModule getModule() const;
 
 		void setCode(Type, const char*);
-		bool compile(std::string*);
+		bool compile(StringView path, std::string* error);
+		void setCompiled(uint32_t* bytes, int size);
 
 		Type getType() const;
 		static void test();
@@ -55,6 +57,9 @@ namespace Rendering
 			ResourcePtr<Device> m_device;
 			Type m_type;
 			std::string m_code;
+
+			ResourcePtr<File> m_cacheFile;
+			Shader* m_shader;
 		};
 		static ShaderLoader* createLoader(Type, const char*);
 		static std::tuple<bool, std::size_t> getSharedHash(Type, const char*);

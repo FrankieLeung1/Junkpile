@@ -5,6 +5,8 @@
 #include "Misc.h"
 
 //#define USE_STACKWALK // slower but more accurate
+//#define LOG_ERROR(...) LOG_F(ERROR, ...)
+#define LOG_ERROR(...) 
 
 CallStack::CallStack()
 {
@@ -74,7 +76,7 @@ std::tuple<std::string, int> CallStack::getLineNumber(std::size_t index) const
 {
 	if (index > m_stack.size())
 	{
-		LOG_F(ERROR, "Index out of range %d\n", index);
+		LOG_ERROR("Index out of range %d\n", index);
 		return { "", -1 };
 	}
 
@@ -83,7 +85,7 @@ std::tuple<std::string, int> CallStack::getLineNumber(std::size_t index) const
 	DWORD displacement = 0;
 	if (!SymGetLineFromAddr64(GetCurrentProcess(), (DWORD64)(m_stack[index]), &displacement, &info))
 	{
-		LOG_F(ERROR, "SymGetLineFromAddr64 failed %X\n", GetLastError());
+		LOG_ERROR("SymGetLineFromAddr64 failed %X\n", GetLastError());
 		return { "", -1 };
 	}
 
@@ -98,7 +100,7 @@ std::string CallStack::getFunctionName(std::size_t index) const
 	DWORD64 dwDisplacement = 0;
 	if (!SymFromAddr(GetCurrentProcess(), (DWORD64)(m_stack[index]), &dwDisplacement, symbol))
 	{
-		LOG_F(ERROR, "SymGetSymFromAddr64 failed %X\n", GetLastError());
+		LOG_ERROR("SymGetSymFromAddr64 failed %X\n", GetLastError());
 		return std::string();
 	}
 	return symbol->Name;

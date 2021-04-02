@@ -9,12 +9,14 @@ public:
 	TextureGenerator();
 	~TextureGenerator();
 
+	void size(int width, int height);
 	void clear(const glm::vec4& colour);
 	void rect(const glm::vec2& p1, const glm::vec2& p2, const glm::vec4& colour);
 	void line(const glm::vec2& p1, const glm::vec2& p2, const glm::vec4& colour);
 	void text(const char* text, const glm::vec2& position, int size, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
 
-	ResourcePtr<Rendering::Texture> generate(unsigned int width, unsigned int height) const;
+	Rendering::Texture* generate(unsigned int width, unsigned int height) const;
+	Rendering::Texture* generate() const;
 
 	static void test();
 

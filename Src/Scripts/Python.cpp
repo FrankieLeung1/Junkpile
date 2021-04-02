@@ -102,12 +102,12 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 {
 	init();
 
-	char* b = (char*)alloca(codeString.size() + 1);
-	memcpy(b, codeString.c_str(), codeString.size());
-	b[codeString.size()] = '\0';
+	char* codeBuffer = (char*)alloca(codeString.size() + 1);
+	memcpy(codeBuffer, codeString.c_str(), codeString.size());
+	codeBuffer[codeString.size()] = '\0';
 	
 	std::string name = m_scripts[(std::size_t)script.m_value].m_debugName.c_str();
-	PyObject* code = Py_CompileString(b, name.c_str(), Py_file_input);
+	PyObject* code = Py_CompileString(codeBuffer, name.c_str(), Py_file_input);
 	if (code != nullptr)
 	{
 		PyObject* result = PyEval_EvalCode(code, m_global, m_global);
