@@ -5,7 +5,7 @@ class EventManager;
 #include "../Misc/StringView.h"
 #include "../Misc/CallStack.h"
 
-#define JUNKPILE_RESOURCE_RECORD_STACK
+//#define JUNKPILE_RESOURCE_RECORD_STACK
 
 struct FileChangeEvent;
 class Resource

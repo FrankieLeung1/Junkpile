@@ -12,7 +12,7 @@ struct PhysicsComponent : public Component<PhysicsComponent>
 	PhysicsComponent() : m_shape(nullptr), m_body(nullptr) { }
 	PhysicsComponent(const PhysicsComponent& p) : m_shape(p.m_shape), m_body(p.m_body) { }
 	PhysicsComponent& operator=(const PhysicsComponent& p) {  reset(); m_shape = p.m_shape; m_body = p.m_body; return *this; }
-	PhysicsComponent& operator=(PhysicsComponent&& p) { reset(); m_shape = p.m_shape; m_body = p.m_body; p.m_body = nullptr; p.m_shape = nullptr; return *this; }
+	PhysicsComponent& operator=(PhysicsComponent&& p) { reset(); m_shape = p.m_shape; m_body = p.m_body; p.m_body = nullptr; p.m_shape = nullptr; Component<PhysicsComponent>::operator=(p); return *this; }
 	~PhysicsComponent();
 	void reset();
 };
@@ -22,6 +22,9 @@ struct CollisionEvent : public PersistentEvent<CollisionEvent>
 	Entity m_entity[2];
 	glm::vec3 m_pointOn1[4];
 	glm::vec3 m_pointOn2[4];
+
+	Entity getEntity1() { return m_entity[0]; }
+	Entity getEntity2() { return m_entity[1]; }
 };
 
 struct PhysicsDebugDraw;
@@ -78,7 +81,9 @@ namespace Meta
 	template<>
 	inline Object instanceMeta<CollisionEvent>()
 	{
-		return Object("CollisionEvent");
+		return Object("CollisionEvent").
+			func("getEntity1", &CollisionEvent::getEntity1).
+			func("getEntity2", &CollisionEvent::getEntity2);
 	}
 
 	template<>

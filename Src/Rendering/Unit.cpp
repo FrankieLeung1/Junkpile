@@ -11,6 +11,8 @@
 #include "../Framework/Framework.h"
 #include "../Misc/CallStack.h"
 
+//#define RECORD_STACK
+
 using namespace Rendering;
 Unit::Unit() :
 m_data(std::make_shared<Data>()),
@@ -19,7 +21,9 @@ m_submitted(false)
 	ResourcePtr<Device> device;
 	m_data->m_root = &device->getRootUnit();
 
+#ifdef RECORD_STACK
 	m_stack = CallStack().str();
+#endif
 }
 
 Unit::Unit(RootUnit& root):
@@ -27,14 +31,19 @@ m_data(std::make_shared<Data>()),
 m_submitted(false)
 {
 	m_data->m_root = &root;
+
+#ifdef RECORD_STACK
 	m_stack = CallStack().str();
+#endif
 }
 
 Unit::Unit(const Unit& unit):
 m_data(unit.m_data),
 m_submitted(false)
 {
+#ifdef RECORD_STACK
 	m_stack = CallStack().str();
+#endif
 }
 
 Unit::~Unit()

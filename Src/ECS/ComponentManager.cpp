@@ -53,6 +53,11 @@ void ComponentManager::removeEntity(Entity entity)
 	m_entityCount--;
 }
 
+int ComponentManager::debugId(Entity entity) const
+{
+	return (int)entity.m_value;
+}
+
 bool ComponentManager::validPointer(const ComponentPool& pool, void* p) const
 {
 	const char* begin = (const char*)pool.m_accessor->front(pool.m_buffer);

@@ -489,7 +489,12 @@ PyObject* Meta::PythonRegisterer::pyCallableCall(PyObject* self, PyObject* args,
 	}
 
 	InstanceData* instance = pyCallable->m_instance;
-	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instance->m_ptr.isType<void*>() ? instance->m_ptr.get<void*>() : *(void**)(instance->m_ptr.toVoidPtr()), &visitor, (int)PyTuple_Size(args));
+	void* instancePtr;
+	if (instance->m_ptr.isType<void*>())	instancePtr = instance->m_ptr.get<void*>();
+	else if (instance->m_ptr.isPtr())	instancePtr = *(void**)(instance->m_ptr.toVoidPtr());
+	else							instancePtr = instance->m_ptr.toVoidPtr();
+
+	Any r = instance->m_class->m_metaObject.callWithVisitor(callable->m_name.c_str(), instancePtr, &visitor, (int)PyTuple_Size(args));
 	if (r.isType<Meta::CallFailure>())
 	{
 		PyErr_SetString(PyExc_ValueError, stringf("callWithVisitor failed: %s", visitor.getError().c_str()).c_str());
@@ -657,6 +662,7 @@ int Meta::PythonRegisterer::CallbackVisitor::startFunctionObject(const char* nam
 int Meta::PythonRegisterer::CallbackVisitor::endFunctionObject() { return 0; }
 int Meta::PythonRegisterer::CallbackVisitor::startCallback(int id) { m_argIndex = 0; for (auto d : m_needsToDec) Py_XDECREF(d); return 0; }
 int Meta::PythonRegisterer::CallbackVisitor::endCallback() {
+	// if you crash here, your python callback might be ill-defined
 	PyObject* r = PyObject_CallFunction(m_callback, m_argFormat, m_args[0], m_args[1], m_args[2], m_args[3], m_args[4], m_args[5], m_args[6], m_args[7], m_args[8], m_args[9]);
 	LOG_IF_F(ERROR, r == nullptr, "PyObject_CallFunction failed\n");
 	Py_XDECREF(r);

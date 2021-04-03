@@ -296,6 +296,7 @@ void EventBase::discardEvent()
 }
 
 #include "../Managers/InputManager.h"
+#include "../Physics/PhysicsSystem.h"
 
 template<>
 Meta::Object Meta::instanceMeta<EventManager>()
@@ -305,7 +306,8 @@ Meta::Object Meta::instanceMeta<EventManager>()
 		func<EventManager, void, std::function<void(UpdateEvent*)>>("addListener_UpdateEvent", &EventManager::addListenerFromScript<UpdateEvent>).
 		func<EventManager, void, std::function<void(InputChanged*)>>("addListener_InputChanged", &EventManager::addListenerFromScript<InputChanged>).
 		func<EventManager, void, std::function<void(InputHeld*)>>("addListener_InputHeld", &EventManager::addListenerFromScript<InputHeld>).
-		func<EventManager, void, std::function<void(ImGuiRenderEvent*)>>("addListener_ImGuiRender", &EventManager::addListenerFromScript<ImGuiRenderEvent>);
+		func<EventManager, void, std::function<void(ImGuiRenderEvent*)>>("addListener_ImGuiRender", &EventManager::addListenerFromScript<ImGuiRenderEvent>).
+		func<EventManager, void, std::function<void(CollisionEvent*)>>("addListener_CollisionEvent", &EventManager::addListenerFromScript<CollisionEvent>);
 }
 
 template<>

@@ -549,6 +549,7 @@ void ScriptManager::registerObjects()
 		registerObject<InputChanged>("InputChanged");
 		registerObject<InputHeld>("InputHeld");
 		registerObject<ImGuiRenderEvent>("ImGuiRenderEvent");
+		registerObject<CollisionEvent>("CollisionEvent");
 		registerObject<Entity>("Entity");
 		registerObject<TransformComponent>("TransformComponent");
 		registerObject<SpriteComponent>("SpriteComponent");

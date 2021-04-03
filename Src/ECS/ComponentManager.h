@@ -8,7 +8,10 @@
 #include "EntityIterator.h"
 
 class ComponentManager;
-struct Entity : public OpaqueHandle<Entity, ComponentManager, unsigned int, std::numeric_limits<unsigned int>::max()> { friend class PhysicsSystem; };
+struct Entity : public OpaqueHandle<Entity, ComponentManager, unsigned int, std::numeric_limits<unsigned int>::max()> {
+	friend class PhysicsSystem; 
+	bool equals(const Entity& p) const { return (*this) == p; };
+};
 typedef std::size_t ComponentId;
 #define INVALID_ENTITY 0
 
@@ -106,6 +109,7 @@ public:
 	template<typename... Components> EntityIterator<Components...> addEntity();
 	Entity newEntity();
 	void removeEntity(Entity);
+	int debugId(Entity) const;
 
 	template<typename Component, typename... Components> EntityIterator<Component, Components...> addComponents(Entity);
 	template<typename Component, typename... Components> void removeComponents(Entity);
@@ -154,12 +158,15 @@ namespace Meta {
 	template<> inline Object instanceMeta<ComponentManager>()
 	{
 		return Object("ComponentManager").
-			func("newEntity", &ComponentManager::newEntity);
+			func("newEntity", &ComponentManager::newEntity).
+			func("removeEntity", &ComponentManager::removeEntity).
+			func("debugId", &ComponentManager::debugId);
 	}
 
 	template<> inline Object instanceMeta<Entity>()
 	{
-		return Object("Entity");
+		return Object("Entity").
+			func("equals", &Entity::equals);
 	}
 }
 
