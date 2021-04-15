@@ -180,7 +180,16 @@ template<typename Event> void EventManager::addListenerFromScript(std::function<
 	std::size_t queuedIndex = priortyListeners.size(), listenerIndex = m_listeners[Event::id()][priority].size();
 	onNewListener(Event::id(), priority, queuedIndex + listenerIndex);
 
-	addListener<Event>([=](EventBase* b) { fn((Event*)b); }, priority);
+	ScriptManager::Environment::Script script = ResourcePtr<ScriptManager>()->getRunningScript();
+	addListener<Event>([=](EventBase* b) {
+		ResourcePtr<ScriptManager> scripts;
+		scripts->m_scriptStack.push(script);
+
+			fn((Event*)b);
+
+		CHECK_F(scripts->m_scriptStack.top() == script);
+		scripts->m_scriptStack.pop();
+	}, priority);
 }
 
 

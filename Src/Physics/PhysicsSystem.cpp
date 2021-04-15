@@ -79,6 +79,8 @@ glm::vec3 PhysicsSystem::getGlobalGravity() const
 
 PhysicsComponent* PhysicsSystem::createBox(Entity entity, const glm::vec3& size, float mass)
 {
+	// TODO: btGeneric6DofConstraint
+
 	PhysicsComponent* component = m_components->addComponents<PhysicsComponent>(entity).get<PhysicsComponent>();
 	component->m_shape = new btBoxShape(btVector3(size[0], size[1], size[2]));
 

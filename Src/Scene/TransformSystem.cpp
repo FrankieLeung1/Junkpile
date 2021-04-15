@@ -31,5 +31,5 @@ template<> Meta::Object Meta::instanceMeta<TransformComponent>()
 template<> Meta::Object Meta::instanceMeta<TransformSystem>()
 {
 	return Object("TransformSystem").
-		func("addComponent", &TransformSystem::addComponent);
+		func("addComponent", &TransformSystem::addComponent, { "entity" });
 }

@@ -159,14 +159,14 @@ namespace Meta {
 	{
 		return Object("ComponentManager").
 			func("newEntity", &ComponentManager::newEntity).
-			func("removeEntity", &ComponentManager::removeEntity).
-			func("debugId", &ComponentManager::debugId);
+			func("removeEntity", &ComponentManager::removeEntity, { "entity" }).
+			func("debugId", &ComponentManager::debugId, { "entity" });
 	}
 
 	template<> inline Object instanceMeta<Entity>()
 	{
 		return Object("Entity").
-			func("equals", &Entity::equals);
+			func("equals", &Entity::equals, { "entity" });
 	}
 }
 

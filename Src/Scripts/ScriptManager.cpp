@@ -7,6 +7,7 @@
 #include "../Misc/Misc.h"
 #include "../Resources/ResourceManager.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
+#include "../Framework/Framework.h"
 
 bool ScriptManager::s_inited = false;
 ScriptManager::ScriptManager() :
@@ -172,8 +173,8 @@ void ScriptManager::setEditorContent(const char* content, const char* _pathToSav
 	std::string pathToSave = normalizePath(_pathToSave);
 
 	// HACK until I make a proper normalizePath
-	if (pathToSave.find("TestGen.py")) pathToSave = "Scripts/Generators/TestGen.py";
-	if (pathToSave.find("Floor.py")) pathToSave = "Scripts/Generators/Floor.py";
+	if (pathToSave.find("TestGen.py") != std::string::npos) pathToSave = "Scripts/Generators/TestGen.py";
+	if (pathToSave.find("Floor.py") != std::string::npos) pathToSave = "Scripts/Generators/Floor.py";
 
 	if (!content && !pathToSave.empty())
 	{
@@ -355,7 +356,7 @@ void ScriptManager::imgui()
 		ResourcePtr<FileManager> f;
 		std::string s = m_editor->GetText();
 		std::vector<char> content(s.begin(), s.end() - 1); // BUG: TextEditor adds a newline to the end of GetText(), don't save it
-		f->save(m_editorSavePath.c_str(), std::move(content));
+		f->save((Framework::getResPath() + m_editorSavePath).c_str(), std::move(content));
 	}
 
 	m_editor->Render("TextEditor");
@@ -378,7 +379,8 @@ void ScriptManager::imgui()
 					if (!markup.getValue(i, &f))
 						sscanf((char*)getDefaultValue(markup, i, true).c_str(), "%f", &f);
 
-					if (ImGui::InputFloat(markup.getName(i).c_str(), &f))
+					//SliderFloat(const char* label, float* v, float v_min, float v_max,
+					if (ImGui::SliderFloat(markup.getName(i).c_str(), &f, 0.0f, 1.0f))
 					{
 						markup.setValue(i, f);
 						remark = true;

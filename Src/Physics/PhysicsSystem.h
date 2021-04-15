@@ -90,12 +90,12 @@ namespace Meta
 	inline Object instanceMeta<PhysicsSystem>()
 	{
 		return Object("PhysicsSystem").
-			func<PhysicsSystem, void, const glm::vec3&>("setGlobalGravity", &PhysicsSystem::setGlobalGravity, { "gravity" }, { {0.0f, 0.0f, 0.0f} }).
+			func<PhysicsSystem, void, const glm::vec3&>("setGlobalGravity", &PhysicsSystem::setGlobalGravity, { "vector" }, { {0.0f, 0.0f, 0.0f} }).
 			func("getGlobalGravity", &PhysicsSystem::getGlobalGravity).
-			func("setGlobalGravity", &PhysicsSystem::setGlobalGravity).
-			func("setGravity", &PhysicsSystem::setGravity).
+			func("setGlobalGravity", &PhysicsSystem::setGlobalGravity, { "vector" }).
+			func("setGravity", &PhysicsSystem::setGravity, { "entity", "vector" }).
 			func("createBox", &PhysicsSystem::createBox, { "entity", "size", "mass" }, { 1.0f }).
 			func("createPlane", &PhysicsSystem::createPlane, { "entity", "size", "mass" }, { 1.0f }).
-			func("impulse", &PhysicsSystem::impulse);
+			func("impulse", &PhysicsSystem::impulse, { "entity", "vector" });
 	}
 }

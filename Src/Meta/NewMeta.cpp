@@ -53,7 +53,17 @@ void Object::imgui()
 						if ((*m)->m_isConstructor)
 							continue;
 
-						ImGui::Text("%s()", (*m)->m_name.c_str());
+						std::stringstream args;
+						for(int i = 0; i < (*m)->m_names.size(); i++)
+						{
+							const char* name = (*m)->m_names[i];
+							if(name)
+								args << (i ? "," : "") << name;
+						}
+
+						ImGui::Text("%s(%s)", (*m)->m_name.c_str(), args.str().c_str());
+						if(ImGui::IsItemHovered())
+							ImGui::SetTooltip((*m)->getPtrType());
 					}
 				}
 				ImGui::TreePop();

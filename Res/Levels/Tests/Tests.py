@@ -10,11 +10,11 @@ t.m_position.y = 250.0
 s = spriteSystem.addComponent(e, "Art/Background Elements/Flat/cloud1.png")
 
 #floor grid
-e = componentManager.newEntity()
+"""e = componentManager.newEntity()
 t = transformSystem.addComponent(e)
 t.m_position.x = 0.0
 t.m_position.y = -390.0
-s = spriteSystem.addComponent(e, "Scripts/Generators/Floor.py")
+s = spriteSystem.addComponent(e, "Scripts/Generators/Floor.py")"""
 
 # character
 character = componentManager.newEntity()
@@ -33,7 +33,7 @@ def spawnCoins(pos, mass):
     t.m_position.y = pos[1]
     t.m_scale.x = 0.6
     t.m_scale.y = 0.6
-    p = physicsSystem.createBox(coin, Junkpile.vec3(40, 40, 1000), mass)
+    p = physicsSystem.createBox(coin, Junkpile.vec3(40, 40, 40), mass)
     s = spriteSystem.addComponent(coin, "Art/Puzzle Assets 2/Coins/coin_01.png")
     coins.append(coin)
 

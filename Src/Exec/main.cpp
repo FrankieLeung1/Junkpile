@@ -53,22 +53,22 @@
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
 {
 	ResourcePtr<TestManager> tests;
-	tests->addTest("Any", &Any::test);
-	tests->addTest("LuaRegisterer", &Meta::LuaRegisterer::test);
+	//tests->addTest("Any", &Any::test);
+	//tests->addTest("LuaRegisterer", &Meta::LuaRegisterer::test);
 	tests->addTest("Sprite", &Sprite::test);
-	tests->addTest("Physics", &physicsTest);
+	//tests->addTest("Physics", &physicsTest);
 
 	//tests->addTest("Meta", &Meta::test);
-	tests->addTest("Shader", &Rendering::Shader::test);
-	tests->addTest("EventManager", &EventManager::test);
-	tests->addTest("Function", &functionTest);
+	//tests->addTest("Shader", &Rendering::Shader::test);
+	//tests->addTest("EventManager", &EventManager::test);
+	//tests->addTest("Function", &functionTest);
 
 	tests->addTest("TextureGenerator", &TextureGenerator::test);
 	//TextureGenerator::test();
 
 	tests->addTest("WindowRecorder", &WindowRecorder::test);
-	tests->addTest("WebServer", &WebServer::test);
-	tests->addTest("SpriteSystem", &SpriteSystem::test);
+	//tests->addTest("WebServer", &WebServer::test);
+	//tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
 	tests->startTest("Game");

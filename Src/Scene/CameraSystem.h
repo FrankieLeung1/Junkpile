@@ -65,10 +65,10 @@ namespace Meta
 	{
 		return Object("CameraSystem").
 			func("addComponentPerspective", &CameraSystem::addComponentPerspective, { "entity", "fov" }, { 90.0f }).
-			func("addComponentOrthographic", &CameraSystem::addComponentOrthographic).
-			func("setCameraActive", &CameraSystem::setCameraActive).
-			func("setWASDInput", &CameraSystem::setWASDInput).
-			func("setNoInput", &CameraSystem::setNoInput);
+			func("addComponentOrthographic", &CameraSystem::addComponentOrthographic, { "entity" }).
+			func("setCameraActive", &CameraSystem::setCameraActive, { "entity" }).
+			func("setWASDInput", &CameraSystem::setWASDInput, { "entity" }).
+			func("setNoInput", &CameraSystem::setNoInput, { "entity" });
 		
 	}
 }

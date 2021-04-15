@@ -521,13 +521,13 @@ void VulkanFramework::update()
 	inputs->setCursorPos((float)point.x, (float)point.y);
 
 	ImGuiIO& io = ImGui::GetIO();
-	//io.MouseWheelH;
 	inputs->setMouseWheel(io.MouseWheel);
 
 	if (inputs->isDown(VK_CONTROL) && inputs->justReleased('F'))
 	{
 		if (glfwGetWindowMonitor(m_window) == nullptr)
 		{
+			// fullscreen
 			glfwGetWindowPos(m_window, &m_winDimensions[0], &m_winDimensions[1]);
 			glfwGetWindowSize(m_window, &m_winDimensions[2], &m_winDimensions[3]);
 
@@ -536,6 +536,7 @@ void VulkanFramework::update()
 		}
 		else
 		{
+			// windowed
 			glfwSetWindowMonitor(m_window, nullptr, m_winDimensions[0], m_winDimensions[1], m_winDimensions[2], m_winDimensions[3], 0);
 		}
 	}

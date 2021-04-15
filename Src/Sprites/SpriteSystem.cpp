@@ -198,7 +198,7 @@ glm::vec4 SpriteSystem::m_clearColour(0.45f, 0.55f, 0.6f, 1.0f);
 template<> Meta::Object Meta::instanceMeta<SpriteSystem>()
 {
 	return Object("SpriteSystem").
-		func("addComponent", &SpriteSystem::addComponent);
+		func("addComponent", &SpriteSystem::addComponent, { "entity" });
 }
 
 template<> Meta::Object Meta::instanceMeta<SpriteComponent>()

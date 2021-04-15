@@ -178,11 +178,12 @@ std::string FileManager::extension(StringView path)
 
 void FileManager::save(const char* path, std::vector<char>&& buffer)
 {
+	std::string p = path;
 	std::vector<char>* contents = new std::vector<char>(std::move(buffer));
-	auto save = [contents, path](){
-		std::fstream f(path, std::fstream::binary | std::fstream::out | std::fstream::trunc);
+	auto save = [contents, p](){
+		std::fstream f(p, std::fstream::binary | std::fstream::out | std::fstream::trunc);
 		f.write(&contents->front(), contents->size());
-		LOG_IF_F(WARNING, !f.good(), "Failed to write to \"%s\"\n", path);
+		LOG_IF_F(WARNING, !f.good(), "Failed to write to \"%s\"\n", p.c_str());
 		delete contents;
 	};
 	m_threadPool->enqueue(save);

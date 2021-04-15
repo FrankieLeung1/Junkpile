@@ -48,6 +48,7 @@ protected:
 	std::vector<ExportedObject> m_exported;
 	PyModuleDef m_moduleDef;
 	PyObject* m_global;
+	std::recursive_mutex m_GIL;
 
 	struct ModuleState
 	{

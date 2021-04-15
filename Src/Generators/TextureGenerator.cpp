@@ -154,6 +154,7 @@ void TextureGenerator::test()
 
 	ResourcePtr<ScriptManager> sm;
 	sm->setEditorContent(nullptr, "Scripts/Generators/TestGen.py");
+	sm->showEditor();
 
 	ResourcePtr<EventManager> events;
 	events->addListener<ScriptLoadedEvent>([=](ScriptLoadedEvent* e) {
@@ -191,8 +192,8 @@ Meta::Object Meta::instanceMeta<TextureGenerator>()
 {
 	return Meta::Object("TextureGenerator")
 		.defaultFactory<TextureGenerator>()
-		.func("size", &TextureGenerator::size)
-		.func("clear", &TextureGenerator::clear)
-		.func("text", &TextureGenerator::text)
-		.func("line", &TextureGenerator::line);
+		.func("size", &TextureGenerator::size, { "width", "height" })
+		.func("clear", &TextureGenerator::clear, { "colour" })
+		.func("text", &TextureGenerator::text, { "text", "position", "size", "colour" })
+		.func("line", &TextureGenerator::line, {"position1", "position2", "colour"});
 }

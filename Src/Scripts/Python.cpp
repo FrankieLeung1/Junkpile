@@ -100,6 +100,10 @@ void PythonEnvironment::deleteScript(Script s)
 
 PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView codeString)
 {
+	// I need a way to try loadScript and fail if mutex is already locked
+	// not sure where Python's GIL is but this function crashes on multiple thread
+	//std::lock_guard<std::recursive_mutex> l(m_GIL); 
+
 	init();
 
 	char* codeBuffer = (char*)alloca(codeString.size() + 1);

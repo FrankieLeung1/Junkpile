@@ -133,6 +133,7 @@ namespace Meta
 		virtual Any callWithVisitor(Visitor* v, int argCount);
 		virtual int visit(Visitor*) =0;
 		virtual void* getTypeInstance() const =0;
+		virtual const char* getPtrType() const =0;
 
 		std::string m_name;
 		std::vector<const char*> m_names;
@@ -146,6 +147,7 @@ namespace Meta
 	public:
 		int visit(Visitor*);
 		void* getTypeInstance() const;
+		const char* getPtrType() const;
 
 		union {
 			R(T::* m_ptrConst)(Args...)const;
@@ -173,6 +175,7 @@ namespace Meta
 	public:
 		int visit(Visitor*);
 		void* getTypeInstance() const;
+		const char* getPtrType() const;
 
 		R(*m_ptr)(Args...);
 	};
@@ -586,6 +589,12 @@ namespace Meta
 		return &Type<R(Args...)>::s_instance;
 	}
 
+	template<typename T, bool isConst, typename R, typename... Args>
+	const char* Method<T, isConst, R, Args...>::getPtrType() const
+	{
+		return isConst ? typeid(m_ptrConst).name() : typeid(m_ptr).name();
+	}
+
 	template<typename R, typename... Args>
 	Any StaticFunction<R, Args...>::callWithVisitor(void* instance, Visitor* v, int argCount)
 	{
@@ -644,6 +653,12 @@ namespace Meta
 	void* StaticFunctionBase<R, Args...>::getTypeInstance() const
 	{
 		return &Type<R(*)(Args...)>::s_instance;
+	}
+
+	template<typename R, typename... Args>
+	const char* StaticFunctionBase<R, Args...>::getPtrType() const
+	{
+		return typeid(m_ptr).name();
 	}
 
 	template<typename T>

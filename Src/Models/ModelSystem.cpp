@@ -62,7 +62,7 @@ void ModelSystem::update(float delta)
 		unit.in(data->m_vBuffer);
 		if(data->m_iBuffer) unit.in(data->m_iBuffer);
 		unit.in(Rendering::Unit::DepthTest{ vk::CompareOp::eLessOrEqual, true, true });
-		unit.in((vk::CullModeFlags)vk::CullModeFlagBits::eFront);
+		unit.in((vk::CullModeFlags)vk::CullModeFlagBits::eBack);
 		unit.in(Rendering::Unit::Binding<ResourcePtr<Rendering::Texture>>(vk::ShaderStageFlagBits::eFragment, 1, model->m_texture1));
 		//unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
 		unit.in(Rendering::Unit::Binding<Rendering::Buffer*>{ vk::ShaderStageFlagBits::eVertex, 0, m_cameraBuffer });
