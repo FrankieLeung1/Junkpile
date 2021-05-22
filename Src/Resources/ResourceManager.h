@@ -180,6 +180,7 @@ public:
 	ResourcePtr<Resource>& operator=(const ResourcePtr<Resource>&);
 	ResourcePtr<Resource>& operator=(ResourcePtr<Resource>&&);
 	bool operator==(const ResourceData*) const;
+	bool operator==(const ResourcePtr<Resource>&) const;
 
 	static ResourcePtr<Resource> fromResourceData(ResourceData*);
 
@@ -571,6 +572,12 @@ template<typename Resource>
 bool ResourcePtr<Resource>::operator==(const ResourceData* data) const
 {
 	return m_data == data;
+}
+
+template<typename Resource>
+bool ResourcePtr<Resource>::operator==(const ResourcePtr<Resource>& res) const
+{
+	return m_data == res.m_data;
 }
 
 template<typename Resource>

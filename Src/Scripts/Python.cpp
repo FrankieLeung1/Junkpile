@@ -102,7 +102,7 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 {
 	// I need a way to try loadScript and fail if mutex is already locked
 	// not sure where Python's GIL is but this function crashes on multiple thread
-	//std::lock_guard<std::recursive_mutex> l(m_GIL); 
+	std::lock_guard<std::recursive_mutex> l(m_GIL);
 
 	init();
 
@@ -120,6 +120,10 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 			Py_DECREF(code);
 			Py_XDECREF(result);
 			return {};
+		}
+		else
+		{
+			HERE;
 		}
 	}
 	
@@ -150,20 +154,29 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 		PyObject *exc = nullptr, *val = nullptr, *traceback = nullptr;
 		PyErr_Fetch(&exc, &val, &traceback);
 
+		Error error;		
+
 		PyObject* repr = PyObject_Repr(exc);
-		PyObject* lineNumber = PyObject_GetAttrString(traceback, "tb_lineno");
-		PyObject* frame = PyObject_GetAttrString(traceback, "tb_frame");
-		PyObject* code = PyObject_GetAttrString(frame, "f_code");
-		PyObject* filename = PyObject_GetAttrString(code, "co_filename");
 
-		const char* messageStr = PyUnicode_AsUTF8(val);
-		if (!messageStr) messageStr = PyUnicode_AsUTF8(PyObject_Repr(val));
-		const char* filenameStr = PyUnicode_AsUTF8(filename);
+		if (traceback)
+		{
+			PyObject* lineNumber = PyObject_GetAttrString(traceback, "tb_lineno");
+			PyObject* frame = PyObject_GetAttrString(traceback, "tb_frame");
+			PyObject* code = PyObject_GetAttrString(frame, "f_code");
+			PyObject* filename = PyObject_GetAttrString(code, "co_filename");
 
-		Error error;
-		error.m_message = messageStr ? messageStr : PyUnicode_AsUTF8(repr);
-		error.m_filename = filenameStr ? filenameStr : "";
-		error.m_line = PyLong_AsLong(lineNumber);
+			const char* messageStr = PyUnicode_AsUTF8(val);
+			if (!messageStr) messageStr = PyUnicode_AsUTF8(PyObject_Repr(val));
+			const char* filenameStr = filename ? PyUnicode_AsUTF8(filename) : "<no file>";
+
+			error.m_message = messageStr ? messageStr : PyUnicode_AsUTF8(repr);
+			error.m_filename = filenameStr;
+			error.m_line = PyLong_AsLong(lineNumber);
+
+			Py_XDECREF(lineNumber);
+			//Py_XDECREF(frame);
+			Py_XDECREF(filename);
+		}
 		error.m_stacktrace = "";
 		error.m_offset = 0;
 
@@ -171,11 +184,7 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 		Py_XDECREF(exc);
 		Py_XDECREF(val);
 		Py_XDECREF(repr);
-		Py_XDECREF(traceback);
-		Py_XDECREF(lineNumber);
-		Py_XDECREF(frame);
-		Py_XDECREF(code);
-		Py_XDECREF(filename);
+		//Py_XDECREF(traceback); // this crashes?
 		return error;
 	}
 }
