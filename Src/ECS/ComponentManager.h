@@ -8,7 +8,7 @@
 #include "EntityIterator.h"
 
 class ComponentManager;
-struct Entity : public OpaqueHandle<Entity, ComponentManager, unsigned int, std::numeric_limits<unsigned int>::max()> {
+struct Entity : public OpaqueHandle<ComponentManager, unsigned int> {
 	friend class PhysicsSystem; 
 	bool equals(const Entity& p) const { return (*this) == p; };
 };
@@ -272,9 +272,29 @@ EntityIterator<Component, Components...> ComponentManager::addComponents(Entity 
 		buffer = std::vector<Component>();
 	}
 
+	bool componentAdded = false;
 	auto& vector = buffer.get<std::vector<Component>>();
-	vector.emplace_back();
-	vector.back().m_entity = eid;
+	for(auto it = vector.begin(); it != vector.end(); ++it)
+	{
+		if (it->m_entity == eid)
+		{
+			LOG_F(WARNING, "adding component (%s) to an entity(%d) that already has it\n", typeid(Component).name(), eid);
+			break;
+		}
+		else if (it->m_entity >= eid)
+		{
+			auto newComponentIt = vector.insert(it, {});
+			newComponentIt->m_entity = eid;
+			componentAdded = true;
+			break;
+		}
+	}
+
+	if (!componentAdded)
+	{
+		vector.emplace_back();
+		vector.back().m_entity = eid;
+	}
 
 	addComponents<Components...>(eid);
 

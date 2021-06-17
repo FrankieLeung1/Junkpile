@@ -627,6 +627,9 @@
     <ClCompile Include="..\External\QR-Code-generator\cpp\QrCode.cpp">
       <Filter>External\QR-Code-generator</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Scripts\LuaEnvironment.cpp">
+      <Filter>Source Files\Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Exec\stdafx.h">
@@ -1483,6 +1486,9 @@
     </ClInclude>
     <ClInclude Include="..\External\QR-Code-generator\cpp\QrCode.hpp">
       <Filter>External\QR-Code-generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scripts\LuaEnvironment.h">
+      <Filter>Header Files\Scripts</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

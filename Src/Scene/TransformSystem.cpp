@@ -13,6 +13,7 @@ TransformSystem::~TransformSystem()
 
 TransformComponent* TransformSystem::addComponent(Entity e)
 {
+	LOG_F(INFO, "TransformSystem::addComponent %d\n", e);
 	auto t = m_components->addComponents<TransformComponent>(e).get<TransformComponent>();
 	t->m_position = glm::vec3(0.0f);
 	t->m_scale = glm::vec3(1.0f);

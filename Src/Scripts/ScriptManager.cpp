@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ScriptManager.h"
+#include "LuaEnvironment.h"
 #include "../imgui/ImGuiManager.h"
 #include "../LuaHelpers.h"
 #include "../Files/FileManager.h"
@@ -79,15 +80,20 @@ bool ScriptManager::run(const char* path, bool ignoreReload, Environment::Script
 			data.m_script = script;
 			data.m_path = path;
 			data.m_env = language;
+			data.m_envUserData = nullptr;
 			data.m_ignoreReloads = ignoreReload;
-
-			m_callstack.push_back(&data);
 
 			if (!script)
 			{
-				script = language->newScript(path);
+				script = Environment::Script();
+				script.m_value = &data;
+				if (!language->newScript(script, path))
+					LOG_F(FATAL, "huh?");
+
 				data.m_script = script;
 			}
+
+			m_callstack.push_back(&data);
 
 			bool didError = false;
 			Environment::Error error;
@@ -165,6 +171,17 @@ StringView ScriptManager::getScriptPath(Environment::Script script) const
 {
 	auto it = std::find_if(m_scripts.begin(), m_scripts.end(), [script](const ScriptData& scriptData) { return scriptData.m_script == script; });
 	return it == m_scripts.end() ? StringView() : StringView(it->m_path);
+}
+
+std::size_t ScriptManager::getCallstackSize() const
+{
+	return m_callstack.size();
+}
+
+ScriptManager::Environment::Script ScriptManager::getCallstack(std::size_t i) const
+{
+	CHECK_F(i < getCallstackSize());
+	return m_callstack[i]->m_script;
 }
 
 void ScriptManager::setEditorContent(const char* content, const char* _pathToSave)
@@ -287,7 +304,7 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 		{
 			LOG_F(INFO, "reloading %s\n", script->m_path.c_str());
 
-			run(script->m_path.c_str(), script->m_script);
+			run(script->m_path.c_str(), false, script->m_script);
 			paths.push_back(script->m_path);
 		}
 
@@ -304,6 +321,16 @@ void ScriptManager::addDependency(const char* name)
 		return;
 
 	m_callstack.back()->m_dependencies.insert(name);
+}
+
+void ScriptManager::setUserData(ScriptManager::Environment::Script script, void* userdata)
+{
+	((ScriptData*)script.m_value)->m_envUserData = userdata;
+}
+
+void* ScriptManager::getUserData(ScriptManager::Environment::Script script) const
+{
+	return ((ScriptData*)script.m_value)->m_envUserData;
 }
 
 void ScriptManager::imgui()
@@ -543,6 +570,7 @@ void ScriptManager::registerObjects()
 		m_objectsRegistered = true;
 		
 		addEnvironment<PythonEnvironment>();
+		addEnvironment<LuaEnvironment>();
 		registerObject<TextureGenerator>("TextureGenerator");
 		registerObject<glm::vec2>("vec2");
 		registerObject<glm::vec3>("vec3");

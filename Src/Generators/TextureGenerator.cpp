@@ -79,12 +79,13 @@ void TextureGenerator::line(const glm::vec2& p1, const glm::vec2& p2, const glm:
 
 void TextureGenerator::text(const char* text, const glm::vec2& position, int size, const glm::vec4& colour)
 {
+	std::string s = text;
 	push([=](CImg<unsigned char>* img)
 	{
 		int x = (int)(position.x * img->width());
 		int y = (int)(position.y * img->height());
 		unsigned char foreground[] = { (unsigned char)(colour.x * 255), (unsigned char)(colour.y * 255), (unsigned char)(colour.z * 255), 255 };
-		img->draw_text(x, y, text, foreground, 0, colour.w, size);
+		img->draw_text(x, y, s.c_str(), foreground, 0, colour.w, size);
 	});
 }
 

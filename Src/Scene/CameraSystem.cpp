@@ -29,6 +29,8 @@ CameraComponent* CameraSystem::addComponentPerspective(Entity e, float fov)
 	component->m_angles = glm::vec3(0.0f);
 	component->m_offset = glm::vec3(0.0f);
 	component->m_fov = fov;
+
+	LOG_F(INFO, "addComponentPerspective %d\n", e);
 	return component;
 }
 
@@ -44,6 +46,8 @@ CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
 	component->m_top = 0.0f;
 	component->m_angles = glm::vec3(0.0f);
 	component->m_offset = glm::vec3(0.0f);
+
+	LOG_F(INFO, "addComponentOrthographic %d\n", e);
 	return component;
 }
 
@@ -53,6 +57,7 @@ void CameraSystem::setCameraActive(Entity e)
 	EntityIterator<CameraComponent> it(components, true);
 	while (it.next())
 	{
+		LOG_F(INFO, "setCameraActive %d\n", e, it.getEntity());
 		if (it.getEntity() == e)
 			it.get<CameraComponent>()->m_flags |= CameraComponent::ActiveCamera;
 		else

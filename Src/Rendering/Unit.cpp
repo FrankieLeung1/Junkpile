@@ -11,7 +11,7 @@
 #include "../Framework/Framework.h"
 #include "../Misc/CallStack.h"
 
-//#define RECORD_STACK
+#define RECORD_STACK
 
 using namespace Rendering;
 Unit::Unit() :

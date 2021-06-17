@@ -6,7 +6,7 @@
 
 class File;
 class ModelManager;
-struct Model : public OpaqueHandle<Model, ModelManager, unsigned int, std::numeric_limits<unsigned int>::max()> { };
+struct Model : public OpaqueHandle<ModelManager, unsigned int> { };
 namespace Rendering
 {
 	class Buffer;

@@ -84,18 +84,19 @@ bool PythonEnvironment::isScript(const char* path) const
 		(size >= 4 && path[size - 4] == '.' && path[size - 3] == 'p' && path[size - 2] == 'y' && path[size - 1] == 'w');
 }
 
-PythonEnvironment::Script PythonEnvironment::newScript(const char* debugName)
+bool PythonEnvironment::newScript(Script script, const char* debugName)
 {
 	init();
 	m_scripts.push_back(ScriptData{debugName});
-	Script s;
-	s.m_value = m_scripts.size() - 1;
-	return s; // TODO: figure out a way to store this for multiple environments
+	
+	ResourcePtr<ScriptManager> s;
+	s->setUserData(script, reinterpret_cast<void*>(m_scripts.size() - 1));
+	return true; // TODO: figure out a way to store this for multiple environments
 }
 
 void PythonEnvironment::deleteScript(Script s)
 {
-	LOG_F(FATAL, "todo");
+	LOG_F(FATAL, "todo (if possible)");
 }
 
 PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView codeString)
@@ -106,11 +107,12 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 
 	init();
 
+	ResourcePtr<ScriptManager> scriptManager;
 	char* codeBuffer = (char*)alloca(codeString.size() + 1);
 	memcpy(codeBuffer, codeString.c_str(), codeString.size());
 	codeBuffer[codeString.size()] = '\0';
 	
-	std::string name = m_scripts[(std::size_t)script.m_value].m_debugName.c_str();
+	std::string name = m_scripts[reinterpret_cast<std::size_t>(scriptManager->getUserData(script))].m_debugName.c_str();
 	PyObject* code = Py_CompileString(codeBuffer, name.c_str(), Py_file_input);
 	if (code != nullptr)
 	{

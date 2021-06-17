@@ -33,7 +33,7 @@ public:
 	class Environment
 	{
 	public:
-		struct Script : public OpaqueHandle <Script, ScriptManager, std::size_t, std::numeric_limits<std::size_t>::max()> { Script() {} friend class Python; friend class PythonEnvironment; };
+		struct Script : public OpaqueHandle < ScriptManager, void*, void*, nullptr> { };
 
 		struct Error
 		{
@@ -46,7 +46,7 @@ public:
 		virtual ~Environment() = 0 {};
 		virtual const char* getName() const = 0;
 		virtual bool isScript(const char* path) const = 0;
-		virtual Script newScript(const char* debugName) =0;
+		virtual bool newScript(Script, const char* debugName) =0;
 		virtual void deleteScript(Script) = 0;
 		virtual Error loadScript(Script, StringView) =0;
 		virtual bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance = {}) =0;
@@ -65,6 +65,9 @@ public:
 
 	Environment::Script getRunningScript() const;
 	StringView getScriptPath(Environment::Script) const;
+
+	std::size_t getCallstackSize() const;
+	Environment::Script getCallstack(std::size_t i) const;
 
 	void showEditor();
 	void hideEditor();
@@ -86,6 +89,9 @@ protected:
 
 	void registerObjects();
 
+	void setUserData(Environment::Script, void*);
+	void* getUserData(Environment::Script) const;
+
 	static bool s_inited;
 	friend class EventManager;
 
@@ -97,6 +103,7 @@ protected:
 	{
 		Environment* m_env;
 		Environment::Script m_script;
+		void* m_envUserData;
 		std::vector<ScriptData*> m_children;
 		std::set<std::string> m_dependencies;
 		std::string m_path;

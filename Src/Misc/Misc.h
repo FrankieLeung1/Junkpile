@@ -156,26 +156,25 @@ protected:
 	std::function<void()> m_exit;
 };
 
-template<typename T, typename Friend = Scope, typename UnderlyingType = void*, UnderlyingType InvalidValue = nullptr> // use Scope as a dummy
+template<typename Friend, typename UnderlyingType, typename InvalidType = UnderlyingType, InvalidType InvalidValue = std::numeric_limits<InvalidType>::max()>
 class OpaqueHandle
 {
 public:
-	typedef OpaqueHandle<T, Friend, UnderlyingType, InvalidValue> MyT;
+	typedef OpaqueHandle<Friend, UnderlyingType, InvalidType, InvalidValue> MyT;
 	OpaqueHandle() = default;
 	OpaqueHandle(const MyT&) = default;
 	~OpaqueHandle() = default;
 	MyT& operator=(const MyT& p) { m_value = p.m_value; return *this; }
 	bool operator==(const MyT& p) const { return p.m_value == m_value; }
 	bool operator<(const MyT& p) const { return m_value < p.m_value; }
+	bool operator>=(const MyT& p) const { return m_value >= p.m_value; }
 
-	typedef void (MyT::* bool_type)() const;
-	operator bool_type() const { return m_value == InvalidValue ? 0 : &MyT::this_type_does_not_support_comparisons; } // The Safe Bool Idiom
+	explicit operator bool() { return !(m_value == InvalidValue); }
 
 protected:
 	MyT& operator=(const UnderlyingType& v) { m_value = v; return *this; }
 	UnderlyingType m_value{ InvalidValue };
 	//operator UnderlyingType () { return m_value; }
-	void this_type_does_not_support_comparisons() const {}
 	friend typename Friend;
 };
 

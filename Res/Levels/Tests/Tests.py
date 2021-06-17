@@ -4,6 +4,15 @@ import random
 
 def print(s):
     pass
+ 
+#camera
+print("camera")
+e = componentManager.newEntity()
+t = transformSystem.addComponent(e)
+c = cameraSystem.addComponentPerspective(e)
+cameraSystem.setCameraActive(e)
+#cameraSystem.setWASDInput(e)
+t.m_position.z = -250.0
 
 #cloud
 print("cloud")
@@ -11,7 +20,7 @@ e = componentManager.newEntity()
 t = transformSystem.addComponent(e)
 t.m_position.x = -450.0
 t.m_position.y = 250.0
-s = spriteSystem.addComponent(e, "Art/Background Elements/Flat/cloud1.png")
+s = spriteSystem.addComponent(e, "Art/Background Elements/Flat/cloud2.png")
 
 #floor grid
 print("floor grid")
@@ -56,15 +65,6 @@ t.m_position.x = 0.0
 t.m_position.y = -250.0
 p = physicsSystem.createBox(e, Junkpile.vec3(10000, 1, 10000), 0)
 
-#camera
-print("camera")
-e = componentManager.newEntity()
-t = transformSystem.addComponent(e)
-c = cameraSystem.addComponentPerspective(e)
-cameraSystem.setCameraActive(e)
-#cameraSystem.setWASDInput(e)
-t.m_position.z = -250.0
-
 def inputChanged(e):
     if inputManager.justDown(32):
         physicsSystem.impulse(character, Junkpile.vec3(0, 50, 0))
@@ -78,7 +78,7 @@ def inputChanged(e):
     elif inputManager.justDown(69): # "E"
         spawnCoins([random.uniform(-20.0, 20.0), 300.0], 1)
 
-print("inputChanged")
+print("inputChanged")  
 eventManager.addListener_InputChanged(inputChanged, 0)
 
 def onCollision(e):

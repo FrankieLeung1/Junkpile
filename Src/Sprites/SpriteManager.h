@@ -7,7 +7,7 @@
 class SpriteData;
 class SpriteManager;
 namespace Rendering { class TextureAtlas; }
-struct SpriteId : public OpaqueHandle<SpriteId, SpriteManager, unsigned int, std::numeric_limits<unsigned int>::max()> { };
+struct SpriteId : public OpaqueHandle<SpriteManager, unsigned int> { };
 class SpriteManager : public SingletonResource<SpriteManager>
 {
 public:

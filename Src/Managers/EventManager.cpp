@@ -131,13 +131,17 @@ void EventManager::onNewListener(EventBase::Id eventId, int priority, std::size_
 	if (!ScriptManager::s_inited)
 	{
 		// special case: ScriptManager registers listeners which makes a circular loop if we're constructing
-		m_listenerData.push_back({"", ScriptManager::Environment::Script(), eventId, priority, index });
+		m_listenerData.push_back({ "", {}, eventId, priority, index });
 	}
 	else
 	{
 		ResourcePtr<ScriptManager> scripts;
+		std::vector<Any> callstack;
+		for (std::size_t i = 0; i < scripts->getCallstackSize(); i++)
+			callstack.push_back(scripts->getCallstack(i));
+
 		StringView path = scripts->getScriptPath(scripts->getRunningScript());
-		m_listenerData.push_back({ path, scripts->getRunningScript(), eventId, priority, index });
+		m_listenerData.push_back({ path, std::move(callstack), eventId, priority, index });
 	}
 }
 
@@ -245,25 +249,25 @@ void EventManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 	std::vector<ListenerData> scriptsToRemove;
 	for (std::vector<ListenerData>::iterator it = m_listenerData.begin(); it != m_listenerData.end(); ++it)
 	{
-		if (!it->m_script)
-			continue;
-
-		auto script = it->m_script.get<ScriptManager::Environment::Script>();
-		if (!script)
-			continue;
-
-		StringView path = scripts->getScriptPath(script);
-		if (path)
+		for (auto scriptAny : it->m_script)
 		{
-			// BUG? Expression: vector iterators incompatible
-			/*auto begin = e->m_paths.begin();
-			auto end = e->m_paths.end();
-			auto found = std::find(begin, end, path);*/
+			auto script = scriptAny.get<ScriptManager::Environment::Script>();
+			if (!script)
+				continue;
 
-			for (const StringView& _path : e->m_paths)
+			StringView path = scripts->getScriptPath(script);
+			if (path)
 			{
-				if(_path == path)
-					scriptsToRemove.push_back(*it);
+				// BUG? Expression: vector iterators incompatible
+				/*auto begin = e->m_paths.begin();
+				auto end = e->m_paths.end();
+				auto found = std::find(begin, end, path);*/
+
+				for (const StringView& _path : e->m_paths)
+				{
+					if (_path == path)
+						scriptsToRemove.push_back(*it);
+				}
 			}
 		}
 	}

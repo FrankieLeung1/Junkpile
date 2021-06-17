@@ -111,7 +111,7 @@ protected:
 	struct ListenerData
 	{
 		std::string m_path; //temp
-		Any m_script; // typeof ScriptManager::Environment::Script
+		std::vector<Any> m_script; // typeof ScriptManager::Environment::Script
 		EventBase::Id m_eventId;
 		int m_priority;
 		std::size_t m_index;

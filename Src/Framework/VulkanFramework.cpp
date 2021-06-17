@@ -275,6 +275,7 @@ int VulkanFramework::initImGui(AppType type)
 		height = 1;
 	}
 	m_window = glfwCreateWindow(width, height, m_windowTitle.c_str(), NULL, NULL);
+	glfwMaximizeWindow(m_window);
 	m_prevScrollCallback = glfwSetScrollCallback(m_window, scrollCallback);
 
 	// Setup Vulkan

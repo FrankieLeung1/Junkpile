@@ -11,7 +11,7 @@ public:
 	const char* getName() const;
 
 	bool isScript(const char* path) const;
-	Script newScript(const char* debugName);
+	bool newScript(Script, const char* debugName);
 	void deleteScript(Script);
 	Error loadScript(Script, StringView);
 	bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance);
