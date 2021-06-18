@@ -36,6 +36,7 @@ public:
 	float getDuration() const;
 
 	glm::vec2 getDimensions() const;
+	StringView getPath() const;
 
 public:
 	class SpriteDataLoader : public Loader

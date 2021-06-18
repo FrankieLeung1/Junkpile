@@ -19,15 +19,22 @@ ComponentManager::~ComponentManager()
 Entity ComponentManager::newEntity()
 {
 	ResourcePtr<ScriptManager> scripts;
-	ScriptManager::Environment::Script script = scripts->getRunningScript();
+	
 	auto allocateNewEntity = [=]() {Entity e = m_nextFreeEntityId; m_nextFreeEntityId.m_value++; m_entityCount++; return e; };
+	ScriptManager::Environment::Script script = scripts->getRunningScript();
 	if (script)
 	{
+		// this might be too complicated but if a script deletes an entity, we can reuse their id instead of incrementing m_nextFreeEntityId
 		ScriptData& data = m_scriptData[script];
 		if (data.m_nextEntityIndex == data.m_entities.size())
 		{
 			Entity e = allocateNewEntity();
-			data.m_entities.push_back(e);
+			for (std::size_t i = 0; i < scripts->getCallstackSize(); i++)
+			{
+				ScriptManager::Environment::Script s = scripts->getCallstack(i);
+				ScriptData& stackScriptData = m_scriptData[s];
+				stackScriptData.m_entities.push_back(e);
+			}
 			data.m_nextEntityIndex++;
 			return e;
 		}
@@ -48,6 +55,7 @@ void ComponentManager::removeEntity(Entity entity)
 	{
 		ResizeableMemoryPool& buffer = it->second.m_buffer;
 		it->second.m_accessor->clearEntity(buffer, entity);
+		LOG_F(INFO, "removeEntity %d %s\n", entity, it->second.m_accessor->getClassName());
 	}
 
 	m_entityCount--;
@@ -94,6 +102,7 @@ void ComponentManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 		StringView path = scripts->getScriptPath(it.first);
 		for (auto unloadedPath : e->m_paths)
 		{
+			LOG_F(INFO, "unloadedPath(%s) == path(%s)\n", unloadedPath.c_str(), path.c_str());
 			if (unloadedPath == path)
 			{
 				it.second.m_nextEntityIndex--;

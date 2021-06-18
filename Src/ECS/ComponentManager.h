@@ -63,10 +63,11 @@ public:
 		public:
 			virtual const void* front(const ResizeableMemoryPool&) = 0;
 			virtual std::size_t size(const ResizeableMemoryPool&) = 0;
-			virtual std::size_t elementSize() =0;
+			virtual std::size_t elementSize() = 0;
 			virtual bool empty(const ResizeableMemoryPool&) = 0;
 			virtual void clear(ResizeableMemoryPool&) = 0;
-			virtual void clearEntity(ResizeableMemoryPool&, Entity) =0;
+			virtual void clearEntity(ResizeableMemoryPool&, Entity) = 0;
+			virtual const char* getClassName() const = 0;
 		};
 
 		template<typename T>
@@ -90,6 +91,8 @@ public:
 					else ++it;
 				}
 			};
+
+			const char* getClassName() const { return typeid(T).name(); }
 		};
 
 		BufferAccessor* m_accessor;
@@ -430,7 +433,10 @@ bool ComponentManager::next(EntityIterator<Components...>* it)
 {
 	CHECK_F(it != nullptr);
 
-	it->m_currentEntity.m_value += 1;
+	if (!it->m_currentEntity)
+		it->m_currentEntity.m_value = 0;
+	else
+		it->m_currentEntity.m_value += 1;
 
 	bool hasValidComponent = false;
 	bool foundAllComponents = true;

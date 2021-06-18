@@ -124,6 +124,11 @@ glm::vec2 SpriteData::getDimensions() const
 	return d;
 }
 
+StringView SpriteData::getPath() const
+{
+	return m_path;
+}
+
 SpriteData::SpriteDataLoader::SpriteDataLoader(StringView filePath) :
 	m_file(NewPtr, filePath)
 {
