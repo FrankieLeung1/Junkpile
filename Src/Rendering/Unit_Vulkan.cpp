@@ -6,6 +6,7 @@
 #include "Texture.h"
 
 // there's a lot of looping here, hopefully it's ok
+// IMPORTANT: req() may longjmp out. Don't expect destructors to be called in createVulkanObject() functions
 
 namespace Rendering {
 
@@ -15,7 +16,6 @@ vk::Sampler Unit::createVulkanObject<vk::Sampler>()
 	Data& data = getData();
 	if (!data.m_sampler)
 	{
-        ResourcePtr<Device> device;
 		vk::SamplerCreateInfo info;
         opt(info.flags);
         opt(info.magFilter, "magFilter");
@@ -33,7 +33,7 @@ vk::Sampler Unit::createVulkanObject<vk::Sampler>()
         opt(info.maxLod, "maxLod");
         opt(info.borderColor);
         opt(info.unnormalizedCoordinates, "unnormalizedCoordinates");
-        data.m_sampler = device->createObject(info);
+        data.m_sampler = m_device->createObject(info);
 	}
 
 	return data.m_sampler;
@@ -66,13 +66,12 @@ vk::DescriptorSet Unit::createVulkanObject<vk::DescriptorSet>()
     Data& data = getData();
     if (!data.m_descriptorSet)
     {
-        ResourcePtr<Device> device;
         auto layout = getVulkanObject<vk::DescriptorSetLayout>();
         vk::DescriptorSetAllocateInfo info;
-        info.descriptorPool = device->getDescriptorPool();
+        info.descriptorPool = m_device->getDescriptorPool();
         info.descriptorSetCount = 1;
         info.pSetLayouts = &layout;
-        data.m_descriptorSet = device->allocateObject(info);
+        data.m_descriptorSet = m_device->allocateObject(info);
 
         std::vector<vk::WriteDescriptorSet> writes;
         std::list<vk::DescriptorImageInfo> imageInfos;
@@ -108,7 +107,7 @@ vk::DescriptorSet Unit::createVulkanObject<vk::DescriptorSet>()
         }
 
         if(!writes.empty())
-            device->updateObject(writes);
+            m_device->updateObject(writes);
     }
     return data.m_descriptorSet;
 }
@@ -123,11 +122,10 @@ vk::DescriptorSetLayout Unit::createVulkanObject<vk::DescriptorSetLayout>()
         getBindings<ResourcePtr<Texture>>(&data, &bindings, vk::DescriptorType::eCombinedImageSampler);
         getBindings<Buffer*>(&data, &bindings, vk::DescriptorType::eUniformBuffer);
 
-        ResourcePtr<Device> device;
         vk::DescriptorSetLayoutCreateInfo info;
         info.bindingCount = (uint32_t)bindings.size();
         info.pBindings = info.bindingCount ? &bindings[0] : nullptr;
-        data.m_descriptorSetLayout = device->createObject(info);
+        data.m_descriptorSetLayout = m_device->createObject(info);
     }
 	return data.m_descriptorSetLayout;
 }
@@ -138,7 +136,6 @@ vk::PipelineLayout Unit::createVulkanObject<vk::PipelineLayout>()
     Data& data = getData();
     if (!data.m_pipelineLayout)
     {
-        ResourcePtr<Device> device;
         vk::DescriptorSetLayout setLayout[1] = { getVulkanObject<vk::DescriptorSetLayout>() };
         vk::PipelineLayoutCreateInfo info = {};
         info.setLayoutCount = 1;
@@ -160,7 +157,7 @@ vk::PipelineLayout Unit::createVulkanObject<vk::PipelineLayout>()
         info.pushConstantRangeCount = (uint32_t)pushConstantCount;
         info.pPushConstantRanges = pushConstantInfo;
 
-        data.m_pipelineLayout = device->createObject(info);
+        data.m_pipelineLayout = m_device->createObject(info);
     }
     return data.m_pipelineLayout;
 }
@@ -171,7 +168,6 @@ vk::Pipeline Unit::createVulkanObject<vk::Pipeline>()
     Data& data = getData();
     if (!data.m_pipeline)
     {
-        ResourcePtr<Device> device;
         vk::GraphicsPipelineCreateInfo info;
         opt(info.flags);
 
@@ -213,7 +209,7 @@ vk::Pipeline Unit::createVulkanObject<vk::Pipeline>()
 
         info.layout = getVulkanObject<vk::PipelineLayout>();
 
-        info.renderPass = device->getRenderPass();
+        info.renderPass = m_device->getRenderPass();
 
         vk::DynamicState dynamicStates[2] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
         vk::PipelineDynamicStateCreateInfo dynamicState = {};
@@ -299,7 +295,7 @@ vk::Pipeline Unit::createVulkanObject<vk::Pipeline>()
         VULKAN_HPP_NAMESPACE::Pipeline basePipelineHandle = {};
         int32_t basePipelineIndex = {};*/
 
-        data.m_pipeline = device->createObject(info);
+        data.m_pipeline = m_device->createObject(info);
     }
 	return data.m_pipeline;
 }
@@ -307,16 +303,14 @@ vk::Pipeline Unit::createVulkanObject<vk::Pipeline>()
 template<>
 vk::Viewport Unit::createVulkanObject<vk::Viewport>()
 {
-    ResourcePtr<Device> device;
-    glm::vec2 d = std::get<1>(device->getFrameBuffer());
+    glm::vec2 d = std::get<1>(m_device->getFrameBuffer());
     return {0, 0, d.x, d.y, 0.0f, 1.0f};
 }
 
 template<>
 vk::Rect2D Unit::createVulkanObject<vk::Rect2D>()
 {
-    ResourcePtr<Device> device;
-    glm::vec2 d = std::get<1>(device->getFrameBuffer());
+    glm::vec2 d = std::get<1>(m_device->getFrameBuffer());
     return { {0, 0}, {(uint32_t)d.x, (uint32_t)d.y} };
 }
 

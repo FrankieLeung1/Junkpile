@@ -353,8 +353,7 @@ Unit& Unit::in(DrawIndexed v) { return _in(v); }
 Unit& Unit::out(Texture& v) { return _out(v); }
 
 // RootUnit
-RootUnit::RootUnit():
-Unit(*this)
+RootUnit::RootUnit()
 {
 
 }

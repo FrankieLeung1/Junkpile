@@ -150,11 +150,14 @@ namespace Rendering
 		std::shared_ptr<Data> m_data;
 		bool m_submitted;
 		std::string m_stack;
+		std::jmp_buf m_jmpPoint;
+		ResourcePtr<Rendering::Device> m_device;
 
 		friend class Rendering::Device;
 	};
 
-	class RootUnit : public Unit
+	// Frankie: This is basically an array of Units. Doesn't seem like this is needed anymore
+	class RootUnit
 	{
 	public:
 		std::vector<Unit>& getSubmitted();
@@ -175,16 +178,14 @@ namespace Rendering
 	template<typename T>
 	T Unit::getVulkanObject()
 	{
-		try
+		if (!std::setjmp(m_jmpPoint))
 		{
 			return createVulkanObject<T>();
 		}
-		catch (std::exception e)
+		else
 		{
-			//LOG_F(ERROR, "Unable to get vulkan object %s\n", e.what());
+			return {};
 		}
-
-		return {};
 	}
 
 	template<typename T> struct AnyType { typedef T Type; };
@@ -238,7 +239,8 @@ namespace Rendering
 		}
 
 		if (required)
-			throw std::runtime_error{ stringf("Failed to find Vulkan variable %s", name ? name : typeid(T).name()) };
+			std::longjmp(m_jmpPoint, -1);
+			//throw std::runtime_error{ stringf("Failed to find Vulkan variable %s", name ? name : typeid(T).name()) };
 	}
 
 	template<typename T> void Unit::req(T& v, const char* name) { reqOrOpt(v, name, true); }

@@ -44,6 +44,7 @@
 #include <codecvt>
 #include <sys/stat.h>
 #include <time.h>
+#include <csetjmp>
 #include <WinSock2.h>
 #include <Windows.h>
 
