@@ -34,8 +34,8 @@ Entity ComponentManager::newEntity()
 				ScriptManager::Environment::Script s = scripts->getCallstack(i);
 				ScriptData& stackScriptData = m_scriptData[s];
 				stackScriptData.m_entities.push_back(e);
+				stackScriptData.m_nextEntityIndex++;
 			}
-			data.m_nextEntityIndex++;
 			return e;
 		}
 		else
@@ -55,7 +55,6 @@ void ComponentManager::removeEntity(Entity entity)
 	{
 		ResizeableMemoryPool& buffer = it->second.m_buffer;
 		it->second.m_accessor->clearEntity(buffer, entity);
-		LOG_F(INFO, "removeEntity %d %s\n", entity, it->second.m_accessor->getClassName());
 	}
 
 	m_entityCount--;
@@ -64,6 +63,14 @@ void ComponentManager::removeEntity(Entity entity)
 int ComponentManager::debugId(Entity entity) const
 {
 	return (int)entity.m_value;
+}
+
+void ComponentManager::printAllEntityIds() const
+{
+	for (auto it = m_pools.begin(); it != m_pools.end(); ++it)
+	{
+		it->second.m_accessor->printEntityIds(it->second.m_buffer);
+	}
 }
 
 bool ComponentManager::validPointer(const ComponentPool& pool, void* p) const
@@ -102,19 +109,14 @@ void ComponentManager::onScriptUnloaded(ScriptUnloadedEvent* e)
 		StringView path = scripts->getScriptPath(it.first);
 		for (auto unloadedPath : e->m_paths)
 		{
-			LOG_F(INFO, "unloadedPath(%s) == path(%s)\n", unloadedPath.c_str(), path.c_str());
 			if (unloadedPath == path)
 			{
 				it.second.m_nextEntityIndex--;
 				for (Entity& entity : it.second.m_entities)
-				{
 					removeEntity(entity);
-				}
 
 				if (!e->m_reloading)
-				{
 					it.second.m_entities.pop_back();
-				}
 
 				CHECK_F(it.second.m_nextEntityIndex >= 0);
 			}

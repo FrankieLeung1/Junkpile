@@ -21,7 +21,6 @@ CameraComponent* CameraSystem::addComponentPerspective(Entity e, float fov)
 {
 	ResourcePtr<ComponentManager> components;
 	CameraComponent* component = components->addComponents<CameraComponent>(e).get<CameraComponent>();
-	//component->m_controlType = CameraComponent::WASD;
 	component->m_flags = CameraComponent::Perspective;
 	component->m_aspect = 16.0f / 9.0f;
 	component->m_near = 0.1f;
@@ -36,7 +35,6 @@ CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
 {
 	ResourcePtr<ComponentManager> components;
 	CameraComponent* component = components->addComponents<CameraComponent>(e).get<CameraComponent>();
-	//component->m_controlType = CameraComponent::WASD;
 	component->m_flags = CameraComponent::Orthographic;
 	component->m_left = 0.0f;
 	component->m_right = 0.0f;

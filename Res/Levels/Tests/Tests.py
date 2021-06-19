@@ -14,14 +14,6 @@ cameraSystem.setCameraActive(e)
 #cameraSystem.setWASDInput(e)
 t.m_position.z = -250.0
 
-#cloud
-print("cloud")
-e = componentManager.newEntity()
-t = transformSystem.addComponent(e)
-t.m_position.x = -450.0
-t.m_position.y = 250.0
-s = spriteSystem.addComponent(e, "Art/Background Elements/Flat/cloud2.png")
-
 #floor grid
 print("floor grid")
 e = componentManager.newEntity()

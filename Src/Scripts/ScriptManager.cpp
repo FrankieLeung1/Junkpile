@@ -7,6 +7,7 @@
 #include "../Managers/TimeManager.h"
 #include "../Misc/Misc.h"
 #include "../Resources/ResourceManager.h"
+#include "../ECS/ComponentManager.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
 #include "../Framework/Framework.h"
 
@@ -304,6 +305,7 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 		{
 			LOG_F(INFO, "reloading %s\n", script->m_path.c_str());
 
+			ResourcePtr<ComponentManager> c;
 			run(script->m_path.c_str(), false, script->m_script);
 			paths.push_back(script->m_path);
 		}

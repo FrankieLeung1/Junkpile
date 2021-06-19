@@ -67,6 +67,7 @@ public:
 			virtual bool empty(const ResizeableMemoryPool&) = 0;
 			virtual void clear(ResizeableMemoryPool&) = 0;
 			virtual void clearEntity(ResizeableMemoryPool&, Entity) = 0;
+			virtual void printEntityIds(const ResizeableMemoryPool&) const = 0;
 			virtual const char* getClassName() const = 0;
 		};
 
@@ -76,10 +77,7 @@ public:
 		public:
 			static BufferAccessorInstance<T> s_instance;
 			const void* front(const ResizeableMemoryPool& pool) { return &pool.get<std::vector<T>>().front(); }
-			std::size_t size(const ResizeableMemoryPool& pool) { 
-				auto& v = pool.get<std::vector<T>>(); 
-				return v.size();
-			}
+			std::size_t size(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().size(); }
 			std::size_t elementSize() { return sizeof(T); };
 			bool empty(const ResizeableMemoryPool& pool) { return pool.get<std::vector<T>>().empty(); }
 			void clear(ResizeableMemoryPool& pool) { pool.get<std::vector<T>>().clear(); }
@@ -91,7 +89,14 @@ public:
 					else ++it;
 				}
 			};
-
+			void printEntityIds(const ResizeableMemoryPool& pool) const
+			{
+				auto& v = pool.get<std::vector<T>>();
+				std::stringstream ss;
+				ss << (void*)&v << " " << getClassName() << " ";
+				for (auto it = v.begin(); it != v.end(); ++it) ss << it->m_entity.m_value << " ";
+				LOG_F(INFO, "%s\n", ss.str().c_str());
+			}
 			const char* getClassName() const { return typeid(T).name(); }
 		};
 
@@ -113,6 +118,7 @@ public:
 	Entity newEntity();
 	void removeEntity(Entity);
 	int debugId(Entity) const;
+	void printAllEntityIds() const;
 
 	template<typename Component, typename... Components> EntityIterator<Component, Components...> addComponents(Entity);
 	template<typename Component, typename... Components> void removeComponents(Entity);
@@ -286,7 +292,7 @@ EntityIterator<Component, Components...> ComponentManager::addComponents(Entity 
 		}
 		else if (it->m_entity >= eid)
 		{
-			auto newComponentIt = vector.insert(it, {});
+			auto newComponentIt = vector.insert(it, Component{});
 			newComponentIt->m_entity = eid;
 			componentAdded = true;
 			break;
