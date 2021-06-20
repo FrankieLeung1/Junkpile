@@ -66,7 +66,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("TextureGenerator", &TextureGenerator::test);
 	//TextureGenerator::test();
 
-	tests->addTest("WindowRecorder", &WindowRecorder::test);
+	//tests->addTest("WindowRecorder", &WindowRecorder::test);
 	//tests->addTest("WebServer", &WebServer::test);
 	//tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
@@ -111,6 +111,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<AssetBrowser> ab;
 	ResourcePtr<CameraSystem> cs;
 	ResourcePtr<Game> g;
+
+	WindowRecorder recorder;
 	
 	r.setFreeResources(false);
 
@@ -125,6 +127,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->registerCallback({ [](SpriteSystem* s) { s->imgui(); }, s.get() });
 	m->registerCallback({ [](Game* g) { g->imgui(); }, g.get() });
 	m->registerCallback({ [](AssetBrowser* ab) { ab->imgui(); }, ab.get() });
+	m->registerCallback({ [](WindowRecorder* r) { r->imgui(); }, &recorder });
 	m->registerCallback([](void*) { Meta::Object::imgui(); });
 
 	TileLevel level;

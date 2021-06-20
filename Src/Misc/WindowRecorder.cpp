@@ -24,7 +24,7 @@ struct WindowRecorder::Impl
 	void capture(const SL::Screen_Capture::Image& img);
 };
 
-WindowRecorder::WindowRecorder() :
+WindowRecorder::WindowRecorder():
 m_p(nullptr)
 {
 	startCaptureMonitor();
@@ -135,55 +135,62 @@ void WindowRecorder::Impl::capture(const SL::Screen_Capture::Image& img)
 	}
 }
 
+void WindowRecorder::imgui()
+{
+	ResourcePtr<ImGuiManager> im;
+	bool* opened = im->win("Recorder");
+	if (*opened == false)
+		return;
+
+	Impl* impl = m_p.get();
+
+	ImGui::Begin("WindowRecorder", opened, ImGuiWindowFlags_NoScrollbar);
+
+	if (!impl)
+	{
+		ImGui::Text("No Capture");
+		ImGui::End();
+		return;
+	}
+
+	std::lock_guard<std::mutex> l(impl->m_mutex);
+
+	std::shared_ptr<Rendering::Texture> t = impl->m_texture;
+	if (t)
+	{
+		float width = (float)impl->m_width, height = (float)impl->m_height;
+		ImVec2 size = ImGui::GetContentRegionMax();
+		size.y = size.x * (height / width);
+
+		ImVec2 uv1 = { 0, 0 }, uv2 = { width / t->getWidth(), height / t->getHeight() };
+		ImGui::Image(t.get(), size, uv1, uv2);
+	}
+
+	std::size_t imgSize = impl->m_imgList.is_empty() ? 0 : impl->m_imgList.size() * impl->m_imgList[0].width() * impl->m_imgList[0].height() * 3;
+	ImGui::Text("Frame Count %d | List Size %s", impl->m_imgList.size(), prettySize(imgSize)); ImGui::SameLine();
+	if (ImGui::Button("Export"))
+	{
+		auto begin = impl->m_imgList.begin(), end = impl->m_imgList.end();
+		std::rotate(begin, begin + impl->m_nextFreeInList, end);
+		impl->m_imgList.save_ffmpeg_external("test.mp4", 25, 0, 4096);
+
+		impl->m_didSave = true;
+	}
+
+	if (impl->m_didSave)
+	{
+		ImGui::SameLine();
+		if (ImGui::Button("Open"))
+			ShellExecute(NULL, L"open", L"test.mp4", NULL, NULL, SW_SHOWDEFAULT);
+	}
+
+	ImGui::End();
+
+}
+
 void WindowRecorder::test()
 {
 	WindowRecorder* recorder = createTestResource<WindowRecorder>();
 	ResourcePtr<ImGuiManager> m;
-	m->registerCallback({ [](void* ud) {
-		WindowRecorder* This = static_cast<WindowRecorder*>(ud);
-		Impl* m_p = This->m_p.get();
-
-		ImGui::Begin("WindowRecorder", nullptr, ImGuiWindowFlags_NoScrollbar);
-
-		if (!m_p)
-		{
-			ImGui::Text("No Capture");
-			ImGui::End();
-			return;
-		}
-
-		std::lock_guard<std::mutex> l(m_p->m_mutex);
-
-		std::shared_ptr<Rendering::Texture> t = m_p->m_texture;
-		if (t)
-		{
-			float width = (float)m_p->m_width, height = (float)m_p->m_height;
-			ImVec2 size = ImGui::GetContentRegionMax();
-			size.y = size.x * (height / width);
-
-			ImVec2 uv1 = { 0, 0 }, uv2 = { width / t->getWidth(), height / t->getHeight() };
-			ImGui::Image(t.get(), size, uv1, uv2);
-		}
-
-		std::size_t imgSize = m_p->m_imgList.is_empty() ? 0 : m_p->m_imgList.size() * m_p->m_imgList[0].width() * m_p->m_imgList[0].height() * 3;
-		ImGui::Text("Frame Count %d | List Size %s", m_p->m_imgList.size(), prettySize(imgSize)); ImGui::SameLine();
-		if (ImGui::Button("Export"))
-		{
-			auto begin = m_p->m_imgList.begin(), end = m_p->m_imgList.end();
-			std::rotate(begin, begin + m_p->m_nextFreeInList, end);
-			m_p->m_imgList.save_ffmpeg_external("test.mp4", 25, 0, 4096);
-
-			m_p->m_didSave = true;
-		}
-
-		if (m_p->m_didSave)
-		{
-			ImGui::SameLine();
-			if (ImGui::Button("Open"))
-				ShellExecute(NULL, L"open", L"test.mp4", NULL, NULL, SW_SHOWDEFAULT);
-		}
-
-		ImGui::End();
-
-	}, recorder });
+	//m->registerCallback({ recorder });
 }

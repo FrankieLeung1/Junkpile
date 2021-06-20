@@ -11,6 +11,7 @@ public:
 	void startCaptureWindow();
 	void startCaptureMonitor();
 
+	void imgui();
 	static void test();
 
 protected:
