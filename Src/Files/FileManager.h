@@ -5,12 +5,6 @@
 #include "../Resources/ResourceManager.h"
 #include "../Managers/EventManager.h"
 
-struct FileImplWin32 : public FileImpl
-{
-	~FileImplWin32() {};
-	std::vector<char> m_contents;
-};
-
 struct FileChangeEvent : public Event<FileChangeEvent>
 {
 	std::vector<std::string> m_files;

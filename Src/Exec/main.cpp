@@ -47,7 +47,7 @@
 #include "../Tools/Standalone.h"
 #include "../Tools/SystemTray.h"
 
-//#define STANDALONE_TOOLS
+#define STANDALONE_TOOLS
 //#define SYSTEMTRAY_TOOLS
 
 static void tests(std::function<void(float)>& update, std::function<void()>& render)
@@ -71,8 +71,10 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
-	tests->startTest("Game");
+	//tests->startTest("Game");
 	//tests->startTest("TextureGenerator");
+
+	tests->startTest("Sprite");
 }
 
 static void standaloneDemo(std::function<void(float)>& update, std::function<void()>& render)

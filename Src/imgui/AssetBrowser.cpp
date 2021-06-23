@@ -99,16 +99,23 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
                 
             }
 
-            if (ImGui::BeginPopupContextItem("texture context"))
+            if (ImGui::BeginPopupContextItem("resource context"))
             {
-                if (ImGui::Selectable("Edit"))
+                std::string ext = FileManager::extension(current.m_name);
+                if (ext == "py" && ImGui::Selectable("Open"))
+                {
+                    ResourcePtr<ScriptManager> scripts;
+                    std::string resPath = stringf("%s/%s", m_current.m_path.c_str(), current.m_name.c_str());
+                    scripts->setEditorContent(nullptr, resPath.c_str());
+                    scripts->showEditor();
+                }
+                else if (ImGui::Selectable("Edit"))
                 {
                     char workingDirectory[MAX_PATH + 1] = "";
                     GetCurrentDirectoryA(MAX_PATH, workingDirectory);
-
                     std::string p = stringf("%s/%s/%s", workingDirectory, m_current.m_path.c_str(), current.m_name.c_str());
                     std::wstring wpath = toWideString(p);
-                    ShellExecute(NULL, L"edit", wpath.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                    ShellExecute(NULL, ext == "py" ? L"open" : L"edit", wpath.c_str(), NULL, NULL, SW_SHOWDEFAULT);
                 }
 
                 if (ImGui::Selectable("Copy"))

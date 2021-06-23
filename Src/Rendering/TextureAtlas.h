@@ -31,5 +31,7 @@ namespace Rendering
 			glm::vec2 m_uv2;
 		};
 		std::vector<Frame> m_frames;
+
+		// TODO: this class needs a loader
 	};
 }

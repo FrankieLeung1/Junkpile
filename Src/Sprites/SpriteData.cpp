@@ -22,10 +22,17 @@ SpriteData::~SpriteData()
 		delete it->m_texture;*/
 }
 
+struct WorkingData
+{
+	int m_mode;
+	SpriteData* m_sprite;
+};
+
 static void frame(void* ud, GIF_WHDR* whdr)
 {
-	CHECK_F(whdr->mode == GIF_CURR);
-	SpriteData* sprite = static_cast<SpriteData*>(ud);
+	CHECK_F(whdr->mode == GIF_NONE || whdr->mode == GIF_CURR || whdr->mode == GIF_BKGD); // TODO: GIF_PREV = init with the data from two frames previous
+	WorkingData* workingData = static_cast<WorkingData*>(ud);
+	SpriteData* sprite = workingData->m_sprite;
 	SpriteData::FrameData data;
 	data.m_duration = (float)whdr->time / 100.0f;
 	data.m_texture = ResourcePtr<Rendering::Texture>(NewPtr);
@@ -45,13 +52,16 @@ static void frame(void* ud, GIF_WHDR* whdr)
 	}
 	else
 	{
-		// init with previous frame
 		const SpriteData::FrameData& prev = sprite->m_frames[whdr->ifrm - 1];
-		void* prevData = prev.m_texture->map();
+		if (workingData->m_mode == GIF_CURR)
+		{
+			// init with previous frame
+			void* prevData = prev.m_texture->map();
 			memcpy(textureData, prevData, width * height * pixelSize);
-		prev.m_texture->unmap();
+			prev.m_texture->unmap();
+		}
 
-		data.m_time = prev.m_time + data.m_duration;
+		data.m_time = prev.m_time + prev.m_duration;
 		data.m_id = prev.m_id + 1;
 		
 	}
@@ -76,6 +86,7 @@ static void frame(void* ud, GIF_WHDR* whdr)
 
 	data.m_texture->unmap();
 	sprite->addFrame(std::move(data));
+	workingData->m_mode = whdr->mode;
 }
 
 bool SpriteData::loadFromGif(ResourcePtr<File> f, Rendering::Device& d)
@@ -84,7 +95,8 @@ bool SpriteData::loadFromGif(ResourcePtr<File> f, Rendering::Device& d)
 	std::size_t size = f->getSize();
 	const char* content = f->getContents();
 
-	GIF_Load(const_cast<char*>(content), (long)size, frame, nullptr, this, 0);
+	WorkingData data{0, this};
+	GIF_Load(const_cast<char*>(content), (long)size, frame, nullptr, &data, 0);
 	return true;
 }
 

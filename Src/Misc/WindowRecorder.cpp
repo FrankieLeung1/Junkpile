@@ -27,7 +27,7 @@ struct WindowRecorder::Impl
 WindowRecorder::WindowRecorder():
 m_p(nullptr)
 {
-	startCaptureMonitor();
+	
 }
 
 WindowRecorder::~WindowRecorder()
@@ -38,6 +38,9 @@ WindowRecorder::~WindowRecorder()
 
 void WindowRecorder::startCaptureWindow()
 {
+	if (m_p)
+		return; // TODO: switch capture types
+
 	m_p = std::make_shared<Impl>();
 	auto getWindows = []() {
 		ResourcePtr<VulkanFramework> vf;
@@ -61,6 +64,9 @@ void WindowRecorder::startCaptureWindow()
 
 void WindowRecorder::startCaptureMonitor()
 {
+	if (m_p)
+		return; // TODO: switch capture types
+
 	m_p = std::make_shared<Impl>();
 	auto getMonitor = []() {
 		std::vector<SL::Screen_Capture::Monitor> monitors = SL::Screen_Capture::GetMonitors();
@@ -144,6 +150,8 @@ void WindowRecorder::imgui()
 
 	Impl* impl = m_p.get();
 
+	startCaptureMonitor();
+
 	ImGui::Begin("WindowRecorder", opened, ImGuiWindowFlags_NoScrollbar);
 
 	if (!impl)
@@ -185,12 +193,4 @@ void WindowRecorder::imgui()
 	}
 
 	ImGui::End();
-
-}
-
-void WindowRecorder::test()
-{
-	WindowRecorder* recorder = createTestResource<WindowRecorder>();
-	ResourcePtr<ImGuiManager> m;
-	//m->registerCallback({ recorder });
 }

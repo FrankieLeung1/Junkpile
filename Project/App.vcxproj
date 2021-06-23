@@ -516,6 +516,7 @@
     <ClCompile Include="..\Src\Tools\Analytics.cpp" />
     <ClCompile Include="..\Src\Tools\GrindstoneEditor.cpp" />
     <ClCompile Include="..\Src\Tools\Narrative.cpp" />
+    <ClCompile Include="..\Src\Tools\SpriteEditor.cpp" />
     <ClCompile Include="..\Src\Tools\Standalone.cpp" />
     <ClCompile Include="..\Src\Tools\SystemTray.cpp" />
   </ItemGroup>
@@ -804,6 +805,7 @@
     <ClInclude Include="..\Src\Tools\Analytics.h" />
     <ClInclude Include="..\Src\Tools\GrindstoneEditor.h" />
     <ClInclude Include="..\Src\Tools\Narrative.h" />
+    <ClInclude Include="..\Src\Tools\SpriteEditor.h" />
     <ClInclude Include="..\Src\Tools\Standalone.h" />
     <ClInclude Include="..\Src\Tools\SystemTray.h" />
   </ItemGroup>

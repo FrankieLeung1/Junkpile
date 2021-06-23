@@ -3,6 +3,7 @@
 #include "GrindstoneEditor.h"
 #include "Analytics.h"
 #include "Narrative.h"
+#include "SpriteEditor.h"
 #include "../Misc/WebServer.h"
 class Standalone
 {
@@ -14,6 +15,7 @@ public:
 
 protected:
 	GrindstoneEditor m_ge;
+	SpriteEditor m_se;
 	Analytics m_analytics;
 	Narrative m_narrative;
 	WebServer m_server;

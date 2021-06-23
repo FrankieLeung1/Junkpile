@@ -13,6 +13,7 @@ m_scriptLoaded(false)
 	m_windows.emplace_back("Demo", []() { ImGui::ShowDemoWindow(); });
 	m_windows.emplace_back("Level", [this]() { m_ge.imgui(); });
 	m_windows.emplace_back("Analytics", [this]() { m_analytics.imgui(); });
+	m_windows.emplace_back("Sprite", [this]() { m_se.imgui(); });
 	m_windows.emplace_back("Narrative", [this]() { m_narrative.imgui(); });
 	m_windows.emplace_back("Web", [this]() { m_server.imgui(); });
 	// gif
