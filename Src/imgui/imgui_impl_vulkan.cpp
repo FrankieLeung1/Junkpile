@@ -315,6 +315,39 @@ static void ImGui_ImplVulkan_SetupRenderState(ImDrawData* draw_data, VkCommandBu
     }
 }
 
+// Uploads textures to GPU that have not yet been uploaded
+void ImGui_ImplVulkan_UploadTextures(ImDrawData* draw_data)
+{
+    ResourcePtr<VulkanFramework>* vf = nullptr;
+    for (int n = 0; n < draw_data->CmdListsCount; n++)
+    {
+        const ImDrawList* cmd_list = draw_data->CmdLists[n];
+        for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+        {
+            const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+            Rendering::Texture* texture = (Rendering::Texture*)pcmd->TextureId;
+            if (texture && !texture->getVkImage())
+            {
+                if (!vf)
+                {
+                    void* mem = alloca(sizeof(ResourcePtr<VulkanFramework>));
+                    vf = new(mem) ResourcePtr<VulkanFramework>();
+                }
+                (*vf)->uploadTexture(texture, false);
+            }
+        }
+    }
+
+    if (vf)
+    {
+        ResourcePtr<Rendering::Device> device;
+        VkResult err = vkDeviceWaitIdle(g_VulkanInitInfo.Device);
+        check_vk_result(err);
+
+        vf->~ResourcePtr<VulkanFramework>();
+    }
+}
+
 // Render function
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
 void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer command_buffer)
@@ -388,23 +421,6 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
     ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
     ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-    // upload textures to the device
-    // For some reason, this doesn't seem to work if it's in the command creation loop below
-    for (int n = 0; n < draw_data->CmdListsCount; n++)
-    {
-        const ImDrawList* cmd_list = draw_data->CmdLists[n];
-        for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
-        {
-            const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
-            Rendering::Texture* texture = (Rendering::Texture*)pcmd->TextureId;
-            if (texture && !texture->getVkImage())
-            {
-                ResourcePtr<VulkanFramework> vf;
-                vf->uploadTexture(texture);
-            }
-        }
-    }
-
     // Render command lists
     ResourcePtr<Rendering::Device> device;
     int vtx_offset = 0;
@@ -476,7 +492,7 @@ bool ImGui_ImplVulkan_CreateFontsTexture(VkCommandBuffer command_buffer)
     void* map = fontTexture->map();
     memcpy(map, pixels, upload_size);
     fontTexture->unmap();
-    fontTexture->uploadTexture(device, command_buffer);
+    //fontTexture->uploadTexture(device, command_buffer);
 
     // Store our identifier
     io.Fonts->TexID = fontTexture;

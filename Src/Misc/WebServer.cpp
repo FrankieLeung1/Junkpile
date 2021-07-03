@@ -63,12 +63,6 @@ void WebServer::imgui()
         ImGui::Button("QR");
         if(ImGui::IsItemHovered())
         {
-            if (!m_texture->getVkImage())
-            {
-                ResourcePtr<VulkanFramework> vf;
-                vf->uploadTexture(&(*m_texture));
-            }
-
             ImGui::BeginTooltip();
             ImGui::Image(m_texture, ImVec2(128, 128));
             ImGui::EndTooltip();

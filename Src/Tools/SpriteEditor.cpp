@@ -19,7 +19,6 @@ m_comboSelection(2)
 	m_atlas->addSprite(&m_sprite);
 
 	m_atlas->layoutAtlas();
-	vf->uploadTexture(&(*m_atlas));
 
 	Hitbox hitbox;
 	hitbox.m_name = "Punch";

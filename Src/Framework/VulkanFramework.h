@@ -28,7 +28,7 @@ public:
 
 	void newFrameImGui();
 
-	void uploadTexture(Rendering::Texture*);
+	void uploadTexture(Rendering::Texture*, bool waitUntilDone = true);
 
 	void update();
 	void render();

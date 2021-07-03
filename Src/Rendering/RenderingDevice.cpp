@@ -628,12 +628,6 @@ ImGui::Node* Device::createNode(int nt, const ImVec2& pos, const ImGui::NodeGrap
 			ResourcePtr<Rendering::Device> device;
 			if (device->m_graphTexture)
 			{
-				if (!device->m_graphTexture->getVkImage())
-				{
-					ResourcePtr<VulkanFramework> vf;
-					vf->uploadTexture(&(*device->m_graphTexture));
-				}
-
 				auto& t = device->m_graphTexture;
 				ImGui::Image(t, ImVec2(256, 256));
 			}

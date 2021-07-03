@@ -86,13 +86,6 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
             if(!texture.ready(&error) || std::get<0>(error) != 0)
                 continue;
 
-            int width = (int)current.m_texture->getWidth(), height = (int)current.m_texture->getHeight();
-            if (!texture->getVkImage())
-            {
-                ResourcePtr<VulkanFramework> vf;
-                vf->uploadTexture(&(*texture));
-            }
-
             ImGui::PushID(i);
             if (ImGui::ImageButton(texture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1))
             {
@@ -127,6 +120,7 @@ void AssetBrowser::imgui(bool* open, const char* resPath)
                 ImGui::EndPopup();
             }
 
+            int width = (int)current.m_texture->getWidth(), height = (int)current.m_texture->getHeight();
             if (ImGui::IsItemHovered())
             {
                 ImVec2 size;

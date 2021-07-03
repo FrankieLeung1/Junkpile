@@ -452,7 +452,7 @@ void VulkanFramework::newFrameImGui()
 	ImGui_ImplGlfw_NewFrame();
 }
 
-void VulkanFramework::uploadTexture(Rendering::Texture* texture)
+void VulkanFramework::uploadTexture(Rendering::Texture* texture, bool waitUntilDone)
 {
 	VkResult err;
 	ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
@@ -478,8 +478,11 @@ void VulkanFramework::uploadTexture(Rendering::Texture* texture)
 	err = vkQueueSubmit(g_Queue, 1, &end_info, VK_NULL_HANDLE);
 	check_vk_result(err);
 
-	err = vkDeviceWaitIdle(g_Device);
-	check_vk_result(err);
+	if (waitUntilDone)
+	{
+		err = vkDeviceWaitIdle(g_Device);
+		check_vk_result(err);
+	}
 }
 
 void VulkanFramework::update()
@@ -771,8 +774,9 @@ void VulkanFramework::CleanupVulkanWindow()
 
 void VulkanFramework::FrameRender(ImGui_ImplVulkanH_Window* wd)
 {
-	VkResult err;
+	ImGui_ImplVulkan_UploadTextures(ImGui::GetDrawData());
 
+	VkResult err;
 	VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
 	VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
 

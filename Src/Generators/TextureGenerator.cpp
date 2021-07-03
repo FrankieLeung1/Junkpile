@@ -144,10 +144,6 @@ void TextureGenerator::test()
 		gen.line({ 0.0f, 0.75f }, { 1.0f, 0.75f }, { 1.0f, 1.0f, 1.0f, 0.25f });*/
 
 		ResourcePtr<Rendering::Texture> texture(TakeOwnershipPtr, TextureGenerator::Instance->generate(256, 256));
-
-		ResourcePtr<VulkanFramework> vf;
-		vf->uploadTexture(texture);
-
 		*ptr = texture;
 	};
 

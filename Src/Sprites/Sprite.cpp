@@ -24,8 +24,6 @@ void Sprite::test()
 	std::get<Rendering::TextureAtlas>(*data).addSprite(&std::get<SpriteData>(*data));
 
 	std::get<Rendering::TextureAtlas>(*data).layoutAtlas();
-	vf->uploadTexture(&std::get<Rendering::TextureAtlas>(*data));
-
 	m->registerCallback({ [](void* ud) {
 		auto* tuple = (std::tuple<SpriteData, Rendering::TextureAtlas>*)ud;
 		auto& sprite = std::get<SpriteData>(*tuple);

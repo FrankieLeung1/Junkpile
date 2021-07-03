@@ -426,12 +426,6 @@ void Texture::uploadTexture(Device* device, VkCommandBuffer vcommandBuffer)
 
 void Texture::bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 {
-	if (m_p->m_descriptorSet == VK_NULL_HANDLE)
-	{
-		ResourcePtr<VulkanFramework> vf;
-		vf->uploadTexture(this);
-	}
-
 	VkDescriptorSet desc_set[1] = { m_p->m_descriptorSet };
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, desc_set, 0, NULL);
 }
