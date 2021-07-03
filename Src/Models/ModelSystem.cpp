@@ -38,7 +38,7 @@ void ModelSystem::update(float delta)
 	while (it.next())
 	{
 		ModelComponent* model = it.get<ModelComponent>();
-		const ModelManager::ModelData* data = models->getModelData(model->m_model);
+		const ModelManager::ModelData* data = models->getModelData(model->getModel());
 		if (!data->m_vBuffer)
 			continue;
 
@@ -63,7 +63,7 @@ void ModelSystem::update(float delta)
 		if(data->m_iBuffer) unit.in(data->m_iBuffer);
 		unit.in(Rendering::Unit::DepthTest{ vk::CompareOp::eLessOrEqual, true, true });
 		unit.in((vk::CullModeFlags)vk::CullModeFlagBits::eBack);
-		unit.in(Rendering::Unit::Binding<ResourcePtr<Rendering::Texture>>(vk::ShaderStageFlagBits::eFragment, 1, model->m_texture1));
+		unit.in(Rendering::Unit::Binding<ResourcePtr<Rendering::Texture>>(vk::ShaderStageFlagBits::eFragment, 1, model->getTexture1()));
 		//unit.in({ vk::ShaderStageFlagBits::eVertex, std::move(pushData) });
 		unit.in(Rendering::Unit::Binding<Rendering::Buffer*>{ vk::ShaderStageFlagBits::eVertex, 0, m_cameraBuffer });
 		unit.in(std::array<float, 4>{ 0.45f, 0.55f, 0.6f, 1.0f });
@@ -86,19 +86,19 @@ void ModelSystem::test()
 	ResourcePtr<ComponentManager> components;
 	auto entityIt = components->addEntity<TransformComponent, ModelComponent>();
 	ModelComponent* model = entityIt.get<ModelComponent>();
-	model->m_model = models->getModel("Art/Characters1/Model/characterMedium.fbx");
-	model->m_texture1 = ResourcePtr<Rendering::Texture>(NewPtr, "Art/Characters1/Skins/criminalMaleA.png");
+	model->setModel(models->getModel("Art/Characters1/Model/characterMedium.fbx"));
+	model->setTexture1(ResourcePtr<Rendering::Texture>(NewPtr, "Art/Characters1/Skins/criminalMaleA.png"));
 	//model->m_model = models->getModel("Models/Animations/idle.fbx");
 	
-	model->m_texture1.waitReady(nullptr);
+	model->getTexture1().waitReady(nullptr);
 
 	Rendering::Unit unit;
-	unit.in(model->m_texture1);
-	unit.out(*model->m_texture1.get());
+	unit.in(model->getTexture1());
+	unit.out(*model->getTexture1().get());
 	unit.submit();
 	
 	auto cameraIt = components->addEntity<TransformComponent, CameraComponent>();
-	cameraIt.get<CameraComponent>()->m_controlType = CameraComponent::Orbit;
+	cameraIt.get<CameraComponent>()->setControlType(CameraComponent::Orbit);
 	cameraIt.get<TransformComponent>()->m_position.z = -5.0f;
 	modelSystem->m_cameraEntity = cameraIt.getEntity();
 }

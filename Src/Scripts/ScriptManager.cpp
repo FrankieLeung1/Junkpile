@@ -185,6 +185,15 @@ ScriptManager::Environment::Script ScriptManager::getCallstack(std::size_t i) co
 	return m_callstack[i]->m_script;
 }
 
+ScriptManager::Environment* ScriptManager::getEnvironment(const char* name) const
+{
+	for (auto& l : m_languages)
+		if (strcmp(l->getName(), name) == 0)
+			return l;
+
+	return nullptr;
+}
+
 void ScriptManager::setEditorContent(const char* content, const char* _pathToSave)
 {
 	initEditor();
@@ -242,15 +251,6 @@ void ScriptManager::initEditor()
 		auto lang = TextEditor::LanguageDefinition::Lua();
 		m_editor->SetLanguageDefinition(lang);
 	}
-}
-
-ScriptManager::Environment* ScriptManager::getEnvironment(const char* name) const
-{
-	for (auto& l : m_languages)
-		if (strcmp(l->getName(), name) == 0)
-			return l;
-
-	return nullptr;
 }
 
 void ScriptManager::onFileChange(const FileChangeEvent& e)
@@ -317,13 +317,13 @@ void ScriptManager::onFileChange(const FileChangeEvent& e)
 	}, -10);
 }
 
-void ScriptManager::addDependency(const char* name)
+/*void ScriptManager::addDependency(const char* name)
 {
 	if (m_callstack.empty())
 		return;
 
 	m_callstack.back()->m_dependencies.insert(name);
-}
+}*/
 
 void ScriptManager::setUserData(ScriptManager::Environment::Script script, void* userdata)
 {
@@ -552,6 +552,19 @@ bool ScriptManager::imguiColourPicker4(StringView name, ImGuiColorEditFlags flag
 	}
 
 	return valueChanged;
+}
+
+void ScriptManager::Environment::setUserData(Script s, void* ud) const
+{
+	ResourcePtr<ScriptManager> scripts;
+	scripts->setUserData(s, ud);
+}
+
+
+void* ScriptManager::Environment::getUserData(Script s) const
+{
+	ResourcePtr<ScriptManager> scripts;
+	return scripts->getUserData(s);
 }
 
 // all the classes exposed the scripts

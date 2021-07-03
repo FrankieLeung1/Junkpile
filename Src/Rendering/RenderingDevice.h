@@ -83,6 +83,10 @@ namespace Rendering
 		static Loader* createLoader(); // not used since this is a singleton resource
 
 	protected:
+		void initGraph();
+		static ImGui::Node* createNode(int nt, const ImVec2& pos, const ImGui::NodeGraphEditor& editor);
+
+	protected:
 		vk::Result create(vk::DescriptorPool*) const;
 		vk::Result create(vk::CommandPool*) const;
 
@@ -142,6 +146,12 @@ namespace Rendering
 		// imgui
 		int m_selectedUnit;
 		int m_selectedInOut;
+
+		ResourcePtr<Rendering::Texture> m_graphTexture{ EmptyPtr };
+		std::shared_ptr<ImGui::NodeGraphEditor> m_graph;
+		const char* m_nodeNames[1] = {
+			"RenderTarget"
+		};
 
 		std::map<Fossilize::Hash, Any> m_objects;
 

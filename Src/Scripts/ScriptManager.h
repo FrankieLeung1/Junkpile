@@ -50,6 +50,10 @@ public:
 		virtual void deleteScript(Script) = 0;
 		virtual Error loadScript(Script, StringView) =0;
 		virtual bool registerObject(const Meta::Object&, const char* exposedName, const char* doc, std::tuple<void*, const char*> instance = {}) =0;
+
+	protected:
+		void setUserData(Script, void*) const;
+		void* getUserData(Script) const;
 	};
 
 public:
@@ -73,14 +77,15 @@ public:
 	void hideEditor();
 	void setEditorContent(const char* content, const char* pathToSave);
 
+	Environment* getEnvironment(const char* name) const;
+
 	lua_State* getLua() const;
 	void imgui();
 
 protected:
 	void initEditor();
-	Environment* getEnvironment(const char* name) const;
 	void onFileChange(const FileChangeEvent&);
-	void addDependency(const char* name);
+	//void addDependency(const char* name);
 
 	void runScriptsInFolder(StringView path, bool recursive, std::vector<StringView>* filesRan);
 
@@ -105,7 +110,7 @@ protected:
 		Environment::Script m_script;
 		void* m_envUserData;
 		std::vector<ScriptData*> m_children;
-		std::set<std::string> m_dependencies;
+		//std::set<std::string> m_dependencies;
 		std::string m_path;
 		Markup m_markup;
 		bool m_ignoreReloads;
@@ -126,7 +131,7 @@ protected:
 	Environment::Error m_error;
 	bool m_objectsRegistered;
 
-	friend class PythonEnvironment;
+	friend class Environment;
 };
 
 // ----------------------- IMPLEMENTATION ----------------------- 

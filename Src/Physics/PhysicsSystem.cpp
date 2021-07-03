@@ -3,6 +3,7 @@
 #include "../imgui/ImGuiManager.h"
 #include "../Misc/Misc.h"
 #include "../Scene/TransformSystem.h"
+#include "../Managers/DebugManager.h"
 
 btVector3 toBt(const glm::vec3& v) { return btVector3(v[0], v[1], v[2]); }
 btVector4 toBt(const glm::vec4& v) { return btVector4(v[0], v[1], v[2], v[3]); }
@@ -57,12 +58,12 @@ PhysicsSystem::~PhysicsSystem()
 	while (p.next())
 	{
 		auto* pc = p.get<PhysicsComponent>();
-		m_world->removeRigidBody(pc->m_body);
-		delete pc->m_body->getMotionState();
-		delete pc->m_shape;
-		delete pc->m_body;
-		pc->m_shape = nullptr;
-		pc->m_body = nullptr;
+		m_world->removeRigidBody(pc->getBody());
+		delete pc->getBody()->getMotionState();
+		delete pc->getShape();
+		delete pc->getBody();
+		pc->setShape(nullptr);
+		pc->setBody(nullptr);
 	}
 }
 
@@ -82,7 +83,7 @@ PhysicsComponent* PhysicsSystem::createBox(Entity entity, const glm::vec3& size,
 	// TODO: btGeneric6DofConstraint
 
 	PhysicsComponent* component = m_components->addComponents<PhysicsComponent>(entity).get<PhysicsComponent>();
-	component->m_shape = new btBoxShape(btVector3(size[0], size[1], size[2]));
+	component->setShape(new btBoxShape(btVector3(size[0], size[1], size[2])));
 
 	btTransform startTransform;
 	startTransform.setIdentity();
@@ -95,14 +96,14 @@ PhysicsComponent* PhysicsSystem::createBox(Entity entity, const glm::vec3& size,
 
 	btVector3 localInertia(0, 0, 0);
 	if (isDynamic)
-		component->m_shape->calculateLocalInertia(mass, localInertia);
+		component->getShape()->calculateLocalInertia(mass, localInertia);
 
 	btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, component->m_shape, localInertia);
-	component->m_body = new btRigidBody(rbInfo);
-	component->m_body->setUserIndex(entity.m_value);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, component->getShape(), localInertia);
+	component->setBody(new btRigidBody(rbInfo));
+	component->getBody()->setUserIndex(entity.m_value);
 
-	m_world->addRigidBody(component->m_body);
+	m_world->addRigidBody(component->getBody());
 	return component;
 }
 
@@ -116,8 +117,8 @@ void PhysicsSystem::impulse(Entity e, const glm::vec3& v)
 	auto c = m_components->findEntity<PhysicsComponent>(e).get<PhysicsComponent>();
 	if (c)
 	{
-		c->m_body->activate();
-		c->m_body->applyImpulse(toBt(v), btVector3(0.0f, 0.0f, 0.0f));
+		c->getBody()->activate();
+		c->getBody()->applyImpulse(toBt(v), btVector3(0.0f, 0.0f, 0.0f));
 	}
 }
 
@@ -125,7 +126,7 @@ void PhysicsSystem::setGravity(Entity e, const glm::vec3& gravity)
 {
 	auto c = m_components->findEntity<PhysicsComponent>(e).get<PhysicsComponent>();
 	if (c)
-		c->m_body->setGravity(toBt(gravity));
+		c->getBody()->setGravity(toBt(gravity));
 }
 
 void PhysicsSystem::processWorld(float delta)
@@ -145,7 +146,7 @@ void PhysicsSystem::process(float delta)
 		TransformComponent* position = it.get<TransformComponent>();
 		if (position)
 		{
-			btMotionState* motionState = physics->m_body->getMotionState();
+			btMotionState* motionState = physics->getBody()->getMotionState();
 			if (motionState)
 			{
 				btTransform transform;
@@ -282,16 +283,16 @@ void PhysicsSystem::render(RenderEvent* e)
 
 void PhysicsComponent::reset()
 {
-	if (m_body)
+	if (getBody())
 	{
 		ResourcePtr<PhysicsSystem> p;
-		delete m_body->getMotionState();
-		p->m_world->removeCollisionObject(m_body);
-		delete m_body;
-		delete m_shape;
+		delete getBody()->getMotionState();
+		p->m_world->removeCollisionObject(getBody());
+		delete getBody();
+		delete getShape();
 
-		m_body = nullptr;
-		m_shape = nullptr;
+		setBody(nullptr);
+		setShape(nullptr);
 	}
 }
 

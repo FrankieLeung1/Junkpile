@@ -32,8 +32,8 @@ m_p(nullptr)
 
 WindowRecorder::~WindowRecorder()
 {
-	m_p->m_screenCapture = nullptr;
-	m_p->m_windowCapture = nullptr;
+	//m_p->m_screenCapture = nullptr;
+	//m_p->m_windowCapture = nullptr;
 }
 
 void WindowRecorder::startCaptureWindow()

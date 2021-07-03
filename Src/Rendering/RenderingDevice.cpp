@@ -8,6 +8,7 @@
 #include "../Managers/InputManager.h"
 #include "../Misc/Misc.h"
 #include "../Managers/EventManager.h"
+#include "../Rendering/Texture.h"
 #include "Unit.h"
 
 using namespace Rendering;
@@ -35,6 +36,7 @@ m_currentWindowResources(nullptr)
 Device::~Device()
 {
 	delete m_rootUnit;
+	m_graph = nullptr;
 
 	for (auto& value : m_objects)
 	{
@@ -598,11 +600,74 @@ void Device::destroyObject(vk::ImageView view)
 	m_device.destroyImageView(view, m_allocator);
 }
 
+void Device::initGraph()
+{
+	if (!m_graph)
+	{
+		m_graphTexture = ResourcePtr<Rendering::Texture>{ NewPtr, "Art/Grindstone/blue.png" };
+
+		m_graph = std::make_shared<ImGui::NodeGraphEditor>();
+		m_graph->registerNodeTypes(m_nodeNames, (int)countof(m_nodeNames), &createNode, NULL, -1);
+		m_graph->registerNodeTypeMaxAllowedInstances(0, 1);
+		m_graph->addNode(0, ImVec2(0, 0));
+	}
+}
+
+ImGui::Node* Device::createNode(int nt, const ImVec2& pos, const ImGui::NodeGraphEditor& editor)
+{
+	struct Node : public ImGui::Node {
+		using ImGui::Node::init;
+		using ImGui::Node::fields;
+	};
+	Node* node = (Node*)ImGui::MemAlloc(sizeof(Node));
+	IM_PLACEMENT_NEW(node) Node();
+
+	if (nt == 0)
+	{
+		auto render = [](ImGui::FieldInfo&) {
+			ResourcePtr<Rendering::Device> device;
+			if (device->m_graphTexture)
+			{
+				if (!device->m_graphTexture->getVkImage())
+				{
+					ResourcePtr<VulkanFramework> vf;
+					vf->uploadTexture(&(*device->m_graphTexture));
+				}
+
+				auto& t = device->m_graphTexture;
+				ImGui::Image(t, ImVec2(256, 256));
+			}
+			else
+			{
+				ImGui::Dummy(ImVec2(100.0f, 20.0f));
+			}
+			return false; 
+		};
+		auto copy = [](ImGui::FieldInfo&, const ImGui::FieldInfo&) { return false; };
+		node->fields.addFieldCustom(render, copy, nullptr);
+	}
+
+	node->setOpen(true);
+	return node;
+}
+
 void Device::imgui()
 {
 	using namespace ImGui;
 	ResourcePtr<ImGuiManager> imgui;
 	ResourcePtr<InputManager> input;
+
+	bool* nodesOpened = imgui->win("Nodes", "Rendering");
+	if (*nodesOpened)
+	{
+		if (Begin("Nodes", nodesOpened))
+		{
+			initGraph();
+			m_graph->render();
+			End();
+		}
+	}
+
 	bool* unitsOpened = imgui->win("Units", "Rendering");
 	if(*unitsOpened)
 	{

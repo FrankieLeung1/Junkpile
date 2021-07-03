@@ -29,6 +29,17 @@ Object::~Object()
 	
 }
 
+Object& Object::prop(const char* name, const char* getter, const char* setter)
+{
+	auto impl = new MemberProperty();
+	impl->m_name = name;
+	impl->m_getter = getter;
+	impl->m_setter = setter;
+	m_members->emplace_back(impl);
+	return *this;
+
+}
+
 void Object::imgui()
 {
 	ResourcePtr<ImGuiManager> im;

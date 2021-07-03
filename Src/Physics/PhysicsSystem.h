@@ -6,13 +6,15 @@
 #include "../Meta/Meta.h"
 struct PhysicsComponent : public Component<PhysicsComponent>
 {
-	btCollisionShape* m_shape;
-	btRigidBody* m_body;
+	COMPONENT_PROPERTY_PTR(btCollisionShape*, Shape);
+	COMPONENT_PROPERTY_PTR(btRigidBody*, Body);
+	//btCollisionShape* m_shape;
+	//btRigidBody* m_body;
 
-	PhysicsComponent() : m_shape(nullptr), m_body(nullptr) { }
-	PhysicsComponent(const PhysicsComponent& p) : m_shape(p.m_shape), m_body(p.m_body) { }
-	PhysicsComponent& operator=(const PhysicsComponent& p) {  reset(); m_shape = p.m_shape; m_body = p.m_body; return *this; }
-	PhysicsComponent& operator=(PhysicsComponent&& p) { reset(); m_shape = p.m_shape; m_body = p.m_body; p.m_body = nullptr; p.m_shape = nullptr; Component<PhysicsComponent>::operator=(p); return *this; }
+	PhysicsComponent() : _Shape(nullptr), _Body(nullptr) { }
+	PhysicsComponent(const PhysicsComponent& p) : _Shape(p._Shape), _Body(p._Body) { }
+	PhysicsComponent& operator=(const PhysicsComponent& p) {  reset(); _Shape = p._Shape; _Body = p._Body; return *this; }
+	PhysicsComponent& operator=(PhysicsComponent&& p) { reset(); _Shape = p._Shape; _Body = p._Body; p._Body = nullptr; p._Shape = nullptr; Component<PhysicsComponent>::operator=(p); return *this; }
 	~PhysicsComponent();
 	void reset();
 };

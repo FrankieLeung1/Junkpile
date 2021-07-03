@@ -26,17 +26,23 @@ const char* LuaEnvironment::getName() const
 bool LuaEnvironment::isScript(const char* path) const
 {
 	std::size_t size = strlen(path);
-	return (size >= 3 && path[size - 3] == '.' && path[size - 2] == 'l' && path[size - 1] == 'u' && path[size - 1] == 'a');
+	return (size >= 4 && path[size - 4] == '.' && path[size - 3] == 'l' && path[size - 2] == 'u' && path[size - 1] == 'a');
 }
 
-bool LuaEnvironment::newScript(Script, const char* debugName)
+bool LuaEnvironment::newScript(Script script, const char* debugName)
 {
+	m_scriptData.emplace_front();
+	ScriptData* data = &m_scriptData.front();
+	data->m_name = debugName;
+
+	ResourcePtr<ScriptManager> scripts;
+	Environment::setUserData(script, data);
 	return true;
 }
 
 void LuaEnvironment::deleteScript(Script)
 {
-
+	LOG_F(FATAL, "TODO: deleteScript");
 }
 
 LuaEnvironment::Error LuaEnvironment::loadScript(Script, StringView)

@@ -32,7 +32,6 @@ void PythonEnvironment::init()
 		
 		Py_Initialize();
 
-		//m_global = PyEval_GetGlobals();
 		m_global = PyModule_GetDict(PyImport_ImportModule("__main__"));
 
 		const char* code =
@@ -49,7 +48,6 @@ void PythonEnvironment::init()
 			"sys.stderr = Error()\n"
 			"class MyMetaFinder():\n"
 			"	def find_spec(self, fullname, path, target = None):\n"
-			//"		print(type(path))\n"
 			"		if path == None:\n"
 			"			Junkpile.addModuleDependency(fullname, path)\n"
 			"		return None\n"
@@ -89,8 +87,7 @@ bool PythonEnvironment::newScript(Script script, const char* debugName)
 	init();
 	m_scripts.push_back(ScriptData{debugName});
 	
-	ResourcePtr<ScriptManager> s;
-	s->setUserData(script, reinterpret_cast<void*>(m_scripts.size() - 1));
+	Environment::setUserData(script, reinterpret_cast<void*>(m_scripts.size() - 1));
 	return true; // TODO: figure out a way to store this for multiple environments
 }
 
@@ -112,7 +109,7 @@ PythonEnvironment::Error PythonEnvironment::loadScript(Script script, StringView
 	memcpy(codeBuffer, codeString.c_str(), codeString.size());
 	codeBuffer[codeString.size()] = '\0';
 	
-	std::string name = m_scripts[reinterpret_cast<std::size_t>(scriptManager->getUserData(script))].m_debugName.c_str();
+	std::string name = m_scripts[reinterpret_cast<std::size_t>(Environment::getUserData(script))].m_debugName.c_str();
 	PyObject* code = Py_CompileString(codeBuffer, name.c_str(), Py_file_input);
 	if (code != nullptr)
 	{
@@ -217,12 +214,13 @@ PyObject* PythonEnvironment::printErrorMethod(PyObject* self, PyObject* args)
 
 PyObject* PythonEnvironment::addModuleDependencyMethod(PyObject* self, PyObject* args)
 {
+	// Do we need to know dependencies?
 	const char* name = nullptr, *path = nullptr;
 	if (!PyArg_ParseTuple(args, "sZ", &name, &path))
 		return NULL;
 
-	ResourcePtr<ScriptManager> scripts;
-	scripts->addDependency(name);
+	//ResourcePtr<ScriptManager> scripts;
+	//scripts->addDependency(name);
 	return PyLong_FromLong(0);
 }
 

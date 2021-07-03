@@ -162,7 +162,8 @@ SpriteData* SpriteData::SpriteDataLoader::load(std::tuple<int, std::string>* err
 	}
 	else if(ext == "gif")
 	{
-		GIF_Load(const_cast<char*>(content), (long)size, frame, nullptr, data, 0);
+		WorkingData workingData{ 0, data };
+		GIF_Load(const_cast<char*>(content), (long)size, frame, nullptr, &workingData, 0);
 	}
 	else if(ext == "py")
 	{

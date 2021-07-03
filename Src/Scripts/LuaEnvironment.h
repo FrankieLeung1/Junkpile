@@ -16,4 +16,10 @@ public:
 protected:
 	lua_State* m_state;
 	bool m_ownsState;
+
+	struct ScriptData
+	{
+		std::string m_name;
+	};
+	std::forward_list<ScriptData> m_scriptData;
 };

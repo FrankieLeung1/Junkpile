@@ -198,6 +198,16 @@ protected:
 	T* m_component;
 };
 
+#define COMPONENT_PROPERTY(type, name, ...) \
+	private: type _##name { __VA_ARGS__ }; \
+	public: void set##name(type value){ _##name = value; } void set##name(type& value){ _##name = value; } \
+	const type& get##name() const { return _##name; } type get##name() { return _##name; }
+
+#define COMPONENT_PROPERTY_PTR(type, name, ...) \
+	private: type _##name { __VA_ARGS__ }; \
+	public: void set##name(type value){ _##name = value; } \
+	const type get##name() const { return _##name; } type get##name() { return _##name; }
+	
 
 template<typename Super>
 struct ComponentBase
@@ -213,14 +223,10 @@ struct Component : public ComponentBase<Super>
 	template<class T = System> static typename std::enable_if<!std::is_same<T, void>::value, void>::type initSystem() { SingletonResource<T>::getSingleton(); }
 };
 
-struct EmptyComponent : public Component<EmptyComponent>
-{
-	//static constexpr const char* m_cid = "Empty";
-};
-
 struct NameComponent : public Component<NameComponent>
 {
-	char m_name[32];
+	typedef std::array<char, 32> NameArray;
+	COMPONENT_PROPERTY(NameArray, name);
 };
 
 // ----------------------- IMPLEMENTATION ----------------------- 

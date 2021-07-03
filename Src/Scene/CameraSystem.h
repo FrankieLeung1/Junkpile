@@ -11,21 +11,25 @@ struct CameraComponent : public Component<CameraComponent, CameraSystem>
 	static const int Perspective = (1);
 	static const int Orthographic = (1) << 1;
 	static const int ActiveCamera = (1) << 2;
-	int m_flags;
+	//int m_flags;
+	COMPONENT_PROPERTY(int, Flags, Perspective);
 
 	enum ControlType { None, WASD, Orbit };
-	ControlType m_controlType;
+	//ControlType m_controlType;
+	COMPONENT_PROPERTY(ControlType, ControlType);
 
-	union {
+	union { // TODO: use COMPONENT_PROPERTY
 		struct { float m_fov, m_aspect, m_near, m_far; }; // perspective
 		struct { float m_left, m_right, m_bottom, m_top; }; // orthographic
 	};
 
 	// Arcball
-	glm::vec3 m_angles;
-	glm::vec3 m_offset;
+	//glm::vec3 m_angles;
+	//glm::vec3 m_offset;
+	COMPONENT_PROPERTY(glm::vec3, Angles);
+	COMPONENT_PROPERTY(glm::vec3, Offset);
 
-	CameraComponent() : m_flags(Perspective), m_fov(90.0f), m_aspect(16.0f / 9.0f), m_near(0.1f), m_far(10000.0f), m_angles(0.0f), m_offset(0.0f) {}
+	CameraComponent() : _Flags(Perspective), m_fov(90.0f), m_aspect(16.0f / 9.0f), m_near(0.1f), m_far(10000.0f), _Angles(0.0f), _Offset(0.0f) {}
 	//CameraComponent() : m_flags(Orthographic), m_controlType(None), m_left(0.0f), m_right(0.0f), m_bottom(0.0f), m_top(0.0f), m_lookAt(0.0f) {}
 };
 
@@ -55,10 +59,19 @@ namespace Meta
 	template<> inline Object instanceMeta<CameraComponent>()
 	{
 		return Object("CameraComponent").
-			var("m_flags", &CameraComponent::m_flags).
+			//var("m_flags", &CameraComponent::m_flags).
+			prop("m_flags", "getFlags", "setFlags").
+			func<CameraComponent, int>("getFlags", &CameraComponent::getFlags).
+			func<CameraComponent, void, int>("setFlags", &CameraComponent::setFlags).
+			prop("m_angles", "getAngles", "setAngles").
+			func<CameraComponent, glm::vec3>("getAngles", &CameraComponent::getAngles).
+			func<CameraComponent, void, glm::vec3>("setAngles", &CameraComponent::setAngles).
+			prop("m_offset", "getOffset", "setOffset").
+			func<CameraComponent, glm::vec3>("getOffset", &CameraComponent::getOffset).
+			func<CameraComponent, void, glm::vec3>("setOffset", &CameraComponent::setOffset);
 			//var("m_controlType", &CameraComponent::m_controlType).
-			var("m_angles", &CameraComponent::m_angles).
-			var("m_offset", &CameraComponent::m_offset);
+			//var("m_angles", &CameraComponent::m_angles).
+			//var("m_offset", &CameraComponent::m_offset);
 	}
 
 	template<> inline Object instanceMeta<CameraSystem>()

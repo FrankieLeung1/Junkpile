@@ -48,6 +48,7 @@
 #include "../Rendering/RenderingDevice.h"
 #include "../Rendering/Texture.h"
 #include "../Rendering/RenderTarget.h"
+#include "../Managers/TimeManager.h"
 #include <stdio.h>
 
 // Reusable buffers used for rendering 1 current in-flight frame, for ImGui_ImplVulkan_RenderDrawData()
@@ -387,7 +388,25 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
     ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
     ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
+    // upload textures to the device
+    // For some reason, this doesn't seem to work if it's in the command creation loop below
+    for (int n = 0; n < draw_data->CmdListsCount; n++)
+    {
+        const ImDrawList* cmd_list = draw_data->CmdLists[n];
+        for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+        {
+            const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+            Rendering::Texture* texture = (Rendering::Texture*)pcmd->TextureId;
+            if (texture && !texture->getVkImage())
+            {
+                ResourcePtr<VulkanFramework> vf;
+                vf->uploadTexture(texture);
+            }
+        }
+    }
+
     // Render command lists
+    ResourcePtr<Rendering::Device> device;
     int vtx_offset = 0;
     int idx_offset = 0;
     for (int n = 0; n < draw_data->CmdListsCount; n++)
@@ -430,9 +449,8 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
                     scissor.extent.height = (uint32_t)(clip_rect.w - clip_rect.y);
                     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-                    ((Rendering::Texture*)pcmd->TextureId)->bind(ResourcePtr<Rendering::Device>(), command_buffer, g_PipelineLayout);
-
-                    // Draw
+                    Rendering::Texture* texture = (Rendering::Texture*)pcmd->TextureId;
+                    texture->bind(device, command_buffer, g_PipelineLayout);
                     vkCmdDrawIndexed(command_buffer, pcmd->ElemCount, 1, idx_offset, vtx_offset, 0);
                 }
             }

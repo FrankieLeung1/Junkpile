@@ -7,8 +7,8 @@
 class ModelSystem;
 struct ModelComponent : public Component<ModelComponent, ModelSystem>
 {
-	Model m_model;
-	ResourcePtr<Rendering::Texture> m_texture1{ EmptyPtr };
+	COMPONENT_PROPERTY(::Model, Model);
+	COMPONENT_PROPERTY(ResourcePtr<Rendering::Texture>, Texture1, EmptyPtr);
 };
 
 struct UpdateEvent;

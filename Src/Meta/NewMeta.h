@@ -56,6 +56,7 @@ namespace Meta
 		std::size_t getSize() const;
 		void setSize(std::size_t);
 
+		Object& prop(const char* name, const char* getter, const char* setter);
 		template<typename Variable, typename T> Object& var(const char* name, Variable(T::*));
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...), const std::array<const char*, sizeof...(Args)>& names, const std::vector<Any>& defaults);
 		template<typename T, typename R, typename... Args> Object& func(const char* name, R(T::*)(Args...), const std::array<const char*, sizeof...(Args)>& names);
@@ -123,6 +124,15 @@ namespace Meta
 
 		std::string m_name;
 		V (T::* m_ptr);
+	};
+
+	class MemberProperty
+	{
+	public:
+		/*virtual ~MemberProperty() = 0 {};
+		virtual const char* getGetter() const =0;
+		virtual const char* getSetter() const = 0;*/
+		std::string m_name, m_getter, m_setter;
 	};
 
 	class Function
