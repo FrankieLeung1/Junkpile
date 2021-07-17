@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 #include "RenderingDevice.h"
 #include "RenderTarget.h"
 #include "VulkanHelpers.h"
@@ -626,14 +627,16 @@ ImGui::Node* Device::createNode(int nt, const ImVec2& pos, const ImGui::NodeGrap
 	{
 		auto render = [](ImGui::FieldInfo&) {
 			ResourcePtr<Rendering::Device> device;
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			float scale = window->FontWindowScale;
 			if (device->m_graphTexture)
 			{
 				auto& t = device->m_graphTexture;
-				ImGui::Image(t, ImVec2(256, 256));
+				ImGui::Image(t, ImVec2(256 * scale, 256 * scale));
 			}
 			else
 			{
-				ImGui::Dummy(ImVec2(100.0f, 20.0f));
+				ImGui::Dummy(ImVec2(100.0f * scale, 20.0f * scale));
 			}
 			return false; 
 		};

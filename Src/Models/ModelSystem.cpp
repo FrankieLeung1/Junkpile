@@ -84,6 +84,7 @@ void ModelSystem::test()
 	ResourcePtr<ModelManager> models;
 	ResourcePtr<ModelSystem> modelSystem;
 	ResourcePtr<ComponentManager> components;
+	ResourcePtr<CameraSystem> cameras;
 	auto entityIt = components->addEntity<TransformComponent, ModelComponent>();
 	ModelComponent* model = entityIt.get<ModelComponent>();
 	model->setModel(models->getModel("Art/Characters1/Model/characterMedium.fbx"));
@@ -97,8 +98,9 @@ void ModelSystem::test()
 	unit.out(*model->getTexture1().get());
 	unit.submit();
 	
-	auto cameraIt = components->addEntity<TransformComponent, CameraComponent>();
-	cameraIt.get<CameraComponent>()->setControlType(CameraComponent::Orbit);
-	cameraIt.get<TransformComponent>()->m_position.z = -5.0f;
+	auto cameraIt = components->addEntity<TransformComponent>();
+	CameraComponent* cameraComponent = cameras->addComponentPerspective(cameraIt.getEntity(), 90.0f);
+	cameraComponent->m_controlType = CameraComponent::Orbit;
+	//cameraIt.get<TransformComponent>()->m_position.x = 0.0f;
 	modelSystem->m_cameraEntity = cameraIt.getEntity();
 }

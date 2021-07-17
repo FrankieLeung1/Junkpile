@@ -190,8 +190,8 @@ void SpriteSystem::test(std::function<void(float)>& update, std::function<void()
 	auto camera = components->addEntity<TransformComponent, CameraComponent>();
 	Entity cameraEntity = camera.getEntity();
 	camera.get<TransformComponent>()->m_position.z = -250.0f;
-	//camera.get<CameraComponent>()->setControlType(CameraComponent::Orbit);
-	camera.get<CameraComponent>()->setControlType(CameraComponent::WASD);
+	//camera.get<CameraComponent>()->m_controlType = CameraComponent::Orbit;
+	camera.get<CameraComponent>()->m_controlType = CameraComponent::WASD;
 }
 
 glm::vec4 SpriteSystem::m_clearColour(0.45f, 0.55f, 0.6f, 1.0f);
