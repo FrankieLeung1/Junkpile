@@ -91,9 +91,3 @@ def onCollision(e):
 
 print("onCollision")
 eventManager.addListener_CollisionEvent(onCollision, 0)
-
-
-def update(e):
-    ImGui.Begin("Test")
-    ImGui.End()
-#eventManager.addListener_UpdateEvent(update, 0)

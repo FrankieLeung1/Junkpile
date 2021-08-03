@@ -7,8 +7,8 @@
 class ModelSystem;
 struct ModelComponent : public Component<ModelComponent, ModelSystem>
 {
-	COMPONENT_PROPERTY(::Model, Model);
-	COMPONENT_PROPERTY(ResourcePtr<Rendering::Texture>, Texture1, EmptyPtr);
+	::Model m_model;
+	ResourcePtr<Rendering::Texture> m_texture1{ EmptyPtr };
 };
 
 struct UpdateEvent;
@@ -26,6 +26,8 @@ protected:
 protected:
 	Entity m_cameraEntity;
 	Rendering::Buffer* m_cameraBuffer;
+	int m_shaderType;
+	int m_skin;
 
 	struct CameraUBO
 	{

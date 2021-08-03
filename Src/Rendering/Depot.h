@@ -17,9 +17,13 @@ namespace Rendering {
 		ResourcePtr<Rendering::Shader> getTexturedVertexShader();
 		ResourcePtr<Rendering::Shader> getTexturedFragmentShader();
 
+		ResourcePtr<Rendering::Shader> getBWFragmentShader();
+		ResourcePtr<Rendering::Shader> getInvertFragmentShader();
+
 	protected:
 		ResourcePtr<Rendering::Shader> m_passVShader, m_passFShader;
 		ResourcePtr<Rendering::Shader> m_texVShader, m_texFShader;
+		ResourcePtr<Rendering::Shader> m_bwFShader, m_invertFShader;
 	};
 
 	template<ResourcePtr<Rendering::Shader>(Depot::*VertexShaderFunc)(), ResourcePtr<Rendering::Shader>(Depot::* FragmentShaderFunc)()>

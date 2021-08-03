@@ -7,7 +7,9 @@ Depot::Depot():
 m_passVShader(EmptyPtr),
 m_passFShader(EmptyPtr),
 m_texVShader(EmptyPtr),
-m_texFShader(EmptyPtr)
+m_texFShader(EmptyPtr),
+m_bwFShader(EmptyPtr),
+m_invertFShader(EmptyPtr)
 {
 
 }
@@ -104,4 +106,47 @@ ResourcePtr<Rendering::Shader> Depot::getTexturedFragmentShader()
 	}
 
 	return m_texFShader;
+}
+
+ResourcePtr<Rendering::Shader> Depot::getBWFragmentShader()
+{
+	if (!m_bwFShader)
+	{
+		char pixelCode[] =
+			"#version 450 core\n"
+			"layout(location = 0) in vec2 UV;\n"
+			"layout(location = 0) out vec4 fColor; \n"
+			"layout(binding = 1) uniform sampler2D sTexture;\n"
+			"void main()\n"
+			"{\n"
+			"	vec4 c = texture(sTexture, UV.st);\n"
+			"	float average = (c.x + c.y + c.z) / 3.0;\n"
+			"	fColor = vec4(average, average, average, 1.0);\n"
+			"}";
+
+		m_bwFShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
+	}
+
+	return m_bwFShader;
+}
+
+ResourcePtr<Rendering::Shader> Depot::getInvertFragmentShader()
+{
+	if (!m_invertFShader)
+	{
+		char pixelCode[] =
+			"#version 450 core\n"
+			"layout(location = 0) in vec2 UV;\n"
+			"layout(location = 0) out vec4 fColor; \n"
+			"layout(binding = 1) uniform sampler2D sTexture;\n"
+			"void main()\n"
+			"{\n"
+			"	vec4 c = texture(sTexture, UV.st);\n"
+			"	fColor = vec4(1.0 - c.x, 1.0 - c.y, 1.0 - c.z, c.w);\n"
+			"}";
+
+		m_invertFShader = ResourcePtr<Rendering::Shader>(NewPtr, Rendering::Shader::Type::Pixel, pixelCode);
+	}
+
+	return m_invertFShader;
 }

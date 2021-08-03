@@ -2,7 +2,7 @@ import Junkpile
 from Junkpile import vec2, vec4
 
 #cloud
-print("cloud")
+#print("cloud")
 e = componentManager.newEntity()
 t = transformSystem.addComponent(e)
 t.m_position.x = -450.0

@@ -180,14 +180,23 @@ void CameraSystem::getMatrices(Entity e, glm::mat4* view, glm::mat4* projection)
 	if (!view) view = (glm::mat4*)alloca(sizeof(glm::mat4));
 	if (!projection) projection = (glm::mat4*)alloca(sizeof(glm::mat4));
 
-	bool flipY = false;
 	*view = glm::mat4(1.0f);
 	if (t)
 	{
-		*view = glm::rotate(*view, glm::radians(c->m_angles.x * (flipY ? -1.0f : 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f));
-		*view = glm::rotate(*view, glm::radians(c->m_angles.y), glm::vec3(0.0f, 1.0f, 0.0f));
-		*view = glm::rotate(*view, glm::radians(c->m_angles.z), glm::vec3(0.0f, 0.0f, 1.0f));
-		*view = glm::translate(glm::mat4(1.0f), c->m_offset) * (*view);
+		if (c->m_useModel)
+		{
+			*view = glm::rotate(*view, glm::radians(c->m_angles.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			*view = glm::rotate(*view, glm::radians(c->m_angles.y), glm::vec3(0.0f, 1.0f, 0.0f));
+			*view = glm::rotate(*view, glm::radians(c->m_angles.z), glm::vec3(0.0f, 0.0f, 1.0f));
+			*view = glm::translate(glm::mat4(1.0f), c->m_offset) * (*view);
+		}
+		else
+		{
+			(*view)[1][1] = -1.0f; // flip the y axis
+			(*view)[2][2] = -1.0f; // flip the z axis
+			(*view) = glm::mat4_cast(t->m_rotation) * glm::translate(*view, t->m_position);
+		}
+		
 	}
 
 	if (c->m_flags & CameraComponent::Perspective)

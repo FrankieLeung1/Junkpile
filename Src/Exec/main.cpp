@@ -72,6 +72,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
 	tests->startTest("Game");
+	//tests->startTest("ModelSystem");
 	//tests->startTest("TextureGenerator");
 
 	//tests->startTest("Sprite");
