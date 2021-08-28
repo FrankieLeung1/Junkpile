@@ -14,9 +14,7 @@ TicTacToeSystem::TicTacToeSystem()
 {
 	ResourcePtr<EventManager> events;
 	events->addListener<UpdateEvent>([this](UpdateEvent* e) { update(); });
-
-	ResourcePtr<ImGuiManager> imgui;
-	imgui->registerCallback({ [](TicTacToeSystem* t) { t->imgui(); }, this });
+	events->addListener<ImGuiRenderEvent>([this](ImGuiRenderEvent*) { imgui(); });	
 
 	ResourcePtr<ComponentManager> components;
 	components->addComponentType<TicTacToeComponent>(1);

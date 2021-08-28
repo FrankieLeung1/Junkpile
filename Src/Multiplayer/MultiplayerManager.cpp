@@ -32,8 +32,7 @@ m_showServerList(false),
 m_impl(new Impl())
 {
 	ResourcePtr<EventManager> events;
-	ResourcePtr<ImGuiManager> imgui;
-	imgui->registerCallback({ [](MultiplayerManager* m) { m->imgui(); }, this });
+	events->addListener<ImGuiRenderEvent>([this](ImGuiRenderEvent*) { imgui(); });
 
 	ResourcePtr<ThreadPool> pool;
 	m_impl->m_state = Impl::State::Connecting;

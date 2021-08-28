@@ -33,8 +33,6 @@ public:
 
 	bool* win(const char* name, const char* category = nullptr);
 
-	void registerCallback(BasicFunction<void>);
-
 	void saveOpenedWindows();
 
 	void setPipDisable(bool);
@@ -58,8 +56,6 @@ protected:
 	// std::string = category, std::string = name
 	std::map<std::string, std::map<std::string, bool> > m_menuBarSubWindows;
 	std::map<std::string, bool> m_menuBarWindows;
-
-	std::vector< BasicFunction<void> > m_renderCallbacks;
 
 	struct ToastData
 	{

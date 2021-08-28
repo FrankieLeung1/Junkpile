@@ -45,6 +45,11 @@ struct PersistentEvent : public Event<T>
 	float m_eventDeath{ std::numeric_limits<float>::infinity() };	// how long should this live?
 };
 
+struct TickEvent : public Event<TickEvent>
+{
+	int m_tick;
+};
+
 struct UpdateEvent : public Event<UpdateEvent>
 {
 	float m_delta;

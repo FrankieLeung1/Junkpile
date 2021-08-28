@@ -122,23 +122,22 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	WindowRecorder recorder;
 	
 	r.setFreeResources(false);
+	em->addListener<ImGuiRenderEvent>([&r](ImGuiRenderEvent*) { r.imgui(); });
+	em->addListener<ImGuiRenderEvent>([m](ImGuiRenderEvent*) { bool* b = m->win("Demo"); if (*b) ImGui::ShowDemoWindow(b); });
+	em->addListener<ImGuiRenderEvent>([m](ImGuiRenderEvent*) { m->drawMainMenuBar(); m->drawFramerate(); m->drawTrayContext(); });
+	em->addListener<ImGuiRenderEvent>([cm](ImGuiRenderEvent*) { cm->imgui(); });
+	em->addListener<ImGuiRenderEvent>([ps](ImGuiRenderEvent*) { ps->imgui(); });
+	em->addListener<ImGuiRenderEvent>([em](ImGuiRenderEvent*) { em->imgui(); });
+	em->addListener<ImGuiRenderEvent>([sm](ImGuiRenderEvent*) { sm->imgui(); });
+	em->addListener<ImGuiRenderEvent>([rd](ImGuiRenderEvent*) { rd->imgui(); });
+	em->addListener<ImGuiRenderEvent>([s](ImGuiRenderEvent*) { s->imgui(); });
+	//em->addListener<ImGuiRenderEvent>([g](ImGuiRenderEvent*) { g->imgui(); });
+	em->addListener<ImGuiRenderEvent>([ab](ImGuiRenderEvent*) { ab->imgui(); });
+	em->addListener<ImGuiRenderEvent>([&recorder](ImGuiRenderEvent*) { recorder.imgui(); });
+	em->addListener<ImGuiRenderEvent>([](ImGuiRenderEvent*) { Meta::Object::imgui(); });
 
-	m->registerCallback({ [](ResourceManager* r) { r->imgui(); }, &r });
-	m->registerCallback({ [](ImGuiManager* im) { bool* b = im->win("Demo"); if(*b) ImGui::ShowDemoWindow(b);  }, m.get() });
-	m->registerCallback({ [](ImGuiManager* im) { im->drawMainMenuBar(); im->drawFramerate(); im->drawTrayContext(); }, m.get() });
-	m->registerCallback({ [](ComponentManager* cm) { cm->imgui(); }, cm.get() });
-	m->registerCallback({ [](PhysicsSystem* ps) { ps->imgui(); }, ps.get() });
-	m->registerCallback({ [](EventManager* em) { em->imgui(); }, em.get() });
-	m->registerCallback({ [](ScriptManager* im) { im->imgui(); }, sm.get() });
-	m->registerCallback({ [](Rendering::Device* rd) { rd->imgui(); }, rd.get() });
-	m->registerCallback({ [](SpriteSystem* s) { s->imgui(); }, s.get() });
-	//m->registerCallback({ [](Game* g) { g->imgui(); }, g.get() });
-	m->registerCallback({ [](AssetBrowser* ab) { ab->imgui(); }, ab.get() });
-	m->registerCallback({ [](WindowRecorder* r) { r->imgui(); }, &recorder });
-	m->registerCallback([](void*) { Meta::Object::imgui(); });
-
-	TileLevel level;
-	m->registerCallback({ [](TileLevel* level) { level->imgui(); }, &level });
+	//TileLevel level;
+	//em->addListener<ImGuiRenderEvent>([level](ImGuiRenderEvent*) { level->imgui(); });	
 
 	r.startLoading();
 	r.setAutoStartTasks(true);
@@ -172,6 +171,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 			testRender();
 	});
 
+	int tickCount = 0;
+	float tickEvery = 2.0f;
+	float tickCounter = 0.0f;
 	while (!vf->shouldQuit())
 	{
 		t->update();
@@ -179,6 +181,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		auto* update = em->addOneFrameEvent<UpdateEvent>();
 		update->m_delta = t->getDelta();
 		update->m_frame = t->getFrame();
+
+		tickCounter += update->m_delta;
+		if(tickCounter > tickEvery)
+		{
+			auto* tickEvent = em->addOneFrameEvent<TickEvent>();
+			tickEvent->m_tick = tickCount++;
+			tickCounter -= tickEvery;
+		}
 
 		glm::mat4x4 view, proj;
 		if (cs->getActiveMatrices(&view, &proj))

@@ -35,11 +35,8 @@ WebServer::~WebServer()
 void WebServer::test()
 {
 	WebServer* server = createTestResource<WebServer>();
-	ResourcePtr<ImGuiManager> m;
-	m->registerCallback({ [](void* ud) {
-        WebServer* server = static_cast<WebServer*>(ud);
-        server->imgui();
-	}, server });
+	ResourcePtr<EventManager> events;
+    events->addListener<ImGuiRenderEvent>([server](ImGuiRenderEvent*) { server->imgui(); });
 }
 
 void WebServer::imgui()

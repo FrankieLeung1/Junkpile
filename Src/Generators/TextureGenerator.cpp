@@ -208,17 +208,16 @@ void TextureGenerator::test()
 	});
 
 	ResourcePtr<ImGuiManager> imgui;
-	imgui->registerCallback({[](ResourcePtr<Rendering::Texture>* texture)
-	{
-		if (!texture)
+	events->addListener<ImGuiRenderEvent>([ptr](ImGuiRenderEvent*) {
+		if (!ptr)
 			return;
 
 		ImGui::Begin("TexGen");
 
-		ImGui::Image((*texture), ImVec2(256, 256));
+		ImGui::Image((*ptr), ImVec2(256, 256));
 
 		ImGui::End();
-	}, ptr });
+	});
 }
 
 template<>

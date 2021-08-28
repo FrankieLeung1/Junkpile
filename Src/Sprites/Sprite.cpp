@@ -24,10 +24,11 @@ void Sprite::test()
 	std::get<Rendering::TextureAtlas>(*data).addSprite(&std::get<SpriteData>(*data));
 
 	std::get<Rendering::TextureAtlas>(*data).layoutAtlas();
-	m->registerCallback({ [](void* ud) {
-		auto* tuple = (std::tuple<SpriteData, Rendering::TextureAtlas>*)ud;
-		auto& sprite = std::get<SpriteData>(*tuple);
-		auto& t = std::get<Rendering::TextureAtlas>(*tuple);
+
+	ResourcePtr<EventManager> events;
+	events->addListener<ImGuiRenderEvent>([data](ImGuiRenderEvent*) {
+		auto& sprite = std::get<SpriteData>(*data);
+		auto& t = std::get<Rendering::TextureAtlas>(*data);
 
 		ImGui::Begin("Image");
 
@@ -56,6 +57,5 @@ void Sprite::test()
 
 		ImGui::Text("It's peanut butter jelly time!");
 		ImGui::End();
-
-	}, data });
+	});
 }

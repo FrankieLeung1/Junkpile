@@ -32,9 +32,6 @@ void ImGuiManager::update()
 
 	if (!m_pipDisable)
 	{
-		for (BasicFunction<void>& fn : m_renderCallbacks)
-			fn.call();
-
 		ResourcePtr<EventManager> events;
 		events->processEventImmediately(&ImGuiRenderEvent{});
 	}
@@ -203,11 +200,6 @@ void ImGuiManager::newToast(const char* name, const std::function<void(bool*)>& 
 
 	flags |= ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing;
 	m_toasts.emplace_front(name ? name : "", m_nextToastId++, flags, r, lifetime, ResourcePtr<TimeManager>()->getTime());
-}
-
-void ImGuiManager::registerCallback(BasicFunction<void> f)
-{
-	m_renderCallbacks.push_back(f);
 }
 
 void ImGuiManager::bringToFront()

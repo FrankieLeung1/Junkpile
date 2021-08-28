@@ -48,6 +48,7 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
+#define LOGURU_WITH_STREAMS 1
 #include "lua/src/lua.hpp"
 #include "loguru/loguru.hpp"
 #include "imgui/imgui.h"

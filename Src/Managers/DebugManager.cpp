@@ -18,10 +18,9 @@ m_fragmentShader(Vertex::getFragmentShader()),
 m_vertexBuffer(nullptr),
 m_indexBuffer(nullptr)
 {
-	ResourcePtr<ImGuiManager>()->registerCallback({ [](void* v) { static_cast<DebugManager*>(v)->imgui(); }, (void*)this });
-
 	ResourcePtr<EventManager> events;
 	events->addListener<RenderEvent>([this](RenderEvent* e) { render(e); });
+	events->addListener<ImGuiRenderEvent>([this](ImGuiRenderEvent*) { imgui(); });
 }
 
 DebugManager::~DebugManager()

@@ -111,12 +111,12 @@ void ModelSystem::test()
 	//cameraIt.get<TransformComponent>()->m_position.x = 0.0f;
 	modelSystem->m_cameraEntity = cameraIt.getEntity();
 
-	ResourcePtr<ImGuiManager> m;
-	m->registerCallback([](void*) {
+	ResourcePtr<EventManager> events;
+	events->addListener<ImGuiRenderEvent>([](ImGuiRenderEvent*) {
 		ResourcePtr<ModelSystem> models;
 		ImGui::Begin("Model");
 
-		const char* items[] = { "criminalMaleA", "cyborgFemaleA", "skaterFemaleA", "skaterMaleA", "UV"};
+		const char* items[] = { "criminalMaleA", "cyborgFemaleA", "skaterFemaleA", "skaterMaleA", "UV" };
 		if (ImGui::ListBox("Models", &models->m_skin, items, (int)countof(items)))
 		{
 			EntityIterator<ModelComponent> entityIt(true);

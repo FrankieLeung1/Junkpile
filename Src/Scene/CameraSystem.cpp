@@ -48,8 +48,6 @@ CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
 	component->m_far = g_defaultFarPlane;
 	component->m_angles = glm::vec3(0.0f);
 	component->m_offset = glm::vec3(0.0f);
-
-	LOG_F(INFO, "addComponentOrthographic %d\n", e);
 	return component;
 }
 
