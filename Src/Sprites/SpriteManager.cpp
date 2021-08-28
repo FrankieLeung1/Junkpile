@@ -60,6 +60,20 @@ SpriteId SpriteManager::getSprite(const char* path)
 	return { }; // fail
 }
 
+SpriteId SpriteManager::getSprite(ResourcePtr<Rendering::Texture> texture)
+{
+	SpriteData* data = new SpriteData();
+	data->addFrame({ 0, 0, std::numeric_limits<float>::max(), texture });
+	m_nextSpriteId.m_value++;
+	SpriteId sprite = m_nextSpriteId;
+
+	ResourcePtr<SpriteData> dataPtr{ TakeOwnershipPtr, data };
+	m_idSprites.insert(decltype(m_idSprites)::value_type(sprite, dataPtr));
+
+	onSpriteLoaded(dataPtr, "");
+	return sprite;
+}
+
 std::tuple<SpriteData*, Rendering::TextureAtlas*> SpriteManager::getSpriteData(SpriteId id)
 {
 	auto it = m_idSprites.find(id);
@@ -96,7 +110,7 @@ void SpriteManager::onSpriteLoaded(const ResourcePtr<SpriteData>& sprite, String
 	}
 	
 	atlasData->m_atlas->addSprite(sprite);
-	atlasData->m_atlas->setPadding(2);
+	atlasData->m_atlas->setPadding(m_atlases.size() <= 1 ? 0 : 2);
 	atlasData->m_atlas->layoutAtlas();
 	atlasData->m_sprites.push_back(sprite);
 	atlasData->m_id = id.str();

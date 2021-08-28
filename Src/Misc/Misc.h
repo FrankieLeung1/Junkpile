@@ -178,5 +178,35 @@ protected:
 	friend typename Friend;
 };
 
+inline std::vector<glm::vec2> squarePositions(const glm::vec2& center, std::size_t count, const glm::vec2& spacing)
+{
+	std::vector<glm::vec2> result;
+	result.reserve(count);
+
+	int width = 1, height = 1;
+	while (width * height < count)
+	{
+		width += 1;
+		height += 1;
+	}
+
+	std::size_t empty = (width * height) - count;
+	float startingX = -(width / 2) * spacing.x;
+	float currentX = startingX, currentY = -(height / 2) * spacing.y;
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			result.emplace_back(currentX, currentY);
+			currentX += spacing.x;
+		}
+
+		currentY += spacing.y;
+		currentX = startingX;
+	}
+
+	return std::move(result);
+}
+
 #define HERE { LOG_F(INFO, "HERE\n"); }; (void)0
 #define HERE_SCOPE(varName) { LOG_F(INFO, "HERE START (varName)\n"); } Scope varName([](){LOG_F(INFO, "HERE END (varName)\n");)}); (void)0

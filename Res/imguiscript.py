@@ -7,10 +7,10 @@ def imgui(e):
     if(ImGui.Button("button")):
         pressed = not pressed
 
-    #ImGui.Separator()
+    ImGui.Separator()
     
     if(pressed):
-        ImGui.Text("button pressed!")
+        ImGui.Text("BUTTON PRESSED!")
 
     ImGui.End()
 

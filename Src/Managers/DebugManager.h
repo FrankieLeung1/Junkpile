@@ -60,4 +60,4 @@ protected:
 };
 
 #define DEBUG_INC(increment) { ResourcePtr<DebugManager>()->setIncrement(increment); }
-#define DEBUG_VAR(name, value) { ResourcePtr<DebugManager>()->debug(value, name, __FILE__); }
+#define DEBUG_VAR(value) { ResourcePtr<DebugManager>()->debug(value, #value, __FILE__); }

@@ -27,6 +27,7 @@
 #include "../Scripts/Python.h"
 #include "../Meta/LuaRegisterer.h"
 #include "../Framework/VulkanFramework.h"
+#include "../Multiplayer/MultiplayerManager.h"
 #include "../Meta/Meta.h"
 #include "../Misc/Any.h"
 #include "../Rendering/Shader.h"
@@ -46,6 +47,7 @@
 #include "../Game/Game.h"
 #include "../Tools/Standalone.h"
 #include "../Tools/SystemTray.h"
+#include "../Game/TicTacToe.h"
 
 //#define STANDALONE_TOOLS
 //#define SYSTEMTRAY_TOOLS
@@ -71,7 +73,7 @@ static void tests(std::function<void(float)>& update, std::function<void()>& ren
 	//tests->addTest("SpriteSystem", &SpriteSystem::test);
 	tests->addTest("ModelSystem", &ModelSystem::test);
 	tests->addTest("Game", &Game::test);
-	tests->startTest("Game");
+	//tests->startTest("Game");
 	//tests->startTest("ModelSystem");
 	//tests->startTest("TextureGenerator");
 
@@ -113,7 +115,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	ResourcePtr<TransformSystem> transformSystem;
 	ResourcePtr<AssetBrowser> ab;
 	ResourcePtr<CameraSystem> cs;
-	ResourcePtr<Game> g;
+	ResourcePtr<TicTacToeSystem> g;
+	//ResourcePtr<MultiplayerManager> mp;
+	//mp->showServerList(true);
 
 	WindowRecorder recorder;
 	
@@ -128,7 +132,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	m->registerCallback({ [](ScriptManager* im) { im->imgui(); }, sm.get() });
 	m->registerCallback({ [](Rendering::Device* rd) { rd->imgui(); }, rd.get() });
 	m->registerCallback({ [](SpriteSystem* s) { s->imgui(); }, s.get() });
-	m->registerCallback({ [](Game* g) { g->imgui(); }, g.get() });
+	//m->registerCallback({ [](Game* g) { g->imgui(); }, g.get() });
 	m->registerCallback({ [](AssetBrowser* ab) { ab->imgui(); }, ab.get() });
 	m->registerCallback({ [](WindowRecorder* r) { r->imgui(); }, &recorder });
 	m->registerCallback([](void*) { Meta::Object::imgui(); });

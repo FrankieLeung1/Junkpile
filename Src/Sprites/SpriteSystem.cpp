@@ -41,14 +41,14 @@ m_fragmentShader(EmptyPtr)
 
 	char vertexCode[] =
 		"#version 450 core\n"
-		"layout(location = 0) in vec2 aPos;\n"
+		"layout(location = 0) in vec3 aPos;\n"
 		"layout(location = 1) in vec2 aUV;\n"
 		"layout(push_constant) uniform PushConsts{ mat4 vp; } pushConsts;\n"
 		"out gl_PerVertex{ vec4 gl_Position; };\n"
 		"layout(location = 0) out vec2 UV;\n"
 		"void main()\n"
 		"{\n"
-		"	gl_Position = pushConsts.vp * vec4(aPos.xy, 1.0, 1.0);\n"
+		"	gl_Position = pushConsts.vp * vec4(aPos.xyz, 1.0);\n"
 		"	UV = aUV;\n"
 		"}";
 
@@ -76,12 +76,36 @@ SpriteSystem::~SpriteSystem()
 
 }
 
+bool SpriteSystem::getVertices(std::array<Vertex, 4>* vertices, SpriteComponent* sprite, TransformComponent* transform) const
+{
+	ResourcePtr<SpriteManager> spriteManager;
+	std::tuple<SpriteData*, Rendering::TextureAtlas*> spriteData = spriteManager->getSpriteData(sprite->m_sprite);
+	if (!std::get<1>(spriteData))
+		return false;
+
+	glm::vec2 uv1, uv2;
+	const SpriteData::FrameData& frame = std::get<0>(spriteData)->getFrame(sprite->m_time);
+	std::tie(uv1, uv2) = std::get<1>(spriteData)->getUV(frame.m_id);
+
+	glm::vec3 scale = transform->m_scale;
+	float halfWidth = (frame.m_texture->getWidth() / 2.0f) * scale.x;
+	float halfHeight = (frame.m_texture->getHeight() / 2.0f) * scale.y;
+
+	*vertices = { Vertex{ transform->m_position + glm::vec3{ halfWidth, -halfHeight, 0.0f }, { uv2.x, uv2.y } },
+		Vertex{ transform->m_position + glm::vec3{ halfWidth, halfHeight, 0.0f }, { uv2.x, uv1.y } },
+		Vertex{ transform->m_position + glm::vec3{ -halfWidth, -halfHeight, 0.0f }, { uv1.x, uv2.y } },
+		Vertex{ transform->m_position + glm::vec3{ -halfWidth, halfHeight, 0.0f }, { uv1.x, uv1.y } } };
+
+	return true;
+}
+
 void SpriteSystem::process(float delta)
 {
+	// TODO: use getVertices()
+
 	ResourcePtr<DebugManager> debugManager;
 	ResourcePtr<SpriteManager> spriteManager;
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<TransformComponent, SpriteComponent> it(components, true);
+	EntityIterator<TransformComponent, SpriteComponent> it(true);
 	Vertex* map = (Vertex*)m_vertexBuffer->map();
 	while (it.next())
 	{
@@ -123,8 +147,7 @@ void SpriteSystem::render(const RenderEvent& e)
 		return;
 
 	ResourcePtr<SpriteManager> spriteManager;
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<SpriteComponent> it(components, true);
+	EntityIterator<SpriteComponent> it(true);
 
 	ResourcePtr<Rendering::Device> device;
 
@@ -168,6 +191,16 @@ SpriteComponent* SpriteSystem::addComponent(Entity e, StringView spritePath)
 	return sprite;
 }
 
+SpriteComponent* SpriteSystem::addComponent(Entity e, ResourcePtr<Rendering::Texture> texture)
+{
+	ResourcePtr<SpriteManager> spriteManager;
+	ResourcePtr<ComponentManager> components;
+	SpriteComponent* sprite = components->addComponents<SpriteComponent>(e).get<SpriteComponent>();
+	sprite->m_sprite = spriteManager->getSprite(texture);
+	sprite->m_time = 0.0f;
+	return sprite;
+}
+
 void SpriteSystem::test(std::function<void(float)>& update, std::function<void()>& render)
 {
 	ResourcePtr<Rendering::Device> device;
@@ -199,7 +232,7 @@ glm::vec4 SpriteSystem::m_clearColour(0.45f, 0.55f, 0.6f, 1.0f);
 template<> Meta::Object Meta::instanceMeta<SpriteSystem>()
 {
 	return Object("SpriteSystem").
-		func("addComponent", &SpriteSystem::addComponent, { "entity" });
+		func<SpriteSystem, SpriteComponent*, Entity, StringView>("addComponent", &SpriteSystem::addComponent, { "entity" });
 }
 
 template<> Meta::Object Meta::instanceMeta<SpriteComponent>()

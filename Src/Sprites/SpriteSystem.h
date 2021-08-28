@@ -20,6 +20,7 @@ struct SpriteComponent : public Component<SpriteComponent>
 };
 
 struct RenderEvent;
+struct TransformComponent;
 class SpriteSystem : public SingletonResource<SpriteSystem>
 {
 public:
@@ -32,6 +33,10 @@ public:
 	void imgui();
 
 	SpriteComponent* addComponent(Entity, StringView spritePath);
+	SpriteComponent* addComponent(Entity, ResourcePtr<Rendering::Texture>);
+
+	struct Vertex { glm::vec3 m_position; glm::vec2 m_uv; };
+	bool getVertices(std::array<Vertex, 4>* vertices, SpriteComponent*, TransformComponent*) const;
 
 	static void test(std::function<void(float)>& update, std::function<void()>& render);
 
@@ -42,7 +47,6 @@ protected:
 	std::vector<ResourcePtr<SpriteData>> m_spriteData;
 	std::vector<Rendering::TextureAtlas> m_textures;
 
-	struct Vertex{ glm::vec3 m_position; glm::vec2 m_uv; };
 	ResourcePtr<Rendering::Shader> m_vertexShader, m_fragmentShader;
 	std::shared_ptr<Rendering::Buffer> m_vertexBuffer, m_indexBuffer;
 };

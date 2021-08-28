@@ -60,7 +60,7 @@ void ComponentManager::removeEntity(Entity entity)
 	m_entityCount--;
 }
 
-int ComponentManager::debugId(Entity entity) const
+int ComponentManager::debugId(Entity entity)
 {
 	return (int)entity.m_value;
 }

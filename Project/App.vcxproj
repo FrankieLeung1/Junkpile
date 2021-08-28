@@ -73,8 +73,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;Dbghelp.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\debug;..\External\aws\lib\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;Dbghelp.lib;aws-cpp-sdk-core.lib;aws-cpp-sdk-gamelift.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <AddModuleNamesToAssembly>
@@ -100,8 +100,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;Dbghelp.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%VULKAN_SDK%\lib;..\External\Python\libs;..\External\Visual Leak Detector\lib\Win64;..\external\bullet\lib\release;..\External\aws\lib\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;Dwmapi.lib;Shlwapi.lib;Dbghelp.lib;aws-cpp-sdk-core.lib;aws-cpp-sdk-gamelift.lib;BulletDynamics.lib;BulletCollision.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -455,6 +455,7 @@
     <ClCompile Include="..\Src\Framework\Framework.cpp" />
     <ClCompile Include="..\Src\Framework\VulkanFramework.cpp" />
     <ClCompile Include="..\Src\Game\Game.cpp" />
+    <ClCompile Include="..\Src\Game\TicTacToe.cpp" />
     <ClCompile Include="..\Src\Generators\Generator.cpp" />
     <ClCompile Include="..\Src\Generators\TextureGenerator.cpp" />
     <ClCompile Include="..\Src\imgui\AssetBrowser.cpp" />
@@ -486,6 +487,7 @@
     <ClCompile Include="..\Src\Misc\WindowRecorder.cpp" />
     <ClCompile Include="..\Src\Models\ModelManager.cpp" />
     <ClCompile Include="..\Src\Models\ModelSystem.cpp" />
+    <ClCompile Include="..\Src\Multiplayer\MultiplayerManager.cpp" />
     <ClCompile Include="..\Src\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="..\Src\Rendering\Buffer.cpp" />
     <ClCompile Include="..\Src\Rendering\Depot.cpp" />
@@ -501,6 +503,7 @@
     <ClCompile Include="..\Src\Rendering\VulkanHelpers.cpp" />
     <ClCompile Include="..\Src\Resources\ResourceManager.cpp" />
     <ClCompile Include="..\Src\Scene\CameraSystem.cpp" />
+    <ClCompile Include="..\Src\Scene\SelectableSystem.cpp" />
     <ClCompile Include="..\Src\Scene\TileLevel.cpp" />
     <ClCompile Include="..\Src\Scene\TransformSystem.cpp" />
     <ClCompile Include="..\Src\Scripts\LuaEnvironment.cpp" />
@@ -741,6 +744,7 @@
     <ClInclude Include="..\Src\Framework\NullFramework.h" />
     <ClInclude Include="..\Src\Framework\VulkanFramework.h" />
     <ClInclude Include="..\Src\Game\Game.h" />
+    <ClInclude Include="..\Src\Game\TicTacToe.h" />
     <ClInclude Include="..\Src\Generators\Generator.h" />
     <ClInclude Include="..\Src\Generators\TextureGenerator.h" />
     <ClInclude Include="..\Src\imgui\AssetBrowser.h" />
@@ -773,6 +777,8 @@
     <ClInclude Include="..\Src\Misc\WindowRecorder.h" />
     <ClInclude Include="..\Src\Models\ModelManager.h" />
     <ClInclude Include="..\Src\Models\ModelSystem.h" />
+    <ClInclude Include="..\Src\Multiplayer\Credentials.h" />
+    <ClInclude Include="..\Src\Multiplayer\MultiplayerManager.h" />
     <ClInclude Include="..\Src\Physics\PhysicsSystem.h" />
     <ClInclude Include="..\Src\Rendering\Buffer.h" />
     <ClInclude Include="..\Src\Rendering\DataSource.h" />
@@ -790,6 +796,7 @@
     <ClInclude Include="..\Src\Rendering\VulkanHelpers.h" />
     <ClInclude Include="..\Src\Resources\ResourceManager.h" />
     <ClInclude Include="..\Src\Scene\CameraSystem.h" />
+    <ClInclude Include="..\Src\Scene\SelectableSystem.h" />
     <ClInclude Include="..\Src\Scene\TileLevel.h" />
     <ClInclude Include="..\Src\Scene\TransformSystem.h" />
     <ClInclude Include="..\Src\Scripts\LuaEnvironment.h" />
@@ -808,6 +815,9 @@
     <ClInclude Include="..\Src\Tools\SpriteEditor.h" />
     <ClInclude Include="..\Src\Tools\Standalone.h" />
     <ClInclude Include="..\Src\Tools\SystemTray.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\External\glm\util\glm.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

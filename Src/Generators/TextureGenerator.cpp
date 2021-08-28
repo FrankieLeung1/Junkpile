@@ -77,6 +77,23 @@ void TextureGenerator::line(const glm::vec2& p1, const glm::vec2& p2, const glm:
 	});
 }
 
+void TextureGenerator::circle(const glm::vec2& position, int radius, const glm::vec4& colour)
+{
+	push([=](CImg<unsigned char>* img)
+	{
+		unsigned char foreground[] = { (unsigned char)(colour.x * 255), (unsigned char)(colour.y * 255), (unsigned char)(colour.z * 255), (unsigned char)(colour.w * 255) };
+		img->draw_circle((int)position.x, (int)position.y, radius, foreground, 1.0f);
+	});
+}
+
+void TextureGenerator::blur(float sigma)
+{
+	push([=](CImg<unsigned char>* img)
+	{
+		img->blur(sigma);
+	});
+}
+
 void TextureGenerator::text(const char* text, const glm::vec2& position, int size, const glm::vec4& colour)
 {
 	std::string s = text;
@@ -91,7 +108,7 @@ void TextureGenerator::text(const char* text, const glm::vec2& position, int siz
 
 Rendering::Texture* TextureGenerator::generate(unsigned int width, unsigned int height) const
 {
-	CImg<unsigned char> img(width, height, 1, 4, 255);
+	CImg<unsigned char> img(width, height, 1, 4, 0);
 	for (auto& op : p->m_operations)
 		op(&img);
 
@@ -102,7 +119,7 @@ Rendering::Texture* TextureGenerator::generate(unsigned int width, unsigned int 
 
 	cimg_forXY(img, x, y)
 	{
-		*dest = glm::u8vec4(img(x, y, 0), img(x, y, 1), img(x, y, 2), 255);
+		*dest = glm::u8vec4(img(x, y, 0), img(x, y, 1), img(x, y, 2), img(x, y, 3));
 		dest++;
 	}
 
@@ -121,11 +138,11 @@ void TextureGenerator::test()
 	ResourcePtr<Rendering::Texture>* ptr = createTestResource< ResourcePtr<Rendering::Texture> >(EmptyPtr);
 	auto generate = [ptr](bool remark)
 	{
-		ResourcePtr<ScriptManager> sm;
+		/*ResourcePtr<ScriptManager> sm;
 		if(remark)
 			sm->remark("Scripts/Generators/TestGen.py");
 		else
-			sm->run("Scripts/Generators/TestGen.py");
+			sm->run("Scripts/Generators/TestGen.py");*/
 
 		/*TextureGenerator gen;
 		gen.clear({ 1.0f, 0.0f, 0.0f, 1.0f });
@@ -142,6 +159,26 @@ void TextureGenerator::test()
 		// bottom left
 		gen.line({ 0.25f, 0.0f }, { 0.25f, 1.0f }, { 1.0f, 1.0f, 1.0f, 0.25f });
 		gen.line({ 0.0f, 0.75f }, { 1.0f, 0.75f }, { 1.0f, 1.0f, 1.0f, 0.25f });*/
+
+		glm::vec4 ringColour{1.0f, 0.0f, 0.0f, 1.0f};
+		glm::vec4 borderColour{1.0f, 1.0f, 1.0f, 1.0f};
+
+		const float minRadius = 0.0f;
+		const float maxRadius = 128.0f;
+		const float radiusRange = maxRadius - minRadius;
+		const int maxRings = 6;
+		const int ringThickness = 10;
+		const float borderThickness = 3.0f;
+
+		int i = 1;
+		TextureGenerator gen;
+		gen.clear({ 0.0f, 0.0f, 0.0f, 1.0f });
+
+		float radius = (((float)i / (float)maxRings) * maxRadius) + minRadius;
+		gen.circle({ 128.0f, 128.0f }, (int)radius, borderColour);
+		gen.circle({ 128.0f, 128.0f }, (int)(radius - borderThickness), ringColour);
+		gen.circle({ 128.0f, 128.0f }, (int)(radius - ringThickness - borderThickness), borderColour);
+		gen.circle({ 128.0f, 128.0f }, (int)(radius - ringThickness - (borderThickness * 2.0f)), {1.0f, 1.0f, 0.0f, 1.0f});
 
 		ResourcePtr<Rendering::Texture> texture(TakeOwnershipPtr, TextureGenerator::Instance->generate(256, 256));
 		*ptr = texture;

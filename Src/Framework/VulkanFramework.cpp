@@ -275,8 +275,8 @@ int VulkanFramework::initImGui(AppType type)
 		height = 1;
 	}
 	m_window = glfwCreateWindow(width, height, m_windowTitle.c_str(), NULL, NULL);
-	if(type == AppType::MainWindow)
-		glfwMaximizeWindow(m_window);
+	//if(type == AppType::MainWindow)
+	//	glfwMaximizeWindow(m_window);
 	m_prevScrollCallback = glfwSetScrollCallback(m_window, scrollCallback);
 
 	// Setup Vulkan
@@ -505,11 +505,9 @@ void VulkanFramework::update()
 		m_device->setFrameBuffers(&g_MainWindowData, framebuffers);
 	}
 
-	InputManager* inputs = ResourcePtr<InputManager>().get();
-	inputs->setMouseWheel(0.0f);
-
 	glfwPollEvents();
-	
+
+	InputManager* inputs = ResourcePtr<InputManager>().get();
 	BYTE keyboardState[256];
 	GetKeyboardState(keyboardState);	
 	for (int i = 0; i < countof(keyboardState); ++i)
@@ -521,12 +519,14 @@ void VulkanFramework::update()
 	int focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED) && !ImGui::GetIO().WantTextInput;
 	inputs->setHasFocus(focused != 0);
 
-	POINT point;
-	::GetCursorPos(&point);
-	inputs->setCursorPos((float)point.x, (float)point.y);
+	int posX = 0, posY = 0;
+	glfwGetWindowPos(m_window, &posX, &posY);
 
 	ImGuiIO& io = ImGui::GetIO();
+	inputs->setCursorPos(io.MousePos.x - posX, io.MousePos.y - posY);
 	inputs->setMouseWheel(io.MouseWheel);
+	for (int i = 0; i < countof(io.MouseClicked); i++)
+		inputs->setMouseData(i, io.MouseDownDuration[i] >= 0.0f, io.MouseClicked[i], io.MouseReleased[i], io.MouseDoubleClicked[i]);
 
 	if (inputs->isDown(VK_CONTROL) && inputs->justReleased('F'))
 	{
@@ -545,6 +545,7 @@ void VulkanFramework::update()
 			glfwSetWindowMonitor(m_window, nullptr, m_winDimensions[0], m_winDimensions[1], m_winDimensions[2], m_winDimensions[3], 0);
 		}
 	}
+	inputs->setWindowSize(g_SwapChainResizeWidth, g_SwapChainResizeHeight);
 
 	if (inputs->justReleased(VK_F1) || inputs->justReleased(VK_F2))
 	{
@@ -774,7 +775,16 @@ void VulkanFramework::CleanupVulkanWindow()
 
 void VulkanFramework::FrameRender(ImGui_ImplVulkanH_Window* wd)
 {
-	ImGui_ImplVulkan_UploadTextures(ImGui::GetDrawData());
+	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+	for (int i = 0; i < platform_io.Viewports.Size; i++)
+	{
+		ImGuiViewport* viewport = platform_io.Viewports[i];
+		if (viewport->Flags & ImGuiViewportFlags_Minimized)
+			continue;
+
+		ImGui_ImplVulkan_UploadTextures(viewport->DrawData);
+	}
+	
 
 	VkResult err;
 	VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;

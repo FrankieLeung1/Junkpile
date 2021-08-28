@@ -13,6 +13,8 @@ public:
 	void clear(const glm::vec4& colour);
 	void rect(const glm::vec2& p1, const glm::vec2& p2, const glm::vec4& colour);
 	void line(const glm::vec2& p1, const glm::vec2& p2, const glm::vec4& colour);
+	void circle(const glm::vec2& position, int radius, const glm::vec4& colour);
+	void blur(float sigma);
 	void text(const char* text, const glm::vec2& position, int size, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	Rendering::Texture* generate(unsigned int width, unsigned int height) const;

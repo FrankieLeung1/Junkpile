@@ -54,7 +54,7 @@ m_world(nullptr)
 
 PhysicsSystem::~PhysicsSystem()
 {
-	EntityIterator<PhysicsComponent> p(m_components, true);
+	EntityIterator<PhysicsComponent> p(true);
 	while (p.next())
 	{
 		auto* pc = p.get<PhysicsComponent>();
@@ -136,7 +136,7 @@ void PhysicsSystem::processWorld(float delta)
 
 void PhysicsSystem::process(float delta)
 {
-	EntityIterator<TransformComponent, PhysicsComponent> it(m_components, false);
+	EntityIterator<TransformComponent, PhysicsComponent> it(false);
 	while (it.next())
 	{
 		PhysicsComponent* physics = it.get<PhysicsComponent>();
@@ -277,7 +277,7 @@ void PhysicsSystem::render(RenderEvent* e)
 {
 	if (m_doDebugDraw)
 	{
-		//DEBUG_VAR("projection", m_debugDrawer->m_projection);
+		//DEBUG_VAR(m_debugDrawer->m_projection);
 	}
 }
 

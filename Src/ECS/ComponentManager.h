@@ -27,7 +27,7 @@ template <typename... Ts>
 class EntityIterator : protected std::tuple<Ts*...>
 {
 public:
-	EntityIterator(ComponentManager* manager, bool allComponentsMustExist);
+	EntityIterator(bool allComponentsMustExist);
 	~EntityIterator();
 
 	bool next();
@@ -117,7 +117,7 @@ public:
 	template<typename... Components> EntityIterator<Components...> addEntity();
 	Entity newEntity();
 	void removeEntity(Entity);
-	int debugId(Entity) const;
+	static int debugId(Entity);
 	void printAllEntityIds() const;
 
 	template<typename Component, typename... Components> EntityIterator<Component, Components...> addComponents(Entity);
@@ -258,7 +258,7 @@ EntityIterator<Components...> ComponentManager::addEntity()
 	Entity entity = newEntity();
 	addComponents<Components...>(entity);
 
-	EntityIterator<Components...> result(this, true);
+	EntityIterator<Components...> result(true);
 	result.m_currentEntity.m_value = entity.m_value - 1; // set to the entity before and next()
 	result.next();
 
@@ -313,7 +313,7 @@ EntityIterator<Component, Components...> ComponentManager::addComponents(Entity 
 
 	addComponents<Components...>(eid);
 
-	EntityIterator<Component, Components...> result(this, true);
+	EntityIterator<Component, Components...> result(true);
 	result.m_currentEntity.m_value = eid.m_value - 1; // set to the entity before and next()
 	result.next();
 	return std::move(result);
@@ -406,11 +406,11 @@ template<int> void ComponentManager::removeComponents(Entity){}
 
 template<typename... Components> EntityIterator<Components...> ComponentManager::findEntity(Entity e)
 {
-	EntityIterator<Components...> it(this, false);
+	EntityIterator<Components...> it(false);
 	it.m_currentEntity.m_value = e.m_value - 1;
 	it.next();
 
-	return it.m_currentEntity == e ? it : EntityIterator<Components...>(this, false);
+	return it.m_currentEntity == e ? it : EntityIterator<Components...>(false);
 }
 
 template<int i, typename... Ts>
@@ -544,13 +544,15 @@ void ComponentManager::clearComponents()
 
 // EntityIterator
 template <typename... Ts>
-EntityIterator<Ts...>::EntityIterator(ComponentManager* manager, bool allComponentsMustExist) :
-m_manager(manager),
+EntityIterator<Ts...>::EntityIterator(bool allComponentsMustExist) :
+m_manager(nullptr),
 m_allComponentsMustExist(allComponentsMustExist),
 m_currentEntity()
 {
-	CHECK_F(manager->hasComponentType<Ts...>());
-	manager->setupIterator(std::true_type(), *this);
+	ResourcePtr<ComponentManager> components;
+	m_manager = components.get();
+	CHECK_F(m_manager->hasComponentType<Ts...>());
+	m_manager->setupIterator(std::true_type(), *this);
 }
 
 template <typename... Ts>
@@ -564,6 +566,7 @@ template <typename T>
 T* EntityIterator<Ts...>::get()
 {
 	// TODO: static_assert T is in this tuple
+	// TODO: is there a way to make this work with value undefined?
 
 	auto value = std::get<T*>(*this);
 	return value && value->m_entity == m_currentEntity ? value : nullptr;

@@ -31,8 +31,7 @@ void ModelSystem::update(float delta)
 {
 	ResourcePtr<ModelManager> models;
 	ResourcePtr<Rendering::Depot> depot;
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<TransformComponent, ModelComponent> it(components, true);
+	EntityIterator<TransformComponent, ModelComponent> it(true);
 	ResourcePtr<Rendering::Shader> vshader = depot->getTexturedVertexShader();
 	ResourcePtr<Rendering::Shader> fshader{ EmptyPtr };
 	if (m_shaderType == 0) fshader = depot->getTexturedFragmentShader();
@@ -120,8 +119,7 @@ void ModelSystem::test()
 		const char* items[] = { "criminalMaleA", "cyborgFemaleA", "skaterFemaleA", "skaterMaleA", "UV"};
 		if (ImGui::ListBox("Models", &models->m_skin, items, (int)countof(items)))
 		{
-			ResourcePtr<ComponentManager> components;
-			EntityIterator<ModelComponent> entityIt(components, true);
+			EntityIterator<ModelComponent> entityIt(true);
 			entityIt.next();
 			ModelComponent* model = entityIt.get<ModelComponent>();
 			const char* path = nullptr;

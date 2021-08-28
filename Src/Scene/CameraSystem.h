@@ -16,10 +16,11 @@ struct CameraComponent : public Component<CameraComponent, CameraSystem>
 	enum ControlType { None, WASD, Orbit };
 	ControlType m_controlType;
 
-	union { // TODO: use COMPONENT_PROPERTY
-		struct { float m_fov, m_aspect, m_near, m_far; }; // perspective
-		struct { float m_left, m_right, m_bottom, m_top; }; // orthographic
+	union {
+		struct { float m_fov, m_aspect; }; // perspective
+		struct { float m_left, m_right, m_top, m_bottom; }; // orthographic
 	};
+	float m_near, m_far;
 
 	// Arcball
 	glm::vec3 m_angles;
@@ -45,6 +46,10 @@ public:
 	void setNoInput(Entity);
 
 	void update(const UpdateEvent*);
+
+	// returns position and direction
+	std::tuple<glm::vec3, glm::vec3> screenToWorld(glm::vec2 coords = glm::vec2(std::numeric_limits<float>::infinity()), Entity camera = Entity()) const;
+	bool getOrthographicBounds(CameraComponent*, float* left, float* right, float* top, float* bottom) const;
 
 	bool getActiveMatrices(glm::mat4* view, glm::mat4* projection) const;
 	void getMatrices(Entity, glm::mat4* view, glm::mat4* projection) const;

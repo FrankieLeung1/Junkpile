@@ -27,12 +27,26 @@ public:
 	bool isReleased(int, bool needsFocus = true) const;
 	bool justReleased(int, bool needsFocus = true) const;
 
+	bool isMouseDown(int, bool needsFocus = true) const;
+	bool justMouseDown(int, bool needsFocus = true) const;
+	bool isMouseReleased(int, bool needsFocus = true) const;
+	bool justMouseReleased(int, bool needsFocus = true) const;
+	bool isMouseDoubleClicked(int, bool needsFocus = true) const;
+	void setMouseData(int button, bool down, bool justDown, bool justReleased, bool doubleClicked);
+
 	bool wantsTrayContext() const;
 	void setWantsTrayContext(bool);
 
 	void setCursorPos(float x, float y);
 	glm::vec2 getCursorPos() const;
 	glm::vec2 getCursorPosDelta() const;
+
+	glm::vec2 getCursorPosNDC() const;
+	glm::vec2 getCursorPosDeltaNDC() const;
+
+	glm::vec2 getCursorPosNormalizedInPixels() const;
+
+	void setWindowSize(int width, int height);
 
 	void setMouseWheel(float);
 	float getMouseWheel() const;
@@ -41,11 +55,18 @@ public:
 
 protected:
 	bool m_wantsTrayContext;
-	int m_keys[256];
 	bool m_hasFocus;
+
+	int m_keys[256];
+
+	static const std::size_t m_buttonCount = 5;
 	float m_x, m_y;
 	float m_prevX, m_prevY;
+	bool m_buttonDown[m_buttonCount];
+	bool m_buttonJustDown[m_buttonCount], m_buttonJustReleased[m_buttonCount], m_buttonDoubleClicked[m_buttonCount];
 	float m_mouseWheel;
+
+	int m_width, m_height; // client area dimensions for calculating NDC
 	bool m_needsEmitChanged, m_needsEmitHeld;
 };
 

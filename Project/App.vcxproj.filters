@@ -178,6 +178,12 @@
     <Filter Include="External\QR-Code-generator">
       <UniqueIdentifier>{bb366b4f-2697-4ba4-8ddc-22199f82e68d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Multiplayer">
+      <UniqueIdentifier>{ac706cf9-6665-49b4-8261-33fd0ff7d6e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Multiplayer">
+      <UniqueIdentifier>{715e09e3-291b-4f3a-9662-1593f26afdc7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Exec\stdafx.cpp">
@@ -632,6 +638,15 @@
     </ClCompile>
     <ClCompile Include="..\Src\Tools\SpriteEditor.cpp">
       <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Multiplayer\MultiplayerManager.cpp">
+      <Filter>Source Files\Multiplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Game\TicTacToe.cpp">
+      <Filter>Source Files\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Scene\SelectableSystem.cpp">
+      <Filter>Source Files\Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1496,5 +1511,22 @@
     <ClInclude Include="..\Src\Tools\SpriteEditor.h">
       <Filter>Header Files\Tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\Multiplayer\MultiplayerManager.h">
+      <Filter>Header Files\Multiplayer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Multiplayer\Credentials.h">
+      <Filter>Header Files\Multiplayer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Game\TicTacToe.h">
+      <Filter>Header Files\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Scene\SelectableSystem.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\External\glm\util\glm.natvis">
+      <Filter>External</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

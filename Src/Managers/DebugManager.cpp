@@ -46,9 +46,20 @@ void DebugManager::setIncrement(float f) { m_increment = f; }
 
 void DebugManager::imgui()
 {
+	if (m_variables.empty())
+		return;
+
+	ImGui::Begin("DebugManager");
+	ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_TabListPopupButton | ImGuiTabBarFlags_FittingPolicyScroll);
 	for (auto fileIt = m_variables.begin(); fileIt != m_variables.end(); ++fileIt)
 	{
-		ImGui::Begin(fileIt->first);
+		const char* name = strrchr(fileIt->first, '\\') + 1;
+		bool tabOpened = ImGui::BeginTabItem(name ? name : "Unknown");
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip(fileIt->first);
+
+		if (!tabOpened)
+			continue;
 
 		for (auto varIt = fileIt->second.begin(); varIt != fileIt->second.end(); ++varIt)
 		{
@@ -87,8 +98,10 @@ void DebugManager::imgui()
 			else ImGui::Text("Unknown Variable Type: %s", varIt->m_name);
 		}
 
-		ImGui::End();
+		ImGui::EndTabItem();
 	}
+	ImGui::EndTabBar();
+	ImGui::End();
 
 	m_variables.clear();
 }

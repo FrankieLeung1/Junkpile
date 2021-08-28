@@ -15,6 +15,7 @@ public:
 	~SpriteManager();
 
 	SpriteId getSprite(const char* path);
+	SpriteId getSprite(ResourcePtr<Rendering::Texture> texture);
 	std::tuple<SpriteData*, Rendering::TextureAtlas*> getSpriteData(SpriteId);
 
 	void imgui();

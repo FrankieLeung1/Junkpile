@@ -9,7 +9,7 @@ struct TransformComponent : public Component<TransformComponent, TransformSystem
 	static constexpr const char* m_cid = "Transform";
 
 	glm::vec3 m_position;
-	glm::vec3 m_scale;
+	glm::vec3 m_scale{1.0f};
 	glm::quat m_rotation;
 	//TODO: parent
 };

@@ -174,6 +174,18 @@ bool Framework::getExitCode(ProcessHandle* process, int* exitCode)
 	return dwordExitCode != STILL_ACTIVE;
 }
 
+Framework::GUID Framework::createGUID()
+{
+	::GUID guid;
+	HRESULT r = CoCreateGuid(&guid);
+	CHECK_F(SUCCEEDED(r));
+	CHECK_F(sizeof(Framework::GUID) == sizeof(::GUID));
+
+	Framework::GUID result;
+	memcpy(&result, &guid, sizeof(result));
+	return result;
+}
+
 const char* Framework::getResPath()
 {
 	return "../Res/";

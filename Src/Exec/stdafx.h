@@ -83,7 +83,7 @@
 #include "btBulletDynamicsCommon.h"
 
 #include "../Framework/VulkanFramework.h"
-//#include "../Managers/DebugManager.h"
+#include "../Managers/DebugManager.h"
 #include "../Misc/Any.h"
 #include "../Misc/CallStack.h"
 

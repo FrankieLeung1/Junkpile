@@ -1,10 +1,13 @@
 #include "stdafx.h"
 #include "CameraSystem.h"
+#include "glm/glm/gtx/rotate_vector.hpp"
 #include "../Rendering/RenderingDevice.h"
 #include "TransformSystem.h"
 #include "../Managers/EventManager.h"
 #include "../Managers/InputManager.h"
 #include "../Managers/DebugManager.h"
+
+static float g_defaultFarPlane = 9999.0f;
 
 CameraSystem::CameraSystem()
 {
@@ -25,7 +28,7 @@ CameraComponent* CameraSystem::addComponentPerspective(Entity e, float fov)
 	component->m_flags = CameraComponent::Perspective;
 	component->m_aspect = 16.0f / 9.0f;
 	component->m_near = 0.1f;
-	component->m_far = 1000.0f;
+	component->m_far = g_defaultFarPlane;
 	component->m_angles = glm::vec3(0.0f);
 	component->m_offset = glm::vec3(0.0f);
 	component->m_fov = fov;
@@ -41,6 +44,8 @@ CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
 	component->m_right = 0.0f;
 	component->m_bottom = 0.0f;
 	component->m_top = 0.0f;
+	component->m_near = 0.1f;
+	component->m_far = g_defaultFarPlane;
 	component->m_angles = glm::vec3(0.0f);
 	component->m_offset = glm::vec3(0.0f);
 
@@ -50,8 +55,7 @@ CameraComponent* CameraSystem::addComponentOrthographic(Entity e)
 
 void CameraSystem::setCameraActive(Entity e)
 {
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<CameraComponent> it(components, true);
+	EntityIterator<CameraComponent> it(true);
 	while (it.next())
 	{
 		CameraComponent* component = it.get<CameraComponent>();
@@ -64,8 +68,7 @@ void CameraSystem::setCameraActive(Entity e)
 
 void CameraSystem::setWASDInput(Entity e)
 {
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<CameraComponent> it(components, true);
+	EntityIterator<CameraComponent> it(true);
 	while (it.next())
 	{
 		if (it.getEntity() == e)
@@ -75,8 +78,7 @@ void CameraSystem::setWASDInput(Entity e)
 
 void CameraSystem::setNoInput(Entity e)
 {
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<CameraComponent> it(components, true);
+	EntityIterator<CameraComponent> it(true);
 	while (it.next())
 	{
 		if (it.getEntity() == e)
@@ -86,7 +88,6 @@ void CameraSystem::setNoInput(Entity e)
 
 void CameraSystem::update(const UpdateEvent* e)
 {
-	ResourcePtr<ComponentManager> components;
 	ResourcePtr<InputManager> inputs;
 	float speed = 50.0f;
 	float mouseWheel = inputs->getMouseWheel();
@@ -100,17 +101,17 @@ void CameraSystem::update(const UpdateEvent* e)
 	if(wasdTransformVector != glm::vec3(0.0f))
 		wasdTransformVector = glm::normalize(wasdTransformVector) * (e->m_delta * speed);
 
-	EntityIterator<TransformComponent, CameraComponent> it(components, true);
+	EntityIterator<TransformComponent, CameraComponent> it(true);
 	while (it.next())
 	{
 		TransformComponent* transform = it.get<TransformComponent>();
 		CameraComponent* camera = it.get<CameraComponent>();
 
 		/*float distance = (float)glm::length(transform->m_position);
-		DEBUG_VAR("angles", camera->m_angles);
-		DEBUG_VAR("position", transform->m_position);
-		DEBUG_VAR("offset", camera->m_offset);
-		DEBUG_VAR("distance", distance);*/
+		DEBUG_VAR(camera->m_angles);
+		DEBUG_VAR(transform->m_position);
+		DEBUG_VAR(camera->m_offset);
+		DEBUG_VAR(distance);*/
 
 		switch (camera->m_controlType)
 		{
@@ -154,10 +155,89 @@ void CameraSystem::update(const UpdateEvent* e)
 	}
 }
 
+std::tuple<glm::vec3, glm::vec3> CameraSystem::screenToWorld(glm::vec2 coords, Entity cameraEntity) const
+{
+	ResourcePtr<InputManager> inputs;
+	if (coords.x == std::numeric_limits<float>::infinity() || coords.y == std::numeric_limits<float>::infinity())
+		coords = inputs->getCursorPosNDC();
+
+	CameraComponent* cameraComponent = nullptr;
+	TransformComponent* cameraTransform = nullptr;
+
+	bool findActiveCamera = !cameraEntity;
+	EntityIterator<TransformComponent, CameraComponent> it(true);
+	while (it.next())
+	{
+		CameraComponent* c = it.get<CameraComponent>();
+		if ((findActiveCamera && (c->m_flags & CameraComponent::ActiveCamera) != 0) || (c->m_entity == cameraEntity))
+		{
+			cameraComponent = c;
+			cameraTransform = it.get<TransformComponent>();
+		}
+	}
+	CHECK_F(cameraComponent && cameraTransform); // couldn't find camera
+
+	if ((cameraComponent->m_flags & CameraComponent::Orthographic) != 0)
+	{
+		// TODO: work camera rotation into this
+		float left, right, top, bottom;
+		getOrthographicBounds(cameraComponent, &left, &right, &top, &bottom);
+
+		float width = glm::abs(left) + glm::abs(right), height = glm::abs(top) + glm::abs(bottom);
+
+		glm::vec3 origin = cameraTransform->m_position;
+		origin.x += (coords.x < 0.0f ? coords.x * -left : coords.x * right) * 2.0f;
+		origin.y += (coords.y < 0.0f ? coords.y * bottom : coords.y * -top) * 2.0f;
+
+		glm::vec3 ray = cameraTransform->m_rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+		return std::tuple<glm::vec3, glm::vec3>(origin, ray);
+	}
+	else if ((cameraComponent->m_flags & CameraComponent::Perspective) != 0)
+	{
+		const float fov = glm::radians(cameraComponent->m_fov);
+		const glm::vec3 left = cameraTransform->m_rotation * glm::vec3(-1.0f, 0.0f, 0.0f);
+		const glm::vec3 up = cameraTransform->m_rotation * glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::vec3 ray = cameraTransform->m_rotation * glm::vec3(0.0f, 0.0f, 1.0f); // straight forward
+		ray = glm::rotate(ray, coords.x * fov, up);
+		ray = glm::rotate(ray, coords.y * fov, left);
+
+		return std::tuple<glm::vec3, glm::vec3>(cameraTransform->m_position, ray);
+	}
+	
+	LOG_F(WARNING, "Unknown camera type\n");
+	return {};
+}
+
+bool CameraSystem::getOrthographicBounds(CameraComponent* c, float* left, float* right, float* top, float* bottom) const
+{
+	CHECK_F(c != nullptr);
+	if ((c->m_flags & CameraComponent::Orthographic) == 0)
+		return false;
+
+	if (!c->m_left && !c->m_right && !c->m_top && !c->m_bottom)
+	{
+		ResourcePtr<Rendering::Device> device;
+		auto resolution = std::get<1>(device->getFrameBuffer());
+		float halfWidth = resolution.x / 2.0f, halfHeight = resolution.y / 2.0f;
+		*left = -halfWidth;
+		*right = halfWidth;
+		*top = halfHeight;
+		*bottom = -halfHeight;
+	}
+	else
+	{
+		*left = c->m_left;
+		*right = c->m_right;
+		*top = c->m_top;
+		*bottom = c->m_bottom;
+	}
+
+	return true;
+}
+
 bool CameraSystem::getActiveMatrices(glm::mat4* view, glm::mat4* projection) const
 {
-	ResourcePtr<ComponentManager> components;
-	EntityIterator<TransformComponent, CameraComponent> it(components, true);
+	EntityIterator<TransformComponent, CameraComponent> it(true);
 	while (it.next())
 	{
 		CameraComponent* c = it.get<CameraComponent>();
@@ -196,27 +276,17 @@ void CameraSystem::getMatrices(Entity e, glm::mat4* view, glm::mat4* projection)
 			(*view)[2][2] = -1.0f; // flip the z axis
 			(*view) = glm::mat4_cast(t->m_rotation) * glm::translate(*view, t->m_position);
 		}
-		
 	}
 
 	if (c->m_flags & CameraComponent::Perspective)
 	{
-		int width = 1280, height = 720;
 		*projection = glm::perspective(c->m_fov, c->m_aspect, c->m_near, c->m_far);
 	}
 	else if (c->m_flags & CameraComponent::Orthographic)
 	{
-		if (!c->m_left && !c->m_right && !c->m_top && !c->m_bottom)
-		{
-			ResourcePtr<Rendering::Device> device;
-			auto resolution = std::get<1>(device->getFrameBuffer());
-			float halfWidth = resolution.x / 2.0f, halfHeight = resolution.y / 2.0f;
-			*projection = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight);
-		}
-		else
-		{
-			*projection = glm::ortho(c->m_left, c->m_right, c->m_bottom, c->m_top);
-		}
+		float l, r, t, b;
+		getOrthographicBounds(c, &l, &r, &t, &b);
+		*projection = glm::ortho(l, r, b, t, c->m_near, c->m_far);
 	}
 	else
 	{

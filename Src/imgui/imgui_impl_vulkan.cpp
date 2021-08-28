@@ -43,6 +43,7 @@
 
 #include "stdafx.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 #include "imgui_impl_vulkan.h"
 #include "../Resources/ResourceManager.h"
 #include "../Rendering/RenderingDevice.h"
@@ -318,6 +319,7 @@ static void ImGui_ImplVulkan_SetupRenderState(ImDrawData* draw_data, VkCommandBu
 // Uploads textures to GPU that have not yet been uploaded
 void ImGui_ImplVulkan_UploadTextures(ImDrawData* draw_data)
 {
+    // TODO: Loop through all viewports!
     ResourcePtr<VulkanFramework>* vf = nullptr;
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {

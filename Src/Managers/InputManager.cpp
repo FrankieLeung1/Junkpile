@@ -4,7 +4,9 @@
 
 InputManager::InputManager():
 m_wantsTrayContext(false),
-m_mouseWheel(0.0f)
+m_mouseWheel(0.0f),
+m_width(1),
+m_height(1)
 {
 	std::fill(m_keys, m_keys + countof(m_keys), -std::numeric_limits<int>::max() / 2);
 
@@ -70,6 +72,44 @@ bool InputManager::justReleased(int k, bool needsFocus) const
 	return (!needsFocus || m_hasFocus) && m_keys[k] == -1;
 }
 
+bool InputManager::isMouseDown(int button, bool needsFocus) const
+{
+	CHECK_F(button < m_buttonCount);
+	return (!needsFocus || m_hasFocus) && m_buttonDown[button];
+}
+
+bool InputManager::justMouseDown(int button, bool needsFocus) const
+{
+	CHECK_F(button < m_buttonCount);
+	return (!needsFocus || m_hasFocus) && m_buttonJustDown[button];
+}
+
+bool InputManager::isMouseReleased(int button, bool needsFocus) const
+{
+	return !isMouseDown(button, needsFocus);
+}
+
+bool InputManager::justMouseReleased(int button, bool needsFocus) const
+{
+	CHECK_F(button < m_buttonCount);
+	return (!needsFocus || m_hasFocus) && m_buttonJustReleased[button];
+}
+
+bool InputManager::isMouseDoubleClicked(int button, bool needsFocus) const
+{
+	CHECK_F(button < m_buttonCount);
+	return (!needsFocus || m_hasFocus) && m_buttonDoubleClicked[button];
+}
+
+void InputManager::setMouseData(int button, bool down, bool justDown, bool justReleased, bool doubleClicked)
+{
+	CHECK_F(button < m_buttonCount);
+	m_buttonDown[button] = down;
+	m_buttonJustDown[button] = justDown;
+	m_buttonJustReleased[button] = justReleased;
+	m_buttonDoubleClicked[button] = doubleClicked;
+}
+
 bool InputManager::wantsTrayContext() const
 {
 	return m_wantsTrayContext;
@@ -96,6 +136,36 @@ glm::vec2 InputManager::getCursorPos() const
 glm::vec2 InputManager::getCursorPosDelta() const
 {
 	return { m_prevX - m_x, m_prevY - m_y };
+}
+
+glm::vec2 InputManager::getCursorPosNDC() const
+{
+	// are NDCs scaled to the longest length?
+	/*int longest = std::max(m_width, m_height);
+	glm::vec2 cursor = getCursorPos();
+	return { (cursor.x - m_width * 0.5f) / longest, (cursor.y - m_height * 0.5f) / longest };*/
+	
+	glm::vec2 cursor = getCursorPos();
+	return { (cursor.x - m_width * 0.5f) / m_width, (cursor.y - m_height * 0.5f) / m_height };
+}
+
+glm::vec2 InputManager::getCursorPosDeltaNDC() const
+{
+	int longest = std::max(m_width, m_height);
+	glm::vec2 cursor = getCursorPosDelta();
+	return { (cursor.x - m_width * 0.5f) / longest, (cursor.y - m_height * 0.5f) / longest };
+}
+
+glm::vec2 InputManager::getCursorPosNormalizedInPixels() const
+{
+	glm::vec2 cursor = getCursorPos();
+	return { (cursor.x - m_width * 0.5f), -(cursor.y - m_height * 0.5f) };
+}
+
+void InputManager::setWindowSize(int width, int height)
+{
+	m_width = width;
+	m_height = height;
 }
 
 void InputManager::setMouseWheel(float f)
